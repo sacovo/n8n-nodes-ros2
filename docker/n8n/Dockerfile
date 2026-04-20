@@ -10,7 +10,7 @@ ARG N8N_VERSION=2.16.1
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && apt-get install -y \
-    graphicsmagick tzdata git tini python3 python3-setuptools build-essential curl docker \
+    graphicsmagick tzdata git tini python3 python3-setuptools build-essential curl \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Compile su-exec (Keep this logic but wrap it to stay clean)
