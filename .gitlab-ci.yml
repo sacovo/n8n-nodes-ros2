@@ -1,0 +1,38 @@
+include:
+  - project: 'fhnw-rover/ansible'
+    ref: main
+    file: '/.gitlab/ci/components/ros/pipeline.yml'
+
+stages:
+  - build
+  - deploy
+
+before_script:
+  - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.fhnw.ch".insteadOf "https://gitlab.fhnw.ch"
+  - git submodule sync
+  - git submodule update --init
+
+# Build n8n image
+build:n8n:
+  extends: .ros-build-docker-image-final-only
+  tags: []
+  variables:
+    DOCKERFILE_PATH: ./docker/n8n/Dockerfile
+    IMAGE: $CI_REGISTRY_IMAGE:n8n-$CI_COMMIT_REF_SLUG
+
+# Build runner image
+build:runner:
+  extends: .ros-build-docker-image-final-only
+  tags: []
+  variables:
+    DOCKERFILE_PATH: ./docker/runner/Dockerfile
+    IMAGE: $CI_REGISTRY_IMAGE:runner-$CI_COMMIT_REF_SLUG
+
+# Deploy to jetson-main
+deploy:jetson-main:
+  extends: .ros-deploy-jetson-main
+  needs:
+    - build:n8n
+    - build:runner
+  variables:
+    DEPLOY_SERVICES_JSON: '["n8n", "runner"]'

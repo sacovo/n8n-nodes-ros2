@@ -1,0 +1,8 @@
+dist/
+examples/
+node_modules/
+.vscode/
+.git/
+.gitignore
+.agents/
+.github/
