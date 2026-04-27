@@ -32,17 +32,18 @@ describe('RosTopicNextMessage', () => {
                 getInputData: jest.fn().mockReturnValue([{}]),
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
+                getNodeParameter: jest.fn().mockImplementation((name) => {
+                    if (name === 'topicName') return '/chatter';
+                    if (name === 'messageType') return 'std_msgs/msg/String';
+                    return '';
+                }),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString
-                .mockReturnValueOnce('/chatter')
-                .mockReturnValueOnce('std_msgs/msg/String');
             mockParameterExtractor.extractRequiredNumber.mockReturnValue(5000);
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.waitForTopicMessage.mockResolvedValue({
-                message: { data: 'Hello ROS!' },
-                raw: { data: 'Hello ROS!' },
+                data: 'Hello ROS!'
             });
             mockRosBridgeService.close.mockImplementation(() => { });
 
@@ -54,7 +55,6 @@ describe('RosTopicNextMessage', () => {
                 topic: '/chatter',
                 messageType: 'std_msgs/msg/String',
                 message: { data: 'Hello ROS!' },
-                rawMessage: { data: 'Hello ROS!' },
                 receivedAt: expect.any(String),
             });
 
@@ -73,11 +73,13 @@ describe('RosTopicNextMessage', () => {
                 getInputData: jest.fn().mockReturnValue([{}]),
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(true),
+                getNodeParameter: jest.fn().mockImplementation((name) => {
+                    if (name === 'topicName') return '/quiet_topic';
+                    if (name === 'messageType') return 'std_msgs/msg/String';
+                    return '';
+                }),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString
-                .mockReturnValueOnce('/quiet_topic')
-                .mockReturnValueOnce('std_msgs/msg/String');
             mockParameterExtractor.extractRequiredNumber.mockReturnValue(1000);
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
@@ -96,11 +98,10 @@ describe('RosTopicNextMessage', () => {
                 getInputData: jest.fn().mockReturnValue([{}]),
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
+                getNodeParameter: jest.fn().mockImplementation(() => {
+                    throw new Error('Invalid topic name');
+                }),
             } as unknown as IExecuteFunctions;
-
-            mockParameterExtractor.extractRequiredString.mockImplementation(() => {
-                throw new Error('Invalid topic name');
-            });
 
             mockNodeErrorHandler.handle.mockImplementation(() => {
                 throw new Error('Validation error');
@@ -115,11 +116,13 @@ describe('RosTopicNextMessage', () => {
                 getInputData: jest.fn().mockReturnValue([{}]),
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
+                getNodeParameter: jest.fn().mockImplementation((name) => {
+                    if (name === 'topicName') return '/chatter';
+                    if (name === 'messageType') return 'std_msgs/msg/String';
+                    return '';
+                }),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString
-                .mockReturnValueOnce('/chatter')
-                .mockReturnValueOnce('std_msgs/msg/String');
             mockParameterExtractor.extractRequiredNumber.mockReturnValue(5000);
 
             mockRosBridgeService.connect.mockRejectedValue(new Error('Connection failed'));

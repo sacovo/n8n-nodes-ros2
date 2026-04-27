@@ -275,8 +275,8 @@ export class RosApi implements INodeType {
                 this.continueOnFail();
 
                 // Extract operation parameter
-                const resource = ParameterExtractor.extractRequiredString(this, i, 'resource');
-                const operation = ParameterExtractor.extractRequiredString(this, i, 'operation');
+                const resource = ParameterExtractor.extractRequiredString(this, i, 'resource') as RosResource;
+                const operation = ParameterExtractor.extractRequiredString(this, i, 'operation') as RosOperation;
 
 
                 // Connect to ROS
@@ -315,8 +315,12 @@ export class RosApi implements INodeType {
     }
 }
 
-async function runOperation(resource: string, operation: string, ros: Ros, node: IExecuteFunctions) {
-    switch ([operation, resource].join(':')) {
+type RosResource = 'action' | 'node' | 'parameter' | 'service' | 'topic';
+type RosOperation = 'list' | 'getDetails' | 'get' | 'set' | 'getType' | 'listForType';
+
+async function runOperation(resource: RosResource, operation: RosOperation, ros: Ros, node: IExecuteFunctions) {
+    const actionKey: `${RosOperation}:${RosResource}` = `${operation}:${resource}`;
+    switch (actionKey) {
         case 'list:topic':
             {
                 const topicsResult = await RosApiService.getTopics(ros);

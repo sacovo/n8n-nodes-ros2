@@ -38,7 +38,11 @@ describe('RosApi', () => {
                 getNode: jest.fn().mockReturnValue({}),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString.mockReturnValue('topics');
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'list';
+                return '';
+            });
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getTopics.mockResolvedValue({
@@ -52,7 +56,8 @@ describe('RosApi', () => {
             expect(result).toHaveLength(1);
             expect(result[0]).toHaveLength(1);
             expect(result[0][0].json).toEqual({
-                operation: 'topics',
+                operation: 'list',
+                resource: 'topic',
                 topics: ['/chatter', '/cmd_vel'],
                 types: ['std_msgs/String', 'geometry_msgs/Twist'],
                 retrievedAt: expect.any(String),
@@ -71,7 +76,11 @@ describe('RosApi', () => {
                 getNode: jest.fn().mockReturnValue({}),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString.mockReturnValue('services');
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'service';
+                if (name === 'operation') return 'list';
+                return '';
+            });
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getServices.mockResolvedValue(['service1', 'service2']);
@@ -80,7 +89,8 @@ describe('RosApi', () => {
             const result = await node.execute.call(mockExecuteFunctions);
 
             expect(result[0][0].json).toEqual({
-                operation: 'services',
+                operation: 'list',
+                resource: 'service',
                 services: ['service1', 'service2'],
                 retrievedAt: expect.any(String),
             });
@@ -96,7 +106,11 @@ describe('RosApi', () => {
                 getNode: jest.fn().mockReturnValue({}),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString.mockReturnValue('nodes');
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'node';
+                if (name === 'operation') return 'list';
+                return '';
+            });
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getNodes.mockResolvedValue(['node1', 'node2']);
@@ -105,7 +119,8 @@ describe('RosApi', () => {
             const result = await node.execute.call(mockExecuteFunctions);
 
             expect(result[0][0].json).toEqual({
-                operation: 'nodes',
+                operation: 'list',
+                resource: 'node',
                 nodes: ['node1', 'node2'],
                 retrievedAt: expect.any(String),
             });
@@ -121,7 +136,11 @@ describe('RosApi', () => {
                 getNode: jest.fn().mockReturnValue({}),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString.mockReturnValue('actionServers');
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'action';
+                if (name === 'operation') return 'list';
+                return '';
+            });
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getActionServers.mockResolvedValue(['action1', 'action2']);
@@ -130,7 +149,8 @@ describe('RosApi', () => {
             const result = await node.execute.call(mockExecuteFunctions);
 
             expect(result[0][0].json).toEqual({
-                operation: 'actionServers',
+                operation: 'list',
+                resource: 'action',
                 actionServers: ['action1', 'action2'],
                 retrievedAt: expect.any(String),
             });
@@ -183,19 +203,89 @@ describe('RosApi', () => {
                 getInputData: jest.fn().mockReturnValue([{}]),
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString.mockReturnValue('unsupported_operation');
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'unsupported_operation';
+                return '';
+            });
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.close.mockImplementation(() => { });
 
-            mockNodeErrorHandler.handle.mockImplementation(() => {
-                throw new Error('Unsupported operation: unsupported_operation');
+            mockNodeErrorHandler.handle.mockImplementation((context, error: any) => {
+                throw new Error(error.message);
             });
 
-            await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow('Unsupported operation: unsupported_operation');
+            await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow('Unsupported operation: unsupported_operation:topic!');
             expect(mockNodeErrorHandler.handle).toHaveBeenCalled();
+        });
+
+        it('should support all operations defined in the node properties', async () => {
+            const resourceProperty = node.description.properties.find(p => p.name === 'resource');
+            const resourceOptions = resourceProperty?.options?.map(o => (o as any).value as string) || [];
+
+            const combinations: { resource: string, operation: string }[] = [];
+
+            for (const resource of resourceOptions) {
+                const operationProperties = node.description.properties.filter(
+                    p => p.name === 'operation' && (p.displayOptions?.show?.resource as string[] | undefined)?.includes(resource)
+                );
+                for (const opProp of operationProperties) {
+                    const opOptions = opProp.options?.map(o => (o as any).value as string) || [];
+                    for (const operation of opOptions) {
+                        combinations.push({ resource, operation });
+                    }
+                }
+            }
+
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+            } as unknown as IExecuteFunctions;
+
+            for (const { resource, operation } of combinations) {
+                mockParameterExtractor.extractRequiredString.mockImplementation((n, idx, name) => {
+                    if (name === 'resource') return resource;
+                    if (name === 'operation') return operation;
+                    return '{}'; // Provide a generic fallback for other parameters like parameterValue
+                });
+                
+                mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+                mockRosBridgeService.close.mockImplementation(() => { });
+
+                mockNodeErrorHandler.handle.mockImplementation((context, error: any) => {
+                    throw error;
+                });
+
+                // Mock all possible backend calls to prevent internal application errors
+                mockRosApiService.getTopics.mockResolvedValue({ topics: [], types: [] });
+                mockRosApiService.getServices.mockResolvedValue([]);
+                mockRosApiService.getNodes.mockResolvedValue([]);
+                mockRosApiService.getActionServers.mockResolvedValue([]);
+                mockRosApiService.getParams.mockResolvedValue([]);
+                mockRosApiService.getTopicType.mockResolvedValue('std_msgs/String');
+                mockRosApiService.getNodeDetails.mockResolvedValue({} as any);
+                mockRosApiService.getParam.mockResolvedValue({});
+                mockRosApiService.setParam.mockResolvedValue(undefined);
+                mockRosApiService.getServiceType.mockResolvedValue('std_srvs/Trigger');
+                mockRosApiService.getMessageDetails.mockResolvedValue([] as any);
+                mockRosApiService.getTopicsForType.mockResolvedValue([]);
+                mockRosApiService.getServicesForType.mockResolvedValue([]);
+
+                try {
+                    await node.execute.call(mockExecuteFunctions);
+                } catch (e: any) {
+                    if (e.message && e.message.includes('Unsupported operation')) {
+                        throw new Error(`Combination missing in runOperation switch statement: ${operation}:${resource}`);
+                    }
+                    // Ignore parameter extraction/validation errors (they mean the case exists and is executing)
+                }
+            }
         });
     });
 });
