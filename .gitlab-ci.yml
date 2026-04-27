@@ -1,7 +1,7 @@
 include:
-  - project: 'fhnw-rover/ansible'
+  - project: "fhnw-rover/ansible"
     ref: main
-    file: '/.gitlab/ci/components/ros/pipeline.yml'
+    file: "/.gitlab/ci/components/ros/pipeline.yml"
 
 stages:
   - build
@@ -15,7 +15,7 @@ before_script:
 # Build n8n image
 build:n8n:
   extends: .ros-build-docker-image-final-only
-  tags: []
+  tags: [arm]
   variables:
     DOCKERFILE_PATH: ./docker/n8n/Dockerfile
     IMAGE: $CI_REGISTRY_IMAGE:n8n-$CI_COMMIT_REF_SLUG
@@ -23,7 +23,7 @@ build:n8n:
 # Build runner image
 build:runner:
   extends: .ros-build-docker-image-final-only
-  tags: []
+  tags: [arm]
   variables:
     DOCKERFILE_PATH: ./docker/runner/Dockerfile
     IMAGE: $CI_REGISTRY_IMAGE:runner-$CI_COMMIT_REF_SLUG
