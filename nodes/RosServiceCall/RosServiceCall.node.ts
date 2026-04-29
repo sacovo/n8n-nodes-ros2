@@ -94,13 +94,14 @@ export class RosServiceCall implements INodeType {
         listSearch: {
             async getServicesList(
                 this: ILoadOptionsFunctions,
+                filter?: string
             ): Promise<INodeListSearchResult> {
                 try {
                     const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
                     const ros = await RosBridgeService.connect(credentials);
                     try {
                         const services = await RosApiService.getServices(ros);
-                        return { results: RosN8nFormatter.formatServiceListForN8n(services) };
+                        return { results: RosN8nFormatter.formatServiceListForN8n(services, filter) };
                     } finally {
                         RosBridgeService.close(ros);
                     }

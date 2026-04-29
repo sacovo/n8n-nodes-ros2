@@ -18,12 +18,85 @@ const mockRosBridgeClient = RosBridgeClient as jest.Mocked<typeof RosBridgeClien
 const mockParameterExtractor = ParameterExtractor as jest.Mocked<typeof ParameterExtractor>;
 const mockNodeErrorHandler = NodeErrorHandler as jest.Mocked<typeof NodeErrorHandler>;
 
+import type { ILoadOptionsFunctions } from 'n8n-workflow';
+
 describe('RosTopicPublish', () => {
     let node: RosTopicPublish;
 
     beforeEach(() => {
         jest.clearAllMocks();
         node = new RosTopicPublish();
+    });
+
+    describe('listSearch', () => {
+        describe('getTopicsList', () => {
+            it('should return formatted topic list', async () => {
+                const mockLoadOptionsFunctions = {
+                    getCredentials: jest.fn().mockResolvedValue({}),
+                } as unknown as ILoadOptionsFunctions;
+
+                mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
+                mockRosBridgeClient.getRosTopics.mockResolvedValue({ topics: ['/topic1', '/topic2'], types: [] });
+                mockRosBridgeClient.formatTopicListForN8n.mockReturnValue([
+                    { name: '/topic1', value: '/topic1' },
+                    { name: '/topic2', value: '/topic2' },
+                ]);
+
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                const result = await node.methods.listSearch.getTopicsList.call(mockLoadOptionsFunctions, 'top');
+
+                expect(result).toEqual({
+                    results: [
+                        { name: '/topic1', value: '/topic1' },
+                        { name: '/topic2', value: '/topic2' },
+                    ],
+                });
+                expect(mockRosBridgeClient.getRosTopics).toHaveBeenCalled();
+                expect(mockRosBridgeClient.formatTopicListForN8n).toHaveBeenCalledWith(['/topic1', '/topic2'], 'top');
+                expect(mockRosBridgeClient.closeRos).toHaveBeenCalled();
+            });
+        });
+
+        describe('getDetectedType', () => {
+            it('should return detected type list', async () => {
+                const mockLoadOptionsFunctions = {
+                    getNodeParameter: jest.fn().mockReturnValue('/topic1'),
+                    getCredentials: jest.fn().mockResolvedValue({}),
+                } as unknown as ILoadOptionsFunctions;
+
+                mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
+                mockRosBridgeClient.getRosTopicType.mockResolvedValue('std_msgs/String');
+
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                const result = await node.methods.listSearch.getDetectedType.call(mockLoadOptionsFunctions, 'std');
+
+                expect(result).toEqual({
+                    results: [
+                        { name: 'Detected: std_msgs/String', value: 'std_msgs/String' },
+                    ],
+                });
+                expect(mockRosBridgeClient.getRosTopicType).toHaveBeenCalledWith(expect.anything(), '/topic1');
+                expect(mockRosBridgeClient.closeRos).toHaveBeenCalled();
+            });
+
+            it('should return empty list if filter does not match', async () => {
+                const mockLoadOptionsFunctions = {
+                    getNodeParameter: jest.fn().mockReturnValue('/topic1'),
+                    getCredentials: jest.fn().mockResolvedValue({}),
+                } as unknown as ILoadOptionsFunctions;
+
+                mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
+                mockRosBridgeClient.getRosTopicType.mockResolvedValue('std_msgs/String');
+
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                const result = await node.methods.listSearch.getDetectedType.call(mockLoadOptionsFunctions, 'nomatch');
+
+                expect(result).toEqual({ results: [] });
+            });
+        });
     });
 
     describe('execute', () => {

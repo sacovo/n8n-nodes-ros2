@@ -74,9 +74,10 @@ export class RosN8nFormatter {
     /**
      * Formats topic list from getRosTopics into n8n dropdown options
      */
-    static formatTopicListForN8n(topics: string[]): INodePropertyOptions[] {
+    static formatTopicListForN8n(topics: string[], filter?: string): INodePropertyOptions[] {
         return topics
             .filter((topic) => topic && typeof topic === 'string')
+            .filter((topic) => !filter || topic.toLowerCase().includes(filter.toLowerCase()))
             .map((topic) => ({
                 name: topic,
                 value: topic,
@@ -86,9 +87,10 @@ export class RosN8nFormatter {
     /**
      * Formats service list from getRosServices into n8n dropdown options
      */
-    static formatServiceListForN8n(services: string[]): INodePropertyOptions[] {
+    static formatServiceListForN8n(services: string[], filter?: string): INodePropertyOptions[] {
         return services
             .filter((service) => service && typeof service === 'string')
+            .filter((service) => !filter || service.toLowerCase().includes(filter.toLowerCase()))
             .map((service) => ({
                 name: service,
                 value: service,

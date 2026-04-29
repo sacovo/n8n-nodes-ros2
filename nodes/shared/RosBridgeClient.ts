@@ -512,9 +512,10 @@ export function mapRosTypeToN8nFieldType(rosType: string): FieldType {
 /**
  * Formats topic list from getRosTopics into n8n dropdown options
  */
-export function formatTopicListForN8n(topics: string[]): INodePropertyOptions[] {
+export function formatTopicListForN8n(topics: string[], filter?: string): INodePropertyOptions[] {
     return topics
         .filter((topic) => topic && typeof topic === 'string')
+        .filter((topic) => !filter || topic.toLowerCase().includes(filter.toLowerCase()))
         .map((topic) => ({
             name: topic,
             value: topic,
@@ -524,9 +525,10 @@ export function formatTopicListForN8n(topics: string[]): INodePropertyOptions[] 
 /**
  * Formats service list from getRosServices into n8n dropdown options
  */
-export function formatServiceListForN8n(services: string[]): INodePropertyOptions[] {
+export function formatServiceListForN8n(services: string[], filter?: string): INodePropertyOptions[] {
     return services
         .filter((service) => service && typeof service === 'string')
+        .filter((service) => !filter || service.toLowerCase().includes(filter.toLowerCase()))
         .map((service) => ({
             name: service,
             value: service,

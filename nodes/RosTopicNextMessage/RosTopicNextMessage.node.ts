@@ -139,7 +139,7 @@ export class RosTopicNextMessage implements INodeType {
     methods = {
         loadOptions: {},
         listSearch: {
-            async getDetectedType(this: ILoadOptionsFunctions): Promise<INodeListSearchResult> {
+            async getDetectedType(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
                 try {
                     const topicNameLocator = this.getNodeParameter('topicName', 0, {
                         extractValue: true,
@@ -157,7 +157,7 @@ export class RosTopicNextMessage implements INodeType {
                     const ros = await connectRos(credentials);
                     try {
                         const type = await getRosTopicType(ros, topicName);
-                        if (type) {
+                        if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
                             return {
                                 results: [
                                     {
@@ -183,7 +183,7 @@ export class RosTopicNextMessage implements INodeType {
                     const ros = await connectRos(credentials);
                     try {
                         const topics = await getRosTopics(ros);
-                        return { results: formatTopicListForN8n(topics.topics || []) };
+                        return { results: formatTopicListForN8n(topics.topics || [], filter) };
                     } finally {
                         closeRos(ros);
                     }

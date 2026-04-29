@@ -35,4 +35,4 @@ deploy:jetson-main:
     - build:n8n
     - build:runner
   variables:
-    DEPLOY_SERVICES_JSON: '["n8n", "runner"]'
+    DEPLOY_SERVICES_JSON: '["n8n", "n8n-runner"]'

@@ -18,12 +18,65 @@ const mockRosBridgeService = RosBridgeService as jest.Mocked<typeof RosBridgeSer
 const mockParameterExtractor = ParameterExtractor as jest.Mocked<typeof ParameterExtractor>;
 const mockNodeErrorHandler = NodeErrorHandler as jest.Mocked<typeof NodeErrorHandler>;
 
+// Mock RosApiService and RosN8nFormatter
+import { RosApiService } from '../../shared/services/RosApiService';
+import { RosN8nFormatter } from '../../shared/utils/RosN8nFormatter';
+import type { ILoadOptionsFunctions } from 'n8n-workflow';
+
+jest.mock('../../shared/services/RosApiService');
+jest.mock('../../shared/utils/RosN8nFormatter');
+const mockRosApiService = RosApiService as jest.Mocked<typeof RosApiService>;
+const mockRosN8nFormatter = RosN8nFormatter as jest.Mocked<typeof RosN8nFormatter>;
+
 describe('RosServiceCall', () => {
     let node: RosServiceCall;
 
     beforeEach(() => {
         jest.clearAllMocks();
         node = new RosServiceCall();
+    });
+
+    describe('listSearch', () => {
+        describe('getServicesList', () => {
+            it('should return formatted service list', async () => {
+                const mockLoadOptionsFunctions = {
+                    getCredentials: jest.fn().mockResolvedValue({}),
+                } as unknown as ILoadOptionsFunctions;
+
+                mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+                mockRosApiService.getServices.mockResolvedValue(['/service1', '/service2']);
+                mockRosN8nFormatter.formatServiceListForN8n.mockReturnValue([
+                    { name: '/service1', value: '/service1' },
+                    { name: '/service2', value: '/service2' },
+                ]);
+
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                const result = await node.methods.listSearch.getServicesList.call(mockLoadOptionsFunctions, 'srv');
+
+                expect(result).toEqual({
+                    results: [
+                        { name: '/service1', value: '/service1' },
+                        { name: '/service2', value: '/service2' },
+                    ],
+                });
+                expect(mockRosApiService.getServices).toHaveBeenCalled();
+                expect(mockRosN8nFormatter.formatServiceListForN8n).toHaveBeenCalledWith(['/service1', '/service2'], 'srv');
+                expect(mockRosBridgeService.close).toHaveBeenCalled();
+            });
+
+            it('should return empty list on error', async () => {
+                const mockLoadOptionsFunctions = {
+                    getCredentials: jest.fn().mockRejectedValue(new Error('Auth failed')),
+                } as unknown as ILoadOptionsFunctions;
+
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                const result = await node.methods.listSearch.getServicesList.call(mockLoadOptionsFunctions);
+
+                expect(result).toEqual({ results: [] });
+            });
+        });
     });
 
     describe('execute', () => {
