@@ -30,7 +30,7 @@ build:runner:
 
 # Deploy to jetson-main
 deploy:jetson-main:
-  extends: .ros-deploy-jetson-main
+  extends: .ros-deploy-jetson-drive
   needs:
     - build:n8n
     - build:runner
