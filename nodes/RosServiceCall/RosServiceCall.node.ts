@@ -13,6 +13,7 @@ import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
+import { getRosMessageStructure, type JsonRecord } from '../shared/RosBridgeClient';
 
 
 export class RosServiceCall implements INodeType {
@@ -65,10 +66,77 @@ export class RosServiceCall implements INodeType {
             {
                 displayName: 'Service Type',
                 name: 'serviceType',
-                type: 'string',
-                default: '',
+                type: 'resourceLocator',
+                default: { mode: 'list', value: '' },
                 required: true,
-                placeholder: 'example_interfaces/AddTwoInts',
+                description: 'The ROS 2 service type (e.g. example_interfaces/AddTwoInts). "Detected" mode will automatically fetch the type from the selected service.',
+                typeOptions: {
+                    loadOptionsDependsOn: ['serviceName'],
+                },
+                modes: [
+                    {
+                        displayName: 'Detected',
+                        name: 'list',
+                        type: 'list',
+                        typeOptions: {
+                            searchListMethod: 'getDetectedServiceType',
+                        },
+                    },
+                    {
+                        displayName: 'Manual',
+                        name: 'id',
+                        type: 'string',
+                        placeholder: 'e.g. example_interfaces/AddTwoInts',
+                    },
+                ],
+            },
+            {
+                displayName: 'Request Input Mode',
+                name: 'requestInputMode',
+                type: 'options',
+                options: [
+                    {
+                        name: 'Fixed (Mapper)',
+                        value: 'fixed',
+                        description: 'Use the visual mapper to define request fields',
+                    },
+                    {
+                        name: 'Raw (JSON)',
+                        value: 'raw',
+                        description: 'Provide raw JSON object for the request',
+                    },
+                ],
+                default: 'fixed',
+            },
+            {
+                displayName: 'Request Structure',
+                name: 'requestStructure',
+                type: 'resourceMapper',
+                default: {
+                    mappingMode: 'defineBelow',
+                    value: null,
+                },
+                noDataExpression: true,
+                required: true,
+                displayOptions: {
+                    show: {
+                        requestInputMode: ['fixed'],
+                    },
+                },
+                typeOptions: {
+                    loadOptionsDependsOn: ['serviceType'],
+                    resourceMapper: {
+                        resourceMapperMethod: 'getRequestFieldsForType',
+                        hideNoDataError: true,
+                        addAllFields: false,
+                        supportAutoMap: false,
+                        mode: 'add',
+                        fieldWords: {
+                            singular: 'field',
+                            plural: 'fields',
+                        },
+                    },
+                },
             },
             {
                 displayName: 'Request JSON',
@@ -76,6 +144,11 @@ export class RosServiceCall implements INodeType {
                 type: 'string',
                 typeOptions: {
                     rows: 6,
+                },
+                displayOptions: {
+                    show: {
+                        requestInputMode: ['raw'],
+                    },
                 },
                 default: '{}',
                 description: 'JSON object sent as service request payload',
@@ -92,6 +165,43 @@ export class RosServiceCall implements INodeType {
 
     methods = {
         listSearch: {
+            async getDetectedServiceType(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+                try {
+                    const serviceNameLocator = this.getNodeParameter('serviceName', 0, {
+                        extractValue: true,
+                    }) as { value: string } | string;
+                    const serviceName =
+                        typeof serviceNameLocator === 'string' ? serviceNameLocator : serviceNameLocator?.value;
+
+                    if (!serviceName) {
+                        return { results: [] };
+                    }
+
+                    const credentials = (await this.getCredentials(
+                        'rosBridgeApi',
+                    )) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
+                    try {
+                        const type = await RosApiService.getServiceType(ros, serviceName);
+                        if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
+                            return {
+                                results: [
+                                    {
+                                        name: `Detected: ${type}`,
+                                        value: type,
+                                    },
+                                ],
+                            };
+                        }
+                    } finally {
+                        RosBridgeService.close(ros);
+                    }
+                } catch {
+                    // Ignore errors
+                }
+                return { results: [] };
+            },
+
             async getServicesList(
                 this: ILoadOptionsFunctions,
                 filter?: string
@@ -107,6 +217,52 @@ export class RosServiceCall implements INodeType {
                     }
                 } catch {
                     return { results: [] };
+                }
+            },
+        },
+        resourceMapping: {
+            async getRequestFieldsForType(this: ILoadOptionsFunctions) {
+                try {
+                    const credentials = (await this.getCredentials(
+                        'rosBridgeApi',
+                    )) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
+                    try {
+                        const serviceTypeLocator = this.getNodeParameter('serviceType', 0, {
+                            extractValue: true,
+                        }) as { value: string } | string;
+                        let serviceType =
+                            typeof serviceTypeLocator === 'string'
+                                ? serviceTypeLocator
+                                : serviceTypeLocator?.value;
+
+                        // Auto-detect type from service if not provided
+                        if (!serviceType) {
+                            const serviceNameLocator = this.getNodeParameter('serviceName', 0, {
+                                extractValue: true,
+                            }) as { value: string } | string;
+                            const serviceName =
+                                typeof serviceNameLocator === 'string'
+                                    ? serviceNameLocator
+                                    : serviceNameLocator?.value;
+                            if (serviceName) {
+                                serviceType = await RosApiService.getServiceType(ros, serviceName);
+                            }
+                        }
+
+                        if (!serviceType) {
+                            return { fields: [] };
+                        }
+
+                        // For services, we need the Request part of the type definition
+                        const requestType = serviceType.endsWith('_Request') ? serviceType : `${serviceType}_Request`;
+                        const typeDefs = await RosApiService.getMessageDetails(ros, requestType);
+                        return getRosMessageStructure(typeDefs);
+                    } finally {
+                        RosBridgeService.close(ros);
+                    }
+                } catch {
+                    return { fields: [] };
                 }
             },
         },
@@ -128,8 +284,29 @@ export class RosServiceCall implements INodeType {
                 const serviceName =
                     typeof serviceNameLocator === 'string' ? serviceNameLocator : serviceNameLocator.value;
 
-                const serviceType = ParameterExtractor.extractRequiredString(this, i, 'serviceType');
-                const requestJson = this.getNodeParameter('requestJson', i) as string;
+                // Extract service type from resource locator
+                const serviceTypeLocator = this.getNodeParameter('serviceType', i) as { mode: string; value: string } | string;
+                const serviceType = typeof serviceTypeLocator === 'string'
+                    ? serviceTypeLocator
+                    : serviceTypeLocator.value;
+
+                // Extract request based on input mode
+                const requestInputMode = this.getNodeParameter('requestInputMode', i) as 'fixed' | 'raw';
+                let request: JsonRecord = {};
+
+                if (requestInputMode === 'fixed') {
+                    // Extract request from resource mapper and remove n8n internal fields
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const requestStructure = this.getNodeParameter('requestStructure', i) as any;
+                    if (requestStructure) {
+                        const { value, ...actualFields } = requestStructure;
+                        request = value || actualFields || {};
+                    }
+                } else {
+                    const requestJson = this.getNodeParameter('requestJson', i) as string;
+                    request = ParameterExtractor.parseJsonParameter(requestJson, 'requestJson');
+                }
+
                 const timeoutMs = ParameterExtractor.extractRequiredNumber(this, i, 'timeoutMs');
 
                 ros = await RosBridgeService.connect(credentials);
@@ -137,7 +314,7 @@ export class RosServiceCall implements INodeType {
                     ros,
                     serviceName,
                     serviceType,
-                    ParameterExtractor.parseJsonParameter(requestJson, 'requestJson'),
+                    request,
                     timeoutMs,
                 );
 
@@ -145,7 +322,7 @@ export class RosServiceCall implements INodeType {
                     json: {
                         serviceName,
                         serviceType,
-                        request: ParameterExtractor.parseJsonParameter(requestJson, 'requestJson'),
+                        request,
                         response,
                     },
                     pairedItem: { item: i },
