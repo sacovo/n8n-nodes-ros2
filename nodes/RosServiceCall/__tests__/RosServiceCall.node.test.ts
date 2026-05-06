@@ -6,7 +6,7 @@ import { RosServiceCall } from '../RosServiceCall.node';
 import { RosBridgeService } from '../../shared/services/RosBridgeService';
 import { ParameterExtractor } from '../../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../../shared/utils/NodeErrorHandler';
-import type { IExecuteFunctions } from 'n8n-workflow';
+import type { IExecuteFunctions, ILoadOptionsFunctions  } from 'n8n-workflow';
 import type { Ros } from 'roslib';
 
 // Mock the services
@@ -21,7 +21,6 @@ const mockNodeErrorHandler = NodeErrorHandler as jest.Mocked<typeof NodeErrorHan
 // Mock RosApiService and RosN8nFormatter
 import { RosApiService } from '../../shared/services/RosApiService';
 import { RosN8nFormatter } from '../../shared/utils/RosN8nFormatter';
-import type { ILoadOptionsFunctions } from 'n8n-workflow';
 
 jest.mock('../../shared/services/RosApiService');
 jest.mock('../../shared/utils/RosN8nFormatter');
@@ -46,8 +45,8 @@ describe('RosServiceCall', () => {
                 mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
                 mockRosApiService.getServices.mockResolvedValue(['/service1', '/service2']);
                 mockRosN8nFormatter.formatServiceListForN8n.mockReturnValue([
-                    { name: '/service1', value: '/service1' },
-                    { name: '/service2', value: '/service2' },
+                    { name: '/Service1', value: '/service1' },
+                    { name: '/Service2', value: '/service2' },
                 ]);
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -56,8 +55,8 @@ describe('RosServiceCall', () => {
 
                 expect(result).toEqual({
                     results: [
-                        { name: '/service1', value: '/service1' },
-                        { name: '/service2', value: '/service2' },
+                        { name: '/Service1', value: '/service1' },
+                        { name: '/Service2', value: '/service2' },
                     ],
                 });
                 expect(mockRosApiService.getServices).toHaveBeenCalled();

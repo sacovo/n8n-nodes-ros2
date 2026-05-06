@@ -7,13 +7,11 @@ services:
     network_mode: host
     volumes:
       - n8n_data:/data
-      - ./:/work
       - /var/run/docker.sock:/var/run/docker.sock
     group_add:
-      - 968
+      - 970
 
     environment:
-      - ENV N8N_CUSTOM_EXTENSIONS=/work/
       - N8N_USER_FOLDER=/data
       - N8N_RUNNERS_ENABLED=true
       - N8N_RUNNERS_MODE=external
@@ -27,7 +25,7 @@ services:
       dockerfile: docker/runner/Dockerfile
 
     environment:
-      - N8N_RUNNERS_TASK_BROKER_URI=http://localhost:5679
+      - N8N_RUNNERS_TASK_BROKER_URI=http://172.0.0.1:5679
       - N8N_RUNNERS_AUTH_TOKEN=supersecrettoken
     network_mode: host
     volumes:

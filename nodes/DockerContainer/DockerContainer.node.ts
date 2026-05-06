@@ -5,9 +5,33 @@ import type {
     INodeType,
     INodeTypeDescription,
     JsonObject,
+    ILoadOptionsFunctions,
+    INodeListSearchResult,
 } from 'n8n-workflow';
 import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
 import Docker from 'dockerode';
+
+function getDockerInstance(credentials: IDataObject): Docker {
+    const options: Docker.DockerOptions = {};
+
+    if (credentials.connectionType === 'socket') {
+        options.socketPath = credentials.socketPath as string;
+    } else {
+        options.protocol = credentials.protocol as 'http' | 'https';
+        options.host = credentials.host as string;
+        options.port = credentials.port as number;
+
+        if (credentials.authentication === 'basicAuth') {
+            const token = Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64');
+            options.headers = {
+                Authorization: `Basic ${token}`,
+            };
+        }
+    }
+    options.timeout = 10000;
+
+    return new Docker(options);
+}
 
 export class DockerContainer implements INodeType {
     description: INodeTypeDescription = {
@@ -23,20 +47,37 @@ export class DockerContainer implements INodeType {
         usableAsTool: true,
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
+        credentials: [
+            {
+                name: 'dockerApi',
+                required: true,
+                testedBy: 'dockerApi',
+            },
+        ],
         properties: [
             {
-                displayName: 'Socket Path',
-                name: 'socketPath',
-                type: 'string',
-                default: '/var/run/docker.sock',
-                description: 'Path to the Docker socket',
-                required: true,
+                displayName: 'Resource',
+                name: 'resource',
+                type: 'options',
+                noDataExpression: true,
+                options: [
+                    {
+                        name: 'Container',
+                        value: 'container',
+                    },
+                ],
+                default: 'container',
             },
             {
                 displayName: 'Operation',
                 name: 'operation',
                 type: 'options',
                 noDataExpression: true,
+                displayOptions: {
+                    show: {
+                        resource: ['container'],
+                    },
+                },
                 options: [
                     {
                         name: 'Execute Command',
@@ -49,6 +90,12 @@ export class DockerContainer implements INodeType {
                         value: 'logs',
                         description: 'Get logs from a container',
                         action: 'Get logs from a container',
+                    },
+                    {
+                        name: 'List',
+                        value: 'list',
+                        description: 'List Docker containers',
+                        action: 'List containers',
                     },
                     {
                         name: 'Restart',
@@ -72,12 +119,35 @@ export class DockerContainer implements INodeType {
                 default: 'start',
             },
             {
-                displayName: 'Container ID or Name',
+                displayName: 'Container',
                 name: 'containerId',
-                type: 'string',
-                default: '',
+                type: 'resourceLocator',
+                default: { mode: 'list', value: '' },
                 required: true,
-                description: 'The ID or name of the Docker container',
+                displayOptions: {
+                    show: {
+                        resource: ['container'],
+                        operation: ['exec', 'logs', 'restart', 'start', 'stop'],
+                    },
+                },
+                description: 'The Docker container to operate on',
+                modes: [
+                    {
+                        displayName: 'From List',
+                        name: 'list',
+                        type: 'list',
+                        typeOptions: {
+                            searchListMethod: 'getContainersList',
+                            searchable: true,
+                        },
+                    },
+                    {
+                        displayName: 'ID / Name',
+                        name: 'id',
+                        type: 'string',
+                        placeholder: 'e.g. my-container, 1234567890ab',
+                    },
+                ],
             },
             {
                 displayName: 'Lines',
@@ -107,74 +177,109 @@ export class DockerContainer implements INodeType {
         ],
     };
 
+    methods = {
+        listSearch: {
+            async getContainersList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+                try {
+                    const credentials = await this.getCredentials('dockerApi');
+                    const docker = getDockerInstance(credentials);
+                    const containers = await docker.listContainers({ all: true });
+
+                    let results = containers.map(container => ({
+                        name: container.Names[0].replace(/^\//, '') || container.Id,
+                        value: container.Id,
+                        description: `${container.Status} | ${container.Image}`,
+                    }));
+
+                    if (filter) {
+                        results = results.filter(r =>
+                            r.name.toLowerCase().includes(filter.toLowerCase()) ||
+                            r.value.toLowerCase().includes(filter.toLowerCase())
+                        );
+                    }
+
+                    return { results };
+                } catch {
+                    return { results: [] };
+                }
+            },
+        },
+    };
+
     async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
         const items = this.getInputData();
         const returnData: INodeExecutionData[] = [];
+        const credentials = await this.getCredentials('dockerApi');
+        const docker = getDockerInstance(credentials);
 
         for (let i = 0; i < items.length; i++) {
             try {
                 const operation = this.getNodeParameter('operation', i) as string;
-                const socketPath = this.getNodeParameter('socketPath', i) as string;
-                const containerId = this.getNodeParameter('containerId', i) as string;
-
-                const docker = new Docker({ socketPath });
-                const container = docker.getContainer(containerId);
-
                 const result: IDataObject = { success: true };
 
-                if (operation === 'start') {
-                    await container.start();
-                    result.message = `Container ${containerId} started successfully`;
-                } else if (operation === 'stop') {
-                    await container.stop();
-                    result.message = `Container ${containerId} stopped successfully`;
-                } else if (operation === 'restart') {
-                    await container.restart();
-                    result.message = `Container ${containerId} restarted successfully`;
-                } else if (operation === 'logs') {
-                    const lines = this.getNodeParameter('lines', i) as number;
-                    const logStream = await container.logs({
-                        stdout: true,
-                        stderr: true,
-                        tail: lines,
-                    });
+                if (operation === 'list') {
+                    const containers = await docker.listContainers({ all: true });
+                    result.containers = containers.map(c => ({
+                        id: c.Id,
+                        names: c.Names.map(n => n.replace(/^\//, '')),
+                        image: c.Image,
+                        state: c.State,
+                        status: c.Status,
+                    }));
+                } else {
+                    const containerIdLocator = this.getNodeParameter('containerId', i) as { mode: string; value: string } | string;
+                    const containerId = typeof containerIdLocator === 'string' ? containerIdLocator : containerIdLocator.value;
 
-                    // The logstream from dockerode is a buffer, we need to extract the string
-                    result.logs = logStream.toString('utf8');
-                } else if (operation === 'exec') {
-                    const commandStr = this.getNodeParameter('command', i) as string;
-                    // very basic command splitting
-                    // in real world, you might want to use a shell parser or allow array input
-                    const cmdArray = commandStr.match(/(?:[^\s"']+|['"][^'"]*["'])+/g)?.map(arg => {
-                        if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
-                            return arg.slice(1, -1);
-                        }
-                        return arg;
-                    }) || [];
+                    const container = docker.getContainer(containerId);
 
-                    const execInstance = await container.exec({
-                        Cmd: cmdArray,
-                        AttachStdout: true,
-                        AttachStderr: true,
-                    });
-
-                    const stream = await execInstance.start({ hijack: true, stdin: false });
-
-                    result.output = await new Promise((resolve, reject) => {
-                        let output = '';
-                        stream.on('data', (chunk) => {
-                            // Docker multiplexes stdout and stderr
-                            // The first 8 bytes of the chunk contain the header
-                            // We can just get the whole chunk as string for simplicity here,
-                            // or properly parse it:
-                            // The payload starts at offset 8
-                            if (chunk.length > 8) {
-                                output += chunk.slice(8).toString('utf8');
-                            }
+                    if (operation === 'start') {
+                        await container.start();
+                        result.message = `Container ${containerId} started successfully`;
+                    } else if (operation === 'stop') {
+                        await container.stop();
+                        result.message = `Container ${containerId} stopped successfully`;
+                    } else if (operation === 'restart') {
+                        await container.restart();
+                        result.message = `Container ${containerId} restarted successfully`;
+                    } else if (operation === 'logs') {
+                        const lines = this.getNodeParameter('lines', i) as number;
+                        const logStream = await container.logs({
+                            stdout: true,
+                            stderr: true,
+                            tail: lines,
                         });
-                        stream.on('end', () => resolve(output));
-                        stream.on('error', reject);
-                    });
+
+                        // The logstream from dockerode is a buffer, we need to extract the string
+                        result.logs = logStream.toString('utf8');
+                    } else if (operation === 'exec') {
+                        const commandStr = this.getNodeParameter('command', i) as string;
+                        // very basic command splitting
+                        const cmdArray = commandStr.match(/(?:[^\s"']+|['"][^'"]*["'])+/g)?.map(arg => {
+                            if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
+                                return arg.slice(1, -1);
+                            }
+                            return arg;
+                        }) || [];
+
+                        const execInstance = await container.exec({
+                            Cmd: cmdArray,
+                            AttachStdout: true,
+                            AttachStderr: true,
+                        });
+
+                        const stream = await execInstance.start({ hijack: true, stdin: false });
+
+                        result.output = await new Promise((resolve, reject) => {
+                            let output = '';
+                            stream.on('data', (chunk) => {
+                                if (chunk.length > 8) {
+                                    output += chunk.slice(8).toString('utf8');
+                                }
+                            });
+                            stream.on('end', () => resolve(output));
+                            stream.on('error', reject);
+                        });
+                    }
                 }
 
                 returnData.push({

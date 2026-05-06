@@ -1,9 +1,9 @@
 # Enable BuildKit syntax for advanced caching
 # syntax=docker/dockerfile:1
 
-FROM node:trixie
+FROM node:24-trixie
 
-ARG N8N_VERSION=2.16.1
+ARG N8N_VERSION=2.18.7
 
 # 1. Optimize APT caching
 # We use a cache mount for apt to avoid re-downloading packages

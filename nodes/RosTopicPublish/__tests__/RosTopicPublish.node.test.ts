@@ -6,7 +6,7 @@ import { RosTopicPublish } from '../RosTopicPublish.node';
 import * as RosBridgeClient from '../../shared/RosBridgeClient';
 import { ParameterExtractor } from '../../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../../shared/utils/NodeErrorHandler';
-import type { IExecuteFunctions } from 'n8n-workflow';
+import type { IExecuteFunctions, ILoadOptionsFunctions  } from 'n8n-workflow';
 import type { Ros } from 'roslib';
 
 // Mock the services
@@ -18,7 +18,6 @@ const mockRosBridgeClient = RosBridgeClient as jest.Mocked<typeof RosBridgeClien
 const mockParameterExtractor = ParameterExtractor as jest.Mocked<typeof ParameterExtractor>;
 const mockNodeErrorHandler = NodeErrorHandler as jest.Mocked<typeof NodeErrorHandler>;
 
-import type { ILoadOptionsFunctions } from 'n8n-workflow';
 
 describe('RosTopicPublish', () => {
     let node: RosTopicPublish;
@@ -38,8 +37,8 @@ describe('RosTopicPublish', () => {
                 mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
                 mockRosBridgeClient.getRosTopics.mockResolvedValue({ topics: ['/topic1', '/topic2'], types: [] });
                 mockRosBridgeClient.formatTopicListForN8n.mockReturnValue([
-                    { name: '/topic1', value: '/topic1' },
-                    { name: '/topic2', value: '/topic2' },
+                    { name: '/Topic1', value: '/topic1' },
+                    { name: '/Topic2', value: '/topic2' },
                 ]);
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -48,8 +47,8 @@ describe('RosTopicPublish', () => {
 
                 expect(result).toEqual({
                     results: [
-                        { name: '/topic1', value: '/topic1' },
-                        { name: '/topic2', value: '/topic2' },
+                        { name: '/Topic1', value: '/topic1' },
+                        { name: '/Topic2', value: '/topic2' },
                     ],
                 });
                 expect(mockRosBridgeClient.getRosTopics).toHaveBeenCalled();

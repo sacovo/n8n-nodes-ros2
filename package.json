@@ -36,7 +36,8 @@
 		"n8nNodesApiVersion": 1,
 		"strict": false,
 		"credentials": [
-			"dist/credentials/RosBridgeApi.credentials.js"
+			"dist/credentials/RosBridgeApi.credentials.js",
+			"dist/credentials/DockerApi.credentials.js"
 		],
 		"nodes": [
 			"dist/nodes/DockerContainer/DockerContainer.node.js",
@@ -57,7 +58,7 @@
 		"@types/node": "^20.10.6",
 		"eslint": "9.32.0",
 		"jest": "^29.7.0",
-		"n8n": "^2.15.1",
+		"n8n": "^2.18.7",
 		"prettier": "3.6.2",
 		"release-it": "^19.0.4",
 		"ts-jest": "^29.1.1",

@@ -34,6 +34,7 @@ describe('RosN8nFormatter', () => {
         });
 
         it('should handle undefined or null topics', () => {
+            /* eslint-disable  @typescript-eslint/no-explicit-any */
             const result = RosN8nFormatter.formatTopicListForN8n(['/topic', null as any, undefined as any, '']);
             expect(result).toEqual([
                 { name: '/topic', value: '/topic' },

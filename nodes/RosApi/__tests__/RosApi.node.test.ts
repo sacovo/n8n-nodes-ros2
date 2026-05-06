@@ -215,8 +215,8 @@ describe('RosApi', () => {
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.close.mockImplementation(() => { });
 
-            mockNodeErrorHandler.handle.mockImplementation((context, error: any) => {
-                throw new Error(error.message);
+            mockNodeErrorHandler.handle.mockImplementation((context, error: unknown) => {
+                throw new Error((error as { message: string }).message);
             });
 
             await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow('Unsupported operation: unsupported_operation:topic!');
@@ -225,6 +225,7 @@ describe('RosApi', () => {
 
         it('should support all operations defined in the node properties', async () => {
             const resourceProperty = node.description.properties.find(p => p.name === 'resource');
+            /* eslint-disable  @typescript-eslint/no-explicit-any */
             const resourceOptions = resourceProperty?.options?.map(o => (o as any).value as string) || [];
 
             const combinations: { resource: string, operation: string }[] = [];
@@ -234,6 +235,7 @@ describe('RosApi', () => {
                     p => p.name === 'operation' && (p.displayOptions?.show?.resource as string[] | undefined)?.includes(resource)
                 );
                 for (const opProp of operationProperties) {
+                    /* eslint-disable  @typescript-eslint/no-explicit-any */
                     const opOptions = opProp.options?.map(o => (o as any).value as string) || [];
                     for (const operation of opOptions) {
                         combinations.push({ resource, operation });
@@ -254,7 +256,7 @@ describe('RosApi', () => {
                     if (name === 'operation') return operation;
                     return '{}'; // Provide a generic fallback for other parameters like parameterValue
                 });
-                
+
                 mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
                 mockRosBridgeService.close.mockImplementation(() => { });
 
