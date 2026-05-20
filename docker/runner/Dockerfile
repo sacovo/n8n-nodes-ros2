@@ -1,4 +1,4 @@
-FROM n8nio/runners:2.16.1
+FROM n8nio/runners:2.21.5
 
 USER root
 RUN cd /opt/runners/task-runner-javascript && pnpm add moment uuid
