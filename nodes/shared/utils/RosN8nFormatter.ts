@@ -98,6 +98,19 @@ export class RosN8nFormatter {
     }
 
     /**
+     * Formats action server list from getRosActionServers into n8n dropdown options
+     */
+    static formatActionListForN8n(actions: string[], filter?: string): INodePropertyOptions[] {
+        return actions
+            .filter((action) => action && typeof action === 'string')
+            .filter((action) => !filter || action.toLowerCase().includes(filter.toLowerCase()))
+            .map((action) => ({
+                name: action,
+                value: action,
+            }));
+    }
+
+    /**
      * Converts ROS message TypeDef array to n8n ResourceMapperFields
      * Performs shallow expansion (1 level deep) for nested types
      */

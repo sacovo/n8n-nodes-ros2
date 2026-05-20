@@ -1,0 +1,96 @@
+import type {
+    INodeType,
+    INodeTypeDescription,
+    ITriggerFunctions,
+    ITriggerResponse,
+} from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
+
+import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+
+export class RosActionTrigger implements INodeType {
+    description: INodeTypeDescription = {
+        displayName: 'ROS2 Action Trigger',
+        name: 'rosActionTrigger',
+        icon: { light: 'file:../shared/ros.svg', dark: 'file:../shared/ros.dark.svg' },
+        group: ['trigger'],
+        version: [1],
+        description: 'Advertise a ROS2 action server and start workflow when a goal is received',
+        defaults: {
+            name: 'ROS2 Action Trigger',
+        },
+        usableAsTool: true,
+        inputs: [],
+        outputs: [NodeConnectionTypes.Main],
+        credentials: [
+            {
+                name: 'rosBridgeApi',
+                required: true,
+                testedBy: 'rosBridgeApi',
+            },
+        ],
+        properties: [
+            {
+                displayName: 'Server Name',
+                name: 'serverName',
+                type: 'string',
+                default: '',
+                required: true,
+                placeholder: 'e.g., /fibonacci',
+                description: 'The name of the action server to advertise',
+            },
+            {
+                displayName: 'Action Type',
+                name: 'actionName',
+                type: 'string',
+                default: '',
+                required: true,
+                placeholder: 'e.g., action_tutorials_interfaces/action/Fibonacci',
+                description: 'The ROS 2 action type',
+            },
+        ],
+    };
+
+    async trigger(this: ITriggerFunctions): Promise<ITriggerResponse> {
+        try {
+            const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
+
+            const serverName = this.getNodeParameter('serverName') as string;
+            const actionName = this.getNodeParameter('actionName') as string;
+
+            const ros = await RosBridgeService.connect(credentials);
+
+            const unsubscribe = await RosBridgeService.registerActionServer(
+                ros,
+                serverName,
+                actionName,
+                (goalMessage: JsonRecord, goalId: string) => {
+                    this.emit([
+                        [
+                            {
+                                json: {
+                                    goal: goalMessage,
+                                    goalId,
+                                    serverName,
+                                    actionName,
+                                    timestamp: new Date().toISOString(),
+                                },
+                            },
+                        ],
+                    ]);
+                },
+            );
+
+            return {
+                closeFunction: async () => {
+                    await unsubscribe();
+                    RosBridgeService.close(ros);
+                },
+            };
+        } catch (error) {
+            NodeErrorHandler.handle(this as any, error as Error, 0);
+            throw error;
+        }
+    }
+}

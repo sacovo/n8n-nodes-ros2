@@ -58,6 +58,8 @@ export class RosBridgeService {
         9: 'LOST',
     };
 
+    private static goalRegistry = new Map<string, any>();
+
     private static loadRoslib() {
         // We use eval('import(...)') to prevent tsc from transpiling this to require(),
         // as roslib 2.x is an ESM-only package and doesn't support require().
@@ -345,6 +347,202 @@ export class RosBridgeService {
         return () => {
             topic.unsubscribe(wrappedCallback);
         };
+    }
+
+    static async getActionResult(
+        ros: Ros,
+        serverName: string,
+        actionName: string,
+        goalId: string,
+        timeoutMs: number,
+    ): Promise<JsonRecord> {
+        const { ActionClient, Goal } = await this.loadRoslib();
+
+        const actionClient = new ActionClient({
+            ros,
+            serverName,
+            actionName,
+        }) as ActionClient<JsonRecord, unknown, unknown>;
+
+        // We create a dummy goal object just to use its result listener, 
+        // but we need to associate it with the existing goalId.
+        // roslib's Goal doesn't easily allow attaching to an existing ID for result listening 
+        // without sending it, so we might need to use the service directly or 
+        // hack the Goal object.
+        
+        // Alternative: Use the service directly /_action/get_result
+        // The result service type is usually {action_type}_GetResult
+        // But rosbridge often handles the mapping.
+        
+        return new Promise<JsonRecord>((resolve, reject) => {
+            const timer = setTimeout(() => {
+                actionClient.dispose();
+                reject(new RosBridgeTimeoutError(`Timeout waiting for result of goal "${goalId}" on "${serverName}"`));
+            }, timeoutMs);
+
+            // Standard roslib ActionClient approach:
+            const goal = new Goal({
+                actionClient,
+                goalMessage: {},
+            });
+            // Override the generated ID
+            (goal as any).goalID = { id: goalId };
+
+            goal.on('result', (result) => {
+                clearTimeout(timer);
+                actionClient.dispose();
+                resolve(result as JsonRecord);
+            });
+
+            goal.on('timeout', () => {
+                clearTimeout(timer);
+                actionClient.dispose();
+                reject(new RosBridgeTimeoutError(`roslib timeout waiting for result of goal "${goalId}"`));
+            });
+        });
+    }
+
+    static async cancelAction(
+        ros: Ros,
+        serverName: string,
+        actionName: string,
+        goalId: string,
+    ): Promise<JsonRecord> {
+        const { ActionClient, Goal } = await this.loadRoslib();
+
+        const actionClient = new ActionClient({
+            ros,
+            serverName,
+            actionName,
+        }) as ActionClient<JsonRecord, unknown, unknown>;
+
+        const goal = new Goal({
+            actionClient,
+            goalMessage: {},
+        });
+        (goal as any).goalID = { id: goalId };
+
+        return new Promise<JsonRecord>((resolve, reject) => {
+            try {
+                // roslib's cancel() doesn't return a promise or have a specific 'canceled' event on the goal.
+                // It sends the cancel request via service.
+                goal.cancel();
+                actionClient.dispose();
+                resolve({ status: 'cancel_request_sent', goalId });
+            } catch (error) {
+                actionClient.dispose();
+                reject(error);
+            }
+        });
+    }
+
+    static async advertiseService(
+        ros: Ros,
+        serviceName: string,
+        serviceType: string,
+        callback: (request: JsonRecord, response: JsonRecord) => boolean,
+    ): Promise<() => void> {
+        const { Service } = await this.loadRoslib();
+        const service = new Service({
+            ros,
+            name: serviceName,
+            serviceType,
+        });
+
+        service.advertise((request: unknown, response: unknown) => {
+            return callback(request as JsonRecord, response as JsonRecord);
+        });
+
+        return () => {
+            service.unadvertise();
+        };
+    }
+
+    static async registerActionServer(
+        ros: Ros,
+        serverName: string,
+        actionName: string,
+        callback: (goalMessage: JsonRecord, goalId: string) => void,
+    ): Promise<() => void> {
+        const { SimpleActionServer } = await this.loadRoslib();
+        const server = new SimpleActionServer({
+            ros,
+            serverName,
+            actionName,
+        });
+
+        const onGoal = (goalMessage: any) => {
+            const goalId = server.currentGoal?.goal_id?.id || `goal-${Date.now()}`;
+            this.goalRegistry.set(goalId, server);
+            callback(goalMessage as JsonRecord, goalId);
+        };
+
+        server.on('goal', onGoal);
+
+        return () => {
+            server.removeAllListeners('goal');
+        };
+    }
+
+    static sendActionFeedback(goalId: string, feedback: JsonRecord): void {
+        const server = this.goalRegistry.get(goalId);
+        if (!server) {
+            throw new Error(`No active action goal found for ID "${goalId}"`);
+        }
+        server.sendFeedback(feedback);
+    }
+
+    static setActionSucceeded(goalId: string, result: JsonRecord): void {
+        const server = this.goalRegistry.get(goalId);
+        if (!server) {
+            throw new Error(`No active action goal found for ID "${goalId}"`);
+        }
+        server.setSucceeded(result);
+        this.goalRegistry.delete(goalId);
+    }
+
+    static setActionAborted(goalId: string, result: JsonRecord): void {
+        const server = this.goalRegistry.get(goalId);
+        if (!server) {
+            throw new Error(`No active action goal found for ID "${goalId}"`);
+        }
+        server.setAborted(result);
+        this.goalRegistry.delete(goalId);
+    }
+
+    static async waitForActionFeedback(
+        ros: Ros,
+        serverName: string,
+        actionName: string,
+        goalId: string,
+        timeoutMs: number,
+    ): Promise<JsonRecord> {
+        const { ActionClient, Goal } = await this.loadRoslib();
+
+        const actionClient = new ActionClient({
+            ros,
+            serverName,
+            actionName,
+        }) as ActionClient<JsonRecord, unknown, unknown>;
+
+        const goal = new Goal({
+            actionClient,
+            goalMessage: {},
+        });
+        (goal as any).goalID = { id: goalId };
+
+        return new Promise<JsonRecord>((resolve, reject) => {
+            const timer = setTimeout(() => {
+                actionClient.dispose();
+                reject(new RosBridgeTimeoutError(`Timeout waiting for feedback of goal "${goalId}" on "${serverName}"`));
+            }, timeoutMs);
+
+            goal.on('feedback', (feedback) => {
+                clearTimeout(timer);
+                actionClient.dispose();
+                resolve(feedback as JsonRecord);
+            });
+        });
     }
 
     private static extractGoalId(goal: Goal<JsonRecord>): string {

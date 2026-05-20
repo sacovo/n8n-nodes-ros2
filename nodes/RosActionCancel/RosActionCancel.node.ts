@@ -14,16 +14,16 @@ import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 
-export class RosActionStatus implements INodeType {
+export class RosActionCancel implements INodeType {
     description: INodeTypeDescription = {
-        displayName: 'ROS2 Action Status',
-        name: 'rosActionStatus',
+        displayName: 'ROS2 Action Cancel',
+        name: 'rosActionCancel',
         icon: { light: 'file:../shared/ros.svg', dark: 'file:../shared/ros.dark.svg' },
         group: ['transform'],
         version: [1],
-        description: 'Check status of a previously started ROS2 action goal',
+        description: 'Cancel an active ROS2 action goal',
         defaults: {
-            name: 'ROS2 Action Status',
+            name: 'ROS2 Action Cancel',
         },
         usableAsTool: true,
         inputs: [NodeConnectionTypes.Main],
@@ -70,59 +70,38 @@ export class RosActionStatus implements INodeType {
                 ],
             },
             {
-                displayName: 'Status Topic',
-                name: 'statusTopicName',
+                displayName: 'Action Type',
+                name: 'actionName',
                 type: 'resourceLocator',
                 default: { mode: 'list', value: '' },
                 required: true,
-                description: 'Select from available topics or enter manually. "Detected" mode will automatically find the status topic for the selected server.',
+                description: 'The ROS 2 action type (e.g. action_tutorials_interfaces/Fibonacci). "Detected" mode will automatically fetch the type from the selected server.',
+                typeOptions: {
+                    loadOptionsDependsOn: ['serverName'],
+                },
                 modes: [
                     {
                         displayName: 'Detected',
                         name: 'list',
                         type: 'list',
                         typeOptions: {
-                            searchListMethod: 'getDetectedStatusTopic',
+                            searchListMethod: 'getDetectedActionType',
                         },
                     },
                     {
-                        displayName: 'From List',
-                        name: 'list',
-                        type: 'list',
-                        typeOptions: {
-                            searchListMethod: 'getTopicsList',
-                            searchable: true,
-                        },
-                    },
-                    {
-                        displayName: 'ID (Manual)',
+                        displayName: 'Manual',
                         name: 'id',
                         type: 'string',
-                        placeholder: 'e.g., /fibonacci/_action/status',
+                        placeholder: 'e.g., action_tutorials_interfaces/Fibonacci',
                     },
                 ],
-            },
-            {
-                displayName: 'Status Message Type',
-                name: 'statusMessageType',
-                type: 'string',
-                default: 'action_msgs/msg/GoalStatusArray',
-                required: true,
-                description: 'The ROS 2 message type for status (usually action_msgs/msg/GoalStatusArray)',
-            },
-            {
-                displayName: 'Timeout (Ms)',
-                name: 'timeoutMs',
-                type: 'number',
-                default: 5000,
-                description: 'Maximum wait time for the next status message',
             },
         ],
     };
 
     methods = {
         listSearch: {
-            async getDetectedStatusTopic(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+            async getDetectedActionType(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
                 try {
                     const serverNameLocator = this.getNodeParameter('serverName', 0, {
                         extractValue: true,
@@ -134,19 +113,24 @@ export class RosActionStatus implements INodeType {
                         return { results: [] };
                     }
 
-                    const statusTopic = serverName.endsWith('/') 
-                        ? `${serverName}_action/status` 
-                        : `${serverName}/_action/status`;
-
-                    if (!filter || statusTopic.toLowerCase().includes(filter.toLowerCase())) {
-                        return {
-                            results: [
-                                {
-                                    name: `Detected: ${statusTopic}`,
-                                    value: statusTopic,
-                                },
-                            ],
-                        };
+                    const credentials = (await this.getCredentials(
+                        'rosBridgeApi',
+                    )) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
+                    try {
+                        const type = await RosApiService.getActionType(ros, serverName);
+                        if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
+                            return {
+                                results: [
+                                    {
+                                        name: `Detected: ${type}`,
+                                        value: type,
+                                    },
+                                ],
+                            };
+                        }
+                    } finally {
+                        RosBridgeService.close(ros);
                     }
                 } catch {
                     // Ignore errors
@@ -164,24 +148,6 @@ export class RosActionStatus implements INodeType {
                     try {
                         const actions = await RosApiService.getActionServers(ros);
                         return { results: RosN8nFormatter.formatActionListForN8n(actions, filter) };
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { results: [] };
-                }
-            },
-
-            async getTopicsList(
-                this: ILoadOptionsFunctions,
-                filter?: string
-            ): Promise<INodeListSearchResult> {
-                try {
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const topicsResponse = await RosApiService.getTopics(ros);
-                        return { results: RosN8nFormatter.formatTopicListForN8n(topicsResponse.topics, filter) };
                     } finally {
                         RosBridgeService.close(ros);
                     }
@@ -209,34 +175,27 @@ export class RosActionStatus implements INodeType {
                 const serverName =
                     typeof serverNameLocator === 'string' ? serverNameLocator : serverNameLocator.value;
 
-                // Extract status topic name from resource locator
-                const statusTopicNameLocator = this.getNodeParameter('statusTopicName', i) as
-                    | { mode: string; value: string }
-                    | string;
-                const statusTopicName =
-                    typeof statusTopicNameLocator === 'string' ? statusTopicNameLocator : statusTopicNameLocator.value;
-
-                const statusMessageType = ParameterExtractor.extractRequiredString(this, i, 'statusMessageType');
-                const timeoutMs = ParameterExtractor.extractRequiredNumber(this, i, 'timeoutMs');
+                // Extract action type from resource locator
+                const actionNameLocator = this.getNodeParameter('actionName', i) as { mode: string; value: string } | string;
+                const actionName = typeof actionNameLocator === 'string'
+                    ? actionNameLocator
+                    : actionNameLocator.value;
 
                 ros = await RosBridgeService.connect(credentials);
-                const status = await RosBridgeService.getActionStatusByTopic(
+                const cancelResult = await RosBridgeService.cancelAction(
                     ros,
-                    statusTopicName,
-                    statusMessageType,
+                    serverName,
+                    actionName,
                     goalId,
-                    timeoutMs,
                 );
 
                 returnData.push({
                     json: {
                         goalId,
                         serverName,
-                        status: status.status,
-                        statusCode: status.statusCode,
-                        text: status.text || null,
-                        rawStatusMessage: status.raw,
-                        checkedAt: new Date().toISOString(),
+                        actionName,
+                        cancelResult,
+                        canceledAt: new Date().toISOString(),
                     },
                     pairedItem: { item: i },
                 });

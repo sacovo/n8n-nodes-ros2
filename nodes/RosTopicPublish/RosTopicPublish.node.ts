@@ -103,17 +103,17 @@ export class RosTopicPublish implements INodeType {
                 type: 'options',
                 options: [
                     {
-                        name: 'Fixed (Mapper)',
-                        value: 'fixed',
-                        description: 'Use the visual mapper to define message fields',
-                    },
-                    {
                         name: 'Raw (JSON)',
                         value: 'raw',
                         description: 'Provide raw JSON object for the message',
                     },
+                    {
+                        name: 'Fixed (Mapper)',
+                        value: 'fixed',
+                        description: 'Use the visual mapper to define message fields',
+                    },
                 ],
-                default: 'fixed',
+                default: 'raw',
             },
             {
                 displayName: 'Message Structure',

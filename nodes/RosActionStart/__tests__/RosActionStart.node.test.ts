@@ -27,7 +27,7 @@ describe('RosActionStart', () => {
     });
 
     describe('execute', () => {
-        it('should start an action successfully', async () => {
+        it('should start an action successfully with raw JSON', async () => {
             // Mock the dependencies
             const mockExecuteFunctions = {
                 getInputData: jest.fn().mockReturnValue([{}]),
@@ -36,9 +36,12 @@ describe('RosActionStart', () => {
                 getNodeParameter: jest.fn(),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString
-                .mockReturnValueOnce('test-server')
-                .mockReturnValueOnce('test-action');
+            (mockExecuteFunctions.getNodeParameter as jest.Mock)
+                .mockReturnValueOnce({ mode: 'id', value: 'test-server' }) // serverName
+                .mockReturnValueOnce({ mode: 'id', value: 'test-action' }) // actionName
+                .mockReturnValueOnce('raw') // goalInputMode
+                .mockReturnValueOnce('{"goal":"test"}'); // goalJson
+
             mockParameterExtractor.extractRequiredNumber.mockReturnValue(1000);
             mockParameterExtractor.parseJsonParameter.mockReturnValue({ goal: 'test' });
 
@@ -72,6 +75,42 @@ describe('RosActionStart', () => {
             expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
+        it('should start an action successfully with fixed mapper', async () => {
+            // Mock the dependencies
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNodeParameter: jest.fn(),
+            } as unknown as IExecuteFunctions;
+
+            (mockExecuteFunctions.getNodeParameter as jest.Mock)
+                .mockReturnValueOnce({ mode: 'id', value: 'test-server' }) // serverName
+                .mockReturnValueOnce({ mode: 'id', value: 'test-action' }) // actionName
+                .mockReturnValueOnce('fixed') // goalInputMode
+                .mockReturnValueOnce({ value: { goal: 'test' } }); // goalStructure
+
+            mockParameterExtractor.extractRequiredNumber.mockReturnValue(1000);
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeService.startAction.mockResolvedValue({
+                goalId: 'goal-123',
+                status: { code: 1 },
+            });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json.goalId).toBe('goal-123');
+            expect(mockRosBridgeService.startAction).toHaveBeenCalledWith(
+                {},
+                'test-server',
+                'test-action',
+                { goal: 'test' },
+                1000,
+            );
+        });
+
         it('should handle errors when continueOnFail is true', async () => {
             const mockExecuteFunctions = {
                 getInputData: jest.fn().mockReturnValue([{}]),
@@ -80,7 +119,7 @@ describe('RosActionStart', () => {
                 getNodeParameter: jest.fn(),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString.mockImplementation(() => {
+            (mockExecuteFunctions.getNodeParameter as jest.Mock).mockImplementation(() => {
                 throw new Error('Parameter error');
             });
 
@@ -120,13 +159,22 @@ describe('RosActionStart', () => {
                 getNodeParameter: jest.fn(),
             } as unknown as IExecuteFunctions;
 
-            mockParameterExtractor.extractRequiredString
-                .mockReturnValueOnce('test-server')
-                .mockReturnValueOnce('test-action')
-                .mockReturnValueOnce('test-server')
-                .mockReturnValueOnce('test-action');
+            (mockExecuteFunctions.getNodeParameter as jest.Mock)
+                // First item
+                .mockReturnValueOnce({ mode: 'id', value: 'test-server-1' }) // serverName
+                .mockReturnValueOnce({ mode: 'id', value: 'test-action-1' }) // actionName
+                .mockReturnValueOnce('raw') // goalInputMode
+                .mockReturnValueOnce('{"goal":"test-1"}') // goalJson
+                // Second item
+                .mockReturnValueOnce({ mode: 'id', value: 'test-server-2' }) // serverName
+                .mockReturnValueOnce({ mode: 'id', value: 'test-action-2' }) // actionName
+                .mockReturnValueOnce('raw') // goalInputMode
+                .mockReturnValueOnce('{"goal":"test-2"}'); // goalJson
+
             mockParameterExtractor.extractRequiredNumber.mockReturnValue(1000);
-            mockParameterExtractor.parseJsonParameter.mockReturnValue({ goal: 'test' });
+            mockParameterExtractor.parseJsonParameter
+                .mockReturnValueOnce({ goal: 'test-1' })
+                .mockReturnValueOnce({ goal: 'test-2' });
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.startAction

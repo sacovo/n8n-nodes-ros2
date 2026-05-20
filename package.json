@@ -45,8 +45,14 @@
 			"dist/nodes/RosTopicNextMessage/RosTopicNextMessage.node.js",
 			"dist/nodes/RosTopicPublish/RosTopicPublish.node.js",
 			"dist/nodes/RosServiceCall/RosServiceCall.node.js",
+			"dist/nodes/RosServiceTrigger/RosServiceTrigger.node.js",
 			"dist/nodes/RosActionStart/RosActionStart.node.js",
+			"dist/nodes/RosActionTrigger/RosActionTrigger.node.js",
+			"dist/nodes/RosActionSendFeedback/RosActionSendFeedback.node.js",
 			"dist/nodes/RosActionStatus/RosActionStatus.node.js",
+			"dist/nodes/RosActionResult/RosActionResult.node.js",
+			"dist/nodes/RosActionCancel/RosActionCancel.node.js",
+			"dist/nodes/RosActionFeedback/RosActionFeedback.node.js",
 			"dist/nodes/RosApi/RosApi.node.js"
 		]
 	},

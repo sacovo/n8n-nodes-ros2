@@ -285,9 +285,97 @@ describe('RosApi', () => {
                     if (e.message && e.message.includes('Unsupported operation')) {
                         throw new Error(`Combination missing in runOperation switch statement: ${operation}:${resource}`);
                     }
-                    // Ignore parameter extraction/validation errors (they mean the case exists and is executing)
+                    // Ignore parameter validation errors
                 }
             }
+        });
+
+        it('should get topic definition successfully', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockImplementation((name) => {
+                    if (name === 'resource') return 'topic';
+                    if (name === 'operation') return 'getDefinition';
+                    if (name === 'messageType') return 'std_msgs/String';
+                    return '';
+                }),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'getDefinition';
+                return '';
+            });
+            mockParameterExtractor.extractOptionalString.mockImplementation((node, index, name) => {
+                if (name === 'messageType') return 'std_msgs/String';
+                return undefined;
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getMessageDetails.mockResolvedValue([
+                {
+                    type: 'std_msgs/String',
+                    fieldnames: ['data'],
+                    fieldtypes: ['string'],
+                    fieldarraylen: [-1],
+                    examples: [],
+                }
+            ]);
+            mockRosApiService.expandTypeDef.mockReturnValue({ data: 'string' });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({
+                operation: 'getDefinition',
+                resource: 'topic',
+                messageType: 'std_msgs/String',
+                definition: { data: 'string' },
+            });
+        });
+
+        it('should get service definition successfully', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockImplementation((name) => {
+                    if (name === 'resource') return 'service';
+                    if (name === 'operation') return 'getDefinition';
+                    if (name === 'messageType') return 'std_srvs/Trigger';
+                    return '';
+                }),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'service';
+                if (name === 'operation') return 'getDefinition';
+                return '';
+            });
+            mockParameterExtractor.extractOptionalString.mockImplementation((node, index, name) => {
+                if (name === 'messageType') return 'std_srvs/Trigger';
+                return undefined;
+            });
+            
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getServiceRequestDetails.mockResolvedValue([]);
+            mockRosApiService.getServiceResponseDetails.mockResolvedValue([]);
+            mockRosApiService.expandTypeDef.mockReturnValueOnce({}).mockReturnValueOnce({ success: 'bool', message: 'string' });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({
+                operation: 'getDefinition',
+                resource: 'service',
+                serviceType: 'std_srvs/Trigger',
+                request: {},
+                response: { success: 'bool', message: 'string' },
+            });
         });
     });
 });

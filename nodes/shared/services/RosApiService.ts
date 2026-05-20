@@ -98,6 +98,26 @@ export class RosApiService {
         });
     }
 
+    static async getActionType(ros: Ros, actionServer: string): Promise<string> {
+        // In ROS 2, action servers have a set of services. 
+        // We can try to get the type from the 'send_goal' service.
+        const sendGoalService = actionServer.endsWith('/') 
+            ? `${actionServer}_action/send_goal` 
+            : `${actionServer}/_action/send_goal`;
+        
+        try {
+            const serviceType = await this.getServiceType(ros, sendGoalService);
+            // Service type is usually something like 'action_tutorials_interfaces/action/Fibonacci_SendGoal'
+            // We want 'action_tutorials_interfaces/action/Fibonacci'
+            if (serviceType.endsWith('_SendGoal')) {
+                return serviceType.replace('_SendGoal', '');
+            }
+            return serviceType;
+        } catch {
+            return '';
+        }
+    }
+
     static async getMessageDetails(ros: Ros, message: string): Promise<rosapi.TypeDef[]> {
         return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
             ros.getMessageDetails(
@@ -106,6 +126,99 @@ export class RosApiService {
                 (error) => reject(new Error(error)),
             );
         });
+    }
+
+    static async getServiceRequestDetails(ros: Ros, type: string): Promise<rosapi.TypeDef[]> {
+        return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
+            ros.getServiceRequestDetails(
+                type,
+                (result: any) => resolve(result.typedefs || result),
+                (error: any) => reject(new Error(error)),
+            );
+        });
+    }
+
+    static async getServiceResponseDetails(ros: Ros, type: string): Promise<rosapi.TypeDef[]> {
+        return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
+            ros.getServiceResponseDetails(
+                type,
+                (result: any) => resolve(result.typedefs || result),
+                (error: any) => reject(new Error(error)),
+            );
+        });
+    }
+
+    static async getActionGoalDetails(ros: Ros, type: string): Promise<rosapi.TypeDef[]> {
+        return this.callRosapiService(ros, 'action_goal_details', 'ActionGoalDetails', type);
+    }
+
+    static async getActionResultDetails(ros: Ros, type: string): Promise<rosapi.TypeDef[]> {
+        return this.callRosapiService(ros, 'action_result_details', 'ActionResultDetails', type);
+    }
+
+    static async getActionFeedbackDetails(ros: Ros, type: string): Promise<rosapi.TypeDef[]> {
+        return this.callRosapiService(ros, 'action_feedback_details', 'ActionFeedbackDetails', type);
+    }
+
+    private static async callRosapiService(ros: Ros, serviceName: string, serviceType: string, type: string): Promise<rosapi.TypeDef[]> {
+        const roslib = await this.loadRoslib() as any;
+        const Service = roslib.Service;
+        const ServiceRequest = roslib.ServiceRequest;
+        
+        return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
+            const client = new Service({
+                ros,
+                name: `/rosapi/${serviceName}`,
+                serviceType: `rosapi/${serviceType}`
+            });
+            const request = new ServiceRequest({ type });
+            client.callService(
+                request,
+                (result: any) => {
+                    if (result && Array.isArray(result.typedefs)) {
+                        resolve(result.typedefs);
+                    } else if (Array.isArray(result)) {
+                        resolve(result);
+                    } else {
+                        resolve([]);
+                    }
+                },
+                (error: any) => reject(new Error(error))
+            );
+        });
+    }
+
+    /**
+     * Expands a ROS message definition by recursively resolving nested types.
+     * @param typeName The root type to expand
+     * @param typedefs Array of type definitions (from rosapi)
+     */
+    static expandTypeDef(typeName: string, typedefs: rosapi.TypeDef[]): any {
+        const typedef = typedefs.find(t => t.type === typeName);
+        if (!typedef) {
+            return typeName;
+        }
+
+        const result: Record<string, any> = {};
+        for (let i = 0; i < typedef.fieldnames.length; i++) {
+            const name = typedef.fieldnames[i];
+            const type = typedef.fieldtypes[i];
+            const arrayLen = typedef.fieldarraylen[i];
+
+            let expandedType;
+            if (type === typeName) {
+                expandedType = type;
+            } else {
+                expandedType = this.expandTypeDef(type, typedefs);
+            }
+
+            if (arrayLen !== -1) {
+                result[name] = [expandedType];
+            } else {
+                result[name] = expandedType;
+            }
+        }
+        return result;
     }
 
     static async getTopicsAndRawTypes(ros: Ros): Promise<rosapi.TopicsAndRawTypesResponse> {

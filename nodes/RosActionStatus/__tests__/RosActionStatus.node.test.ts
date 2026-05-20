@@ -32,12 +32,17 @@ describe('RosActionStatus', () => {
                 getInputData: jest.fn().mockReturnValue([{}]),
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
+                getNodeParameter: jest.fn(),
             } as unknown as IExecuteFunctions;
 
             mockParameterExtractor.extractRequiredString
                 .mockReturnValueOnce('goal-123')
-                .mockReturnValueOnce('/fibonacci/status')
                 .mockReturnValueOnce('action_msgs/GoalStatusArray');
+
+            (mockExecuteFunctions.getNodeParameter as jest.Mock)
+                .mockReturnValueOnce({ mode: 'id', value: '/fibonacci' }) // serverName
+                .mockReturnValueOnce({ mode: 'id', value: '/fibonacci/status' }); // statusTopicName
+
             mockParameterExtractor.extractRequiredNumber.mockReturnValue(5000);
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
@@ -56,6 +61,7 @@ describe('RosActionStatus', () => {
             expect(result[0]).toHaveLength(1);
             expect(result[0][0].json).toEqual({
                 goalId: 'goal-123',
+                serverName: '/fibonacci',
                 status: 'SUCCEEDED',
                 statusCode: 3,
                 text: 'Goal completed successfully',
@@ -79,12 +85,17 @@ describe('RosActionStatus', () => {
                 getInputData: jest.fn().mockReturnValue([{}]),
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
+                getNodeParameter: jest.fn(),
             } as unknown as IExecuteFunctions;
 
             mockParameterExtractor.extractRequiredString
                 .mockReturnValueOnce('goal-999')
-                .mockReturnValueOnce('/fibonacci/status')
                 .mockReturnValueOnce('action_msgs/GoalStatusArray');
+
+            (mockExecuteFunctions.getNodeParameter as jest.Mock)
+                .mockReturnValueOnce({ mode: 'id', value: '/fibonacci' }) // serverName
+                .mockReturnValueOnce({ mode: 'id', value: '/fibonacci/status' }); // statusTopicName
+
             mockParameterExtractor.extractRequiredNumber.mockReturnValue(5000);
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
