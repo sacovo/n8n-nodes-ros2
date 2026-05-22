@@ -105,22 +105,12 @@ describe('RosBridgeService', () => {
     });
 
     describe('close', () => {
-        it('closes a valid Ros connection', () => {
+        it('does NOT close a Ros connection (due to pooling)', () => {
             const mockRos = { close: jest.fn() } as unknown as Ros;
 
             RosBridgeService.close(mockRos);
 
-            expect(mockRos.close).toHaveBeenCalled();
-        });
-
-        it('handles close errors gracefully', () => {
-            const mockRos = {
-                close: jest.fn(() => {
-                    throw new Error('Close failed');
-                }),
-            } as unknown as Ros;
-
-            expect(() => RosBridgeService.close(mockRos)).not.toThrow();
+            expect(mockRos.close).not.toHaveBeenCalled();
         });
 
         it('handles null Ros connection', () => {

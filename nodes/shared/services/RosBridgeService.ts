@@ -59,6 +59,12 @@ export class RosBridgeService {
     };
 
     private static goalRegistry = new Map<string, any>();
+    private static connectionPool = new Map<string, Ros>();
+    private static publisherCache = new Map<string, any>();
+
+    private static async sleep(ms: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
 
     private static loadRoslib() {
         // We use eval('import(...)') to prevent tsc from transpiling this to require(),
@@ -101,8 +107,19 @@ export class RosBridgeService {
     }
 
     static async connect(credentials: RosBridgeCredentials): Promise<Ros> {
-        const { Ros } = await this.loadRoslib();
         const url = this.buildRosbridgeUrl(credentials);
+
+        // Check if we have an active connection in the pool
+        if (this.connectionPool.has(url)) {
+            const pooledRos = this.connectionPool.get(url)!;
+            const socket = (pooledRos as any).socket;
+            if (socket && socket.readyState === 1) {
+                return pooledRos;
+            }
+            this.connectionPool.delete(url);
+        }
+
+        const { Ros } = await this.loadRoslib();
         const ros = new Ros({ url });
         const timeoutMs = credentials.connectTimeoutMs ?? 5000;
 
@@ -143,27 +160,49 @@ export class RosBridgeService {
             ros.once('error', onError);
         });
 
+        // Cache the connection and handle cleanup
+        this.connectionPool.set(url, ros);
+        ros.on('close', () => {
+            this.connectionPool.delete(url);
+            // Also clear topics associated with this connection
+            for (const [key, topic] of this.publisherCache.entries()) {
+                if (topic.ros === ros) {
+                    this.publisherCache.delete(key);
+                }
+            }
+        });
+
         return ros;
     }
 
     static close(ros: Ros | null | undefined): void {
-        if (!ros) {
-            return;
-        }
-        try {
-            ros.close();
-        } catch {
-            // Ignore close errors to keep node cleanup safe.
-        }
+        // With connection pooling, we don't want to actually close the connection
+        // on every node execution, as ROS 2 discovery takes time.
     }
 
     static async publishTopic(ros: Ros, topicName: string, messageType: string, message: JsonRecord): Promise<void> {
+        const url = (ros as any).socket?.url || 'default';
+        const cacheKey = `${url}:${topicName}:${messageType}`;
+        let topic = this.publisherCache.get(cacheKey);
+        let isNew = false;
+
         const { Topic } = await this.loadRoslib();
-        const topic = new Topic({
-            ros,
-            name: topicName,
-            messageType,
-        });
+
+        if (!topic || topic.ros !== ros) {
+            topic = new Topic({
+                ros,
+                name: topicName,
+                messageType,
+            });
+            this.publisherCache.set(cacheKey, topic);
+            isNew = true;
+        }
+
+        if (isNew) {
+            topic.advertise();
+            await this.sleep(750);
+        }
+
         topic.publish(message);
     }
 

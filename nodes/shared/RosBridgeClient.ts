@@ -35,6 +35,14 @@ const ACTION_STATUS_LABELS: Record<number, string> = {
     9: 'LOST',
 };
 
+// Publisher and Connection Cache to handle ROS 2 discovery delays and rosbridge QoS issues
+const rosConnections = new Map<string, Ros>();
+const publisherCache = new Map<string, Topic>();
+
+async function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function normalizePath(path?: string): string {
     if (!path) {
         return '';
@@ -68,8 +76,22 @@ async function loadRoslib() {
 }
 
 export async function connectRos(credentials: RosBridgeCredentialsData): Promise<Ros> {
-    const { Ros } = await loadRoslib();
     const url = buildRosbridgeUrl(credentials);
+
+    // Check if we have an active connection in the pool
+    if (rosConnections.has(url)) {
+        const pooledRos = rosConnections.get(url)!;
+        // Check if the connection is still open.
+        // roslib doesn't expose a clean isConnected, but we can check the socket state
+        // if it exists. 0 = CONNECTING, 1 = OPEN, 2 = CLOSING, 3 = CLOSED
+        const socket = (pooledRos as any).socket;
+        if (socket && socket.readyState === 1) {
+            return pooledRos;
+        }
+        rosConnections.delete(url);
+    }
+
+    const { Ros } = await loadRoslib();
     const ros = new Ros({ url });
     const timeoutMs = credentials.connectTimeoutMs ?? 5000;
 
@@ -106,15 +128,25 @@ export async function connectRos(credentials: RosBridgeCredentialsData): Promise
         ros.once('error', onError);
     });
 
+    // Cache the connection and handle cleanup
+    rosConnections.set(url, ros);
+    ros.on('close', () => {
+        rosConnections.delete(url);
+        // Also clear topics associated with this connection
+        for (const [key, topic] of publisherCache.entries()) {
+            if (topic.ros === ros) {
+                publisherCache.delete(key);
+            }
+        }
+    });
+
     return ros;
 }
 
 export function closeRos(ros: Ros): void {
-    try {
-        ros.close();
-    } catch {
-        // Ignore close errors to keep node cleanup safe.
-    }
+    // With connection pooling, we don't want to actually close the connection
+    // on every node execution, as ROS 2 discovery takes time.
+    // The connection will stay open until the process ends or the server closes it.
 }
 
 export function parseJsonPayload(input: string, parameterName: string): JsonRecord {
@@ -155,7 +187,26 @@ export async function publishRosTopic(
     messageType: string,
     message: JsonRecord,
 ): Promise<void> {
-    const topic = await createTopic(ros, topicName, messageType);
+    const url = (ros as any).socket?.url || 'default';
+    const cacheKey = `${url}:${topicName}:${messageType}`;
+    let topic = publisherCache.get(cacheKey);
+    let isNew = false;
+
+    // We reuse the topic if it exists and belongs to the same connection
+    if (!topic || topic.ros !== ros) {
+        topic = await createTopic(ros, topicName, messageType);
+        publisherCache.set(cacheKey, topic);
+        isNew = true;
+    }
+
+    if (isNew) {
+        // Alert the network that we have a new publisher
+        topic.advertise();
+        // DDS Discovery Delay: Wait for subscribers to negotiate connection
+        // before firing the first message. 750ms is usually enough.
+        await sleep(750);
+    }
+
     topic.publish(message);
 }
 

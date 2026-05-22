@@ -5,15 +5,12 @@ FROM node:24-trixie
 
 ARG N8N_VERSION=2.21.5
 
-# 1. Optimize APT caching
-# We use a cache mount for apt to avoid re-downloading packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
   apt-get update && apt-get install -y \
   graphicsmagick tzdata git tini python3 python3-setuptools build-essential curl \
   && rm -rf /var/lib/apt/lists/*
 
-# 2. Compile su-exec (Keep this logic but wrap it to stay clean)
 RUN set -ex; \
   curl -o /usr/local/bin/su-exec.c https://raw.githubusercontent.com/ncopa/su-exec/master/su-exec.c; \
   apt-get update && apt-get install -y --no-install-recommends gcc libc-dev; \
@@ -24,15 +21,12 @@ RUN set -ex; \
   rm -rf /var/lib/apt/lists/*
 
 # 3. Cache Global npm installs
-# Using a cache mount for the npm registry significantly speeds up re-builds
 RUN --mount=type=cache,target=/root/.npm \
   npm install -g "n8n@${N8N_VERSION}"
 
 WORKDIR /work
 
-# 4. THE MOST IMPORTANT STEP: Layered Copying
-# Only copy package files first. This ensures 'npm install' only runs 
-# if your dependencies actually changed.
+# 4. Layered copying
 COPY package.json package-lock.json ./
 
 # Use npm cache mount for local dependencies
