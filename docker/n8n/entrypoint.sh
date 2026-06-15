@@ -19,6 +19,9 @@ if [ -d /data ]; then
     echo '{"dependencies":{}}' > package.json
   fi
   
+  # Force clean reinstall of the package to clear the persistent volume cache
+  rm -rf node_modules/@fhnw-rover/n8n-nodes-ros2
+  
   # Install/update local package from /work
   npm install --legacy-peer-deps /work
 fi
