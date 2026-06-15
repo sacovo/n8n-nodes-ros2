@@ -1,0 +1,76 @@
+{
+  "id": "3",
+  "name": "Dynamic Topics Stress Test",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "dynamic-topics-stress-test",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-node-id",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\nfor (let i = 0; i < 200; i++) {\n  items.push({\n    json: {\n      topic: `/n8n_dynamic_topic_${i}`,\n      message: `message_${i}`\n    }\n  });\n}\nreturn items;"
+      },
+      "id": "code-node-id",
+      "name": "Generate Topics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "topicName": "={{ $json.topic }}",
+        "messageType": "std_msgs/msg/String",
+        "messageInputMode": "raw",
+        "messageJson": "={\"data\": \"{{ $json.message }}\"}",
+        "options": {
+          "discoveryDelay": 0
+        }
+      },
+      "id": "publish-node-id",
+      "name": "ROS2 Topic Publish",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicPublish",
+      "typeVersion": 1,
+      "position": [500, 200],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "1"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Generate Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Topics": {
+      "main": [
+        [
+          {
+            "node": "ROS2 Topic Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

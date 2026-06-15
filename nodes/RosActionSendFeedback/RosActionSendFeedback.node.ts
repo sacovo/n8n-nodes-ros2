@@ -37,21 +37,25 @@ export class RosActionSendFeedback implements INodeType {
                 displayName: 'Operation',
                 name: 'operation',
                 type: 'options',
+																noDataExpression: true,
                 options: [
                     {
                         name: 'Send Feedback',
                         value: 'sendFeedback',
                         description: 'Send progress update to the action client',
+																								action: 'Send progress update to the action client',
                     },
                     {
                         name: 'Set Succeeded',
                         value: 'setSucceeded',
                         description: 'Complete the action successfully and send final result',
+																								action: 'Complete the action successfully and send final result',
                     },
                     {
                         name: 'Set Aborted',
                         value: 'setAborted',
                         description: 'Abort the action and send final result',
+																								action: 'Abort the action and send final result',
                     },
                 ],
                 default: 'sendFeedback',

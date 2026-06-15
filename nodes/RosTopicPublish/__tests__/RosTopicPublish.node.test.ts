@@ -137,8 +137,84 @@ describe('RosTopicPublish', () => {
                 '/chatter',
                 'std_msgs/msg/String',
                 { data: 'Hello ROS!' },
+                undefined,
+                undefined,
             );
             expect(mockRosBridgeClient.closeRos).toHaveBeenCalled();
+        });
+
+        it('should advertise topic only when operation is advertise', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockImplementation((name: string) => {
+                    if (name === 'operation') return 'advertise';
+                    if (name === 'topicName') return '/chatter';
+                    if (name === 'messageType') return 'std_msgs/msg/String';
+                    return undefined;
+                }),
+            } as unknown as IExecuteFunctions;
+
+            mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeClient.advertiseRosTopic.mockResolvedValue(undefined);
+            mockRosBridgeClient.closeRos.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toHaveLength(1);
+            expect(result[0][0].json).toEqual({
+                topic: '/chatter',
+                messageType: 'std_msgs/msg/String',
+                advertisedAt: expect.any(String),
+            });
+
+            expect(mockRosBridgeClient.connectRos).toHaveBeenCalled();
+            expect(mockRosBridgeClient.advertiseRosTopic).toHaveBeenCalledWith(
+                {},
+                '/chatter',
+                'std_msgs/msg/String',
+            );
+            expect(mockRosBridgeClient.publishRosTopic).not.toHaveBeenCalled();
+            expect(mockRosBridgeClient.closeRos).toHaveBeenCalled();
+        });
+
+        it('should publish message with custom options (discoveryDelay and burst)', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockImplementation((name: string) => {
+                    if (name === 'topicName') return '/chatter';
+                    if (name === 'messageType') return 'std_msgs/msg/String';
+                    if (name === 'messageInputMode') return 'raw';
+                    if (name === 'messageJson') return '{"data":"Hello ROS!"}';
+                    if (name === 'options') return { discoveryDelay: 1000, burstOption: true, burstNumber: 3, burstWait: 200 };
+                    return undefined;
+                }),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractJsonParameter.mockReturnValue({ data: 'Hello ROS!' });
+
+            mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeClient.publishRosTopic.mockResolvedValue(undefined);
+            mockRosBridgeClient.closeRos.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toHaveLength(1);
+            expect(mockRosBridgeClient.publishRosTopic).toHaveBeenCalledWith(
+                {},
+                '/chatter',
+                'std_msgs/msg/String',
+                { data: 'Hello ROS!' },
+                1000,
+                { number: 3, wait: 200 },
+            );
         });
 
         it('should handle publish errors with continueOnFail', async () => {

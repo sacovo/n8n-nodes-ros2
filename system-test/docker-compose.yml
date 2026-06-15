@@ -1,0 +1,26 @@
+services:
+  ros2:
+    build:
+      context: .
+      dockerfile: Dockerfile.ros2
+    network_mode: host
+    restart: always
+
+  n8n:
+    build:
+      context: ..
+      dockerfile: docker/n8n/Dockerfile
+    network_mode: host
+    volumes:
+      - n8n_system_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/work/system-test
+    environment:
+      - N8N_USER_FOLDER=/data
+      - N8N_ENCRYPTION_KEY=supersecretkey
+      - N8N_PORT=5678
+      - ROS_PUBLISHER_TTL_MS=5000
+      - N8N_LOG_LEVEL=debug
+
+volumes:
+  n8n_system_data:

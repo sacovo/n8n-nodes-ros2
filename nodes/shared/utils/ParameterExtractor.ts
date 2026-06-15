@@ -90,12 +90,16 @@ export class ParameterExtractor {
         itemIndex: number,
         parameterName: string,
     ): JsonRecord {
-        const value = executeFunctions.getNodeParameter(parameterName, itemIndex) as string;
+        const value = executeFunctions.getNodeParameter(parameterName, itemIndex) as unknown;
+
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            return value as JsonRecord;
+        }
 
         if (typeof value !== 'string') {
             throw new NodeOperationError(
                 executeFunctions.getNode(),
-                `Parameter "${parameterName}" must be a string`,
+                `Parameter "${parameterName}" must be a string or JSON object`,
                 { itemIndex },
             );
         }

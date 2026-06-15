@@ -36,8 +36,6 @@ RUN --mount=type=cache,target=/root/.npm \
 # 5. Copy the rest of the source code AFTER dependencies are installed
 COPY . .
 
-ENV N8N_CUSTOM_EXTENSIONS=/work/dist
-
 # Run build steps
 RUN npm run install-global 
 RUN npm run build
@@ -45,5 +43,12 @@ RUN npm run build
 RUN mkdir -p /data && useradd -ms /bin/bash debian && chown debian:debian /data
 RUN chown -R debian:debian /work
 
+# Copy the entrypoint script and make it executable
+COPY docker/n8n/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Go back to /work to keep runtime working directory clean
+WORKDIR /work
+
 USER debian
-CMD ["n8n", "start"]
+ENTRYPOINT ["/entrypoint.sh"]

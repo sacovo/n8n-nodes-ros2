@@ -9,6 +9,7 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import {
+    advertiseRosTopic,
     closeRos,
     connectRos,
     formatTopicListForN8n,
@@ -45,6 +46,27 @@ export class RosTopicPublish implements INodeType {
             },
         ],
         properties: [
+            {
+                displayName: 'Operation',
+                name: 'operation',
+                type: 'options',
+                noDataExpression: true,
+                options: [
+                    {
+                        name: 'Publish',
+                        value: 'publish',
+                        description: 'Publish a message to the ROS2 topic',
+                        action: 'Publish a message to a topic',
+                    },
+                    {
+                        name: 'Advertise Only',
+                        value: 'advertise',
+                        description: 'Only advertise the publisher without sending a message',
+                        action: 'Advertise a topic',
+                    },
+                ],
+                default: 'publish',
+            },
             {
                 displayName: 'Topic Name',
                 name: 'topicName',
@@ -101,6 +123,11 @@ export class RosTopicPublish implements INodeType {
                 displayName: 'Message Input Mode',
                 name: 'messageInputMode',
                 type: 'options',
+                displayOptions: {
+                    show: {
+                        operation: ['publish'],
+                    },
+                },
                 options: [
                     {
                         name: 'Raw (JSON)',
@@ -127,6 +154,7 @@ export class RosTopicPublish implements INodeType {
                 required: true,
                 displayOptions: {
                     show: {
+                        operation: ['publish'],
                         messageInputMode: ['fixed'],
                     },
                 },
@@ -154,11 +182,64 @@ export class RosTopicPublish implements INodeType {
                 },
                 displayOptions: {
                     show: {
+                        operation: ['publish'],
                         messageInputMode: ['raw'],
                     },
                 },
                 default: '{}',
                 description: 'JSON object sent as the topic message payload',
+            },
+            {
+                displayName: 'Options',
+                name: 'options',
+                type: 'collection',
+                placeholder: 'Add Option',
+                default: {},
+                displayOptions: {
+                    show: {
+                        operation: ['publish'],
+                    },
+                },
+                options: [
+                    {
+                        displayName: 'Timeout for Waiting (Ms)',
+                        name: 'discoveryDelay',
+                        type: 'number',
+                        default: 750,
+                        description: 'Time to wait (in milliseconds) after advertising the topic before publishing, to allow subscribers to discover the publisher',
+                    },
+                    {
+                        displayName: 'Burst Option',
+                        name: 'burstOption',
+                        type: 'boolean',
+                        default: false,
+                        description: 'Whether to publish the message multiple times in a burst',
+                    },
+                    {
+                        displayName: 'Burst Number',
+                        name: 'burstNumber',
+                        type: 'number',
+                        default: 2,
+                        displayOptions: {
+                            show: {
+                                burstOption: [true],
+                            },
+                        },
+                        description: 'Number of messages to send in the burst',
+                    },
+                    {
+                        displayName: 'Wait Between Messages (Ms)',
+                        name: 'burstWait',
+                        type: 'number',
+                        default: 100,
+                        displayOptions: {
+                            show: {
+                                burstOption: [true],
+                            },
+                        },
+                        description: 'Time to wait (in milliseconds) between sending messages in the burst',
+                    },
+                ],
             },
         ],
     };
@@ -285,31 +366,59 @@ export class RosTopicPublish implements INodeType {
                     ? messageTypeLocator
                     : messageTypeLocator.value;
 
-                // Extract message based on input mode
-                const messageInputMode = this.getNodeParameter('messageInputMode', i) as 'fixed' | 'raw';
-                let message: JsonRecord = {};
-
-                if (messageInputMode === 'fixed') {
-                    // Extract message from resource mapper and remove n8n internal fields
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const messageStructure = this.getNodeParameter('messageStructure', i) as any;
-                    if (messageStructure) {
-                        const { value, ...actualFields } = messageStructure;
-                        message = value || actualFields || {};
-                    }
-                } else {
-                    message = ParameterExtractor.extractJsonParameter(this, i, 'messageJson');
-                }
+                const operation = (this.getNodeParameter('operation', i, 'publish') || 'publish') as 'publish' | 'advertise';
 
                 ros = await connectRos(credentials);
-                await publishRosTopic(ros, topicName, messageType, message);
+
+                let message: JsonRecord = {};
+                if (operation === 'advertise') {
+                    await advertiseRosTopic(ros, topicName, messageType);
+                } else {
+                    // Extract message based on input mode
+                    const messageInputMode = this.getNodeParameter('messageInputMode', i) as 'fixed' | 'raw';
+
+                    if (messageInputMode === 'fixed') {
+                        // Extract message from resource mapper and remove n8n internal fields
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const messageStructure = this.getNodeParameter('messageStructure', i) as any;
+                        if (messageStructure) {
+                            const { value, ...actualFields } = messageStructure;
+                            message = value || actualFields || {};
+                        }
+                    } else {
+                        message = ParameterExtractor.extractJsonParameter(this, i, 'messageJson');
+                    }
+
+                    const options = (this.getNodeParameter('options', i, {}) || {}) as {
+                        discoveryDelay?: number;
+                        burstOption?: boolean;
+                        burstNumber?: number;
+                        burstWait?: number;
+                    };
+
+                    let burst: { number: number; wait: number } | undefined;
+                    if (options.burstOption) {
+                        burst = {
+                            number: options.burstNumber ?? 2,
+                            wait: options.burstWait ?? 100,
+                        };
+                    }
+
+                    await publishRosTopic(ros, topicName, messageType, message, options.discoveryDelay, burst);
+                }
 
                 returnData.push({
                     json: {
                         topic: topicName,
                         messageType,
-                        message,
-                        publishedAt: new Date().toISOString(),
+                        ...(operation === 'publish'
+                            ? {
+                                  message,
+                                  publishedAt: new Date().toISOString(),
+                              }
+                            : {
+                                  advertisedAt: new Date().toISOString(),
+                              }),
                     },
                     pairedItem: { item: i },
                 });

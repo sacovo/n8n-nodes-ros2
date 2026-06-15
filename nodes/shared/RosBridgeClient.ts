@@ -35,9 +35,11 @@ const ACTION_STATUS_LABELS: Record<number, string> = {
     9: 'LOST',
 };
 
+const PUBLISHER_TTL_MS = process.env.ROS_PUBLISHER_TTL_MS ? parseInt(process.env.ROS_PUBLISHER_TTL_MS, 10) : 300000;
+
 // Publisher and Connection Cache to handle ROS 2 discovery delays and rosbridge QoS issues
 const rosConnections = new Map<string, Ros>();
-const publisherCache = new Map<string, Topic>();
+const publisherCache = new Map<string, { topic: Topic; timer?: ReturnType<typeof setTimeout> }>();
 
 async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -81,11 +83,7 @@ export async function connectRos(credentials: RosBridgeCredentialsData): Promise
     // Check if we have an active connection in the pool
     if (rosConnections.has(url)) {
         const pooledRos = rosConnections.get(url)!;
-        // Check if the connection is still open.
-        // roslib doesn't expose a clean isConnected, but we can check the socket state
-        // if it exists. 0 = CONNECTING, 1 = OPEN, 2 = CLOSING, 3 = CLOSED
-        const socket = (pooledRos as any).socket;
-        if (socket && socket.readyState === 1) {
+        if (pooledRos.isConnected) {
             return pooledRos;
         }
         rosConnections.delete(url);
@@ -93,6 +91,7 @@ export async function connectRos(credentials: RosBridgeCredentialsData): Promise
 
     const { Ros } = await loadRoslib();
     const ros = new Ros({ url });
+    (ros as any).socketUrl = url;
     const timeoutMs = credentials.connectTimeoutMs ?? 5000;
 
     await new Promise<void>((resolve, reject) => {
@@ -133,8 +132,11 @@ export async function connectRos(credentials: RosBridgeCredentialsData): Promise
     ros.on('close', () => {
         rosConnections.delete(url);
         // Also clear topics associated with this connection
-        for (const [key, topic] of publisherCache.entries()) {
-            if (topic.ros === ros) {
+        for (const [key, cached] of publisherCache.entries()) {
+            if (cached.topic.ros === ros) {
+                if (cached.timer) {
+                    clearTimeout(cached.timer);
+                }
                 publisherCache.delete(key);
             }
         }
@@ -186,29 +188,95 @@ export async function publishRosTopic(
     topicName: string,
     messageType: string,
     message: JsonRecord,
+    discoveryDelayMs?: number,
+    burst?: {
+        number: number;
+        wait: number;
+    },
 ): Promise<void> {
-    const url = (ros as any).socket?.url || 'default';
+    const url = (ros as any).socketUrl || 'default';
     const cacheKey = `${url}:${topicName}:${messageType}`;
-    let topic = publisherCache.get(cacheKey);
+    let cached = publisherCache.get(cacheKey);
     let isNew = false;
+    let topic: Topic;
 
     // We reuse the topic if it exists and belongs to the same connection
-    if (!topic || topic.ros !== ros) {
+    if (!cached || cached.topic.ros !== ros) {
         topic = await createTopic(ros, topicName, messageType);
-        publisherCache.set(cacheKey, topic);
+        cached = { topic };
+        publisherCache.set(cacheKey, cached);
         isNew = true;
+    } else {
+        topic = cached.topic;
+        if (cached.timer) {
+            clearTimeout(cached.timer);
+            cached.timer = undefined;
+        }
     }
+
+    // Set expiration timer to unadvertise stale topics
+    cached.timer = setTimeout(() => {
+        try {
+            topic.unadvertise();
+        } catch (err) {
+            // Ignore error if connection is closed
+        }
+        publisherCache.delete(cacheKey);
+    }, PUBLISHER_TTL_MS);
 
     if (isNew) {
         // Alert the network that we have a new publisher
         topic.advertise();
         // DDS Discovery Delay: Wait for subscribers to negotiate connection
         // before firing the first message. 750ms is usually enough.
-        await sleep(750);
+        await sleep(discoveryDelayMs ?? 750);
     }
 
-    topic.publish(message);
+    if (burst) {
+        const count = burst.number > 0 ? burst.number : 1;
+        for (let j = 0; j < count; j++) {
+            topic.publish(message);
+            if (j < count - 1 && burst.wait > 0) {
+                await sleep(burst.wait);
+            }
+        }
+    } else {
+        topic.publish(message);
+    }
 }
+
+export async function advertiseRosTopic(
+    ros: Ros,
+    topicName: string,
+    messageType: string,
+): Promise<void> {
+    const url = (ros as any).socketUrl || 'default';
+    const cacheKey = `${url}:${topicName}:${messageType}`;
+    let cached = publisherCache.get(cacheKey);
+
+    if (!cached || cached.topic.ros !== ros) {
+        const topic = await createTopic(ros, topicName, messageType);
+        topic.advertise();
+        cached = { topic };
+        publisherCache.set(cacheKey, cached);
+    } else {
+        if (cached.timer) {
+            clearTimeout(cached.timer);
+            cached.timer = undefined;
+        }
+    }
+
+    // Set expiration timer to unadvertise stale topics
+    cached.timer = setTimeout(() => {
+        try {
+            cached.topic.unadvertise();
+        } catch (err) {
+            // Ignore error
+        }
+        publisherCache.delete(cacheKey);
+    }, PUBLISHER_TTL_MS);
+}
+
 
 export async function waitForNextTopicMessage(
     ros: Ros,

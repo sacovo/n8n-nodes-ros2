@@ -1,0 +1,55 @@
+{
+  "id": "4",
+  "name": "Discovery Test",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "discovery-test",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-node-id",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "topicName": "/n8n_discovery_test",
+        "messageType": "std_msgs/msg/String",
+        "messageInputMode": "raw",
+        "messageJson": "={\"data\": \"{{ $json.body.message }}\"}",
+        "options": {
+          "discoveryDelay": "={{ $json.body.delay }}"
+        }
+      },
+      "id": "publish-node-id",
+      "name": "ROS2 Topic Publish",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicPublish",
+      "typeVersion": 1,
+      "position": [300, 200],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "1"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "ROS2 Topic Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

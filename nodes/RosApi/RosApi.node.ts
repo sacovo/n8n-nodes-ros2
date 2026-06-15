@@ -277,7 +277,6 @@ export class RosApi implements INodeType {
                 name: 'messageType',
                 type: 'string',
                 default: '',
-                required: false,
                 placeholder: 'std_msgs/String',
                 displayOptions: {
                     show: {
@@ -471,7 +470,7 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'getDefinition:action':
             {
-                let actionType = ParameterExtractor.extractOptionalString(node, 0, 'messageType');
+                const actionType = ParameterExtractor.extractOptionalString(node, 0, 'messageType');
                 if (!actionType) {
                     // We don't have getActionType yet, so for now we require the type
                     throw new NodeApiError(node.getNode(), { message: 'Action Type (Message Type) is required for getDefinition:action' });

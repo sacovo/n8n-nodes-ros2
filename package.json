@@ -44,6 +44,7 @@
 			"dist/nodes/RosTopicTrigger/RosTopicTrigger.node.js",
 			"dist/nodes/RosTopicNextMessage/RosTopicNextMessage.node.js",
 			"dist/nodes/RosTopicPublish/RosTopicPublish.node.js",
+			"dist/nodes/RosTopicCaptureImage/RosTopicCaptureImage.node.js",
 			"dist/nodes/RosServiceCall/RosServiceCall.node.js",
 			"dist/nodes/RosServiceTrigger/RosServiceTrigger.node.js",
 			"dist/nodes/RosActionStart/RosActionStart.node.js",

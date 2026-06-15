@@ -60,7 +60,8 @@ export class RosBridgeService {
 
     private static goalRegistry = new Map<string, any>();
     private static connectionPool = new Map<string, Ros>();
-    private static publisherCache = new Map<string, any>();
+    private static readonly PUBLISHER_TTL_MS = process.env.ROS_PUBLISHER_TTL_MS ? parseInt(process.env.ROS_PUBLISHER_TTL_MS, 10) : 300000;
+    private static publisherCache = new Map<string, { topic: any; timer?: ReturnType<typeof setTimeout> }>();
 
     private static async sleep(ms: number): Promise<void> {
         return new Promise((resolve) => setTimeout(resolve, ms));
@@ -165,8 +166,11 @@ export class RosBridgeService {
         ros.on('close', () => {
             this.connectionPool.delete(url);
             // Also clear topics associated with this connection
-            for (const [key, topic] of this.publisherCache.entries()) {
-                if (topic.ros === ros) {
+            for (const [key, cached] of this.publisherCache.entries()) {
+                if (cached.topic.ros === ros) {
+                    if (cached.timer) {
+                        clearTimeout(cached.timer);
+                    }
                     this.publisherCache.delete(key);
                 }
             }
@@ -183,20 +187,38 @@ export class RosBridgeService {
     static async publishTopic(ros: Ros, topicName: string, messageType: string, message: JsonRecord): Promise<void> {
         const url = (ros as any).socket?.url || 'default';
         const cacheKey = `${url}:${topicName}:${messageType}`;
-        let topic = this.publisherCache.get(cacheKey);
+        let cached = this.publisherCache.get(cacheKey);
         let isNew = false;
+        let topic: any;
 
         const { Topic } = await this.loadRoslib();
 
-        if (!topic || topic.ros !== ros) {
+        if (!cached || cached.topic.ros !== ros) {
             topic = new Topic({
                 ros,
                 name: topicName,
                 messageType,
             });
-            this.publisherCache.set(cacheKey, topic);
+            cached = { topic };
+            this.publisherCache.set(cacheKey, cached);
             isNew = true;
+        } else {
+            topic = cached.topic;
+            if (cached.timer) {
+                clearTimeout(cached.timer);
+                cached.timer = undefined;
+            }
         }
+
+        // Set expiration timer to unadvertise stale topics
+        cached.timer = setTimeout(() => {
+            try {
+                topic.unadvertise();
+            } catch (err) {
+                // Ignore error if connection is closed
+            }
+            this.publisherCache.delete(cacheKey);
+        }, this.PUBLISHER_TTL_MS);
 
         if (isNew) {
             topic.advertise();
@@ -205,6 +227,43 @@ export class RosBridgeService {
 
         topic.publish(message);
     }
+
+    static async advertiseTopic(ros: Ros, topicName: string, messageType: string): Promise<void> {
+        const url = (ros as any).socket?.url || 'default';
+        const cacheKey = `${url}:${topicName}:${messageType}`;
+        let cached = this.publisherCache.get(cacheKey);
+        let topic: any;
+
+        const { Topic } = await this.loadRoslib();
+
+        if (!cached || cached.topic.ros !== ros) {
+            topic = new Topic({
+                ros,
+                name: topicName,
+                messageType,
+            });
+            topic.advertise();
+            cached = { topic };
+            this.publisherCache.set(cacheKey, cached);
+        } else {
+            topic = cached.topic;
+            if (cached.timer) {
+                clearTimeout(cached.timer);
+                cached.timer = undefined;
+            }
+        }
+
+        // Set expiration timer to unadvertise stale topics
+        cached.timer = setTimeout(() => {
+            try {
+                topic.unadvertise();
+            } catch (err) {
+                // Ignore error if connection is closed
+            }
+            this.publisherCache.delete(cacheKey);
+        }, this.PUBLISHER_TTL_MS);
+    }
+
 
     static async waitForTopicMessage(
         ros: Ros,
