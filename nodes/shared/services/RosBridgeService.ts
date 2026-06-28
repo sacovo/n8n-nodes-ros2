@@ -113,8 +113,11 @@ export class RosBridgeService {
         // Check if we have an active connection in the pool
         if (this.connectionPool.has(url)) {
             const pooledRos = this.connectionPool.get(url)!;
-            const socket = (pooledRos as any).socket;
-            if (socket && socket.readyState === 1) {
+            // roslib's Ros exposes the public `isConnected` getter. Do NOT use
+            // `(ros as any).socket.readyState` — the websocket lives on `ros.transport`,
+            // so `ros.socket` is always undefined, which silently disabled pooling and
+            // leaked a new connection on every node execution.
+            if (pooledRos.isConnected) {
                 return pooledRos;
             }
             this.connectionPool.delete(url);
@@ -122,6 +125,7 @@ export class RosBridgeService {
 
         const { Ros } = await this.loadRoslib();
         const ros = new Ros({ url });
+        (ros as any).socketUrl = url;
         const timeoutMs = credentials.connectTimeoutMs ?? 5000;
 
         await new Promise<void>((resolve, reject) => {
@@ -185,7 +189,7 @@ export class RosBridgeService {
     }
 
     static async publishTopic(ros: Ros, topicName: string, messageType: string, message: JsonRecord): Promise<void> {
-        const url = (ros as any).socket?.url || 'default';
+        const url = (ros as any).socketUrl || 'default';
         const cacheKey = `${url}:${topicName}:${messageType}`;
         let cached = this.publisherCache.get(cacheKey);
         let isNew = false;
@@ -229,7 +233,7 @@ export class RosBridgeService {
     }
 
     static async advertiseTopic(ros: Ros, topicName: string, messageType: string): Promise<void> {
-        const url = (ros as any).socket?.url || 'default';
+        const url = (ros as any).socketUrl || 'default';
         const cacheKey = `${url}:${topicName}:${messageType}`;
         let cached = this.publisherCache.get(cacheKey);
         let topic: any;
