@@ -6,7 +6,7 @@ import type {
     ILoadOptionsFunctions,
     INodeListSearchResult,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { RosBridgeService } from '../shared/services/RosBridgeService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
@@ -200,7 +200,7 @@ export class RosTopicCaptureImage implements INodeType {
 
                 const dataStr = result.data as string;
                 if (!dataStr) {
-                    throw new Error('Image message data is empty or missing.');
+                    throw new NodeOperationError(this.getNode(), 'Image message data is empty or missing.', { itemIndex: i });
                 }
 
                 const rawFormat = (result.format as string || 'jpeg').toLowerCase();

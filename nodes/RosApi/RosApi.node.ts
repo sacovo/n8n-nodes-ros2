@@ -164,16 +164,16 @@ export class RosApi implements INodeType {
                 },
                 options: [
                     {
+                        name: 'Get Definition', value: 'getDefinition',
+                        action: 'Get the expanded definition of a topic message type',
+                    },
+                    {
                         name: 'Get Details', value: 'getDetails',
                         action: 'Get details a topic',
                     },
                     {
                         name: 'Get Type', value: 'getType',
                         action: 'Get type a topic',
-                    },
-                    {
-                        name: 'Get Definition', value: 'getDefinition',
-                        action: 'Get the expanded definition of a topic message type',
                     },
                     {
                         name: 'List', value: 'list',
