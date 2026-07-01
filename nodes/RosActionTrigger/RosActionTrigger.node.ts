@@ -1,4 +1,5 @@
 import type {
+    IExecuteFunctions,
     INodeType,
     INodeTypeDescription,
     ITriggerFunctions,
@@ -89,7 +90,7 @@ export class RosActionTrigger implements INodeType {
                 },
             };
         } catch (error) {
-            NodeErrorHandler.handle(this as any, error as Error, 0);
+            NodeErrorHandler.handle(this as unknown as IExecuteFunctions, error as Error, 0);
             throw error;
         }
     }

@@ -5,6 +5,8 @@
 
 import type { Ros, rosapi } from 'roslib';
 
+export type ExpandedTypeDef = string | { [key: string]: ExpandedTypeDef | ExpandedTypeDef[] };
+
 export class RosApiService {
     private static loadRoslib() {
         // We use eval('import(...)') to prevent tsc from transpiling this to require(),
@@ -132,8 +134,8 @@ export class RosApiService {
         return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
             ros.getServiceRequestDetails(
                 type,
-                (result: any) => resolve(result.typedefs || result),
-                (error: any) => reject(new Error(error)),
+                (result) => resolve(result.typedefs),
+                (error) => reject(new Error(error)),
             );
         });
     }
@@ -142,8 +144,8 @@ export class RosApiService {
         return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
             ros.getServiceResponseDetails(
                 type,
-                (result: any) => resolve(result.typedefs || result),
-                (error: any) => reject(new Error(error)),
+                (result) => resolve(result.typedefs),
+                (error) => reject(new Error(error)),
             );
         });
     }
@@ -161,29 +163,28 @@ export class RosApiService {
     }
 
     private static async callRosapiService(ros: Ros, serviceName: string, serviceType: string, type: string): Promise<rosapi.TypeDef[]> {
-        const roslib = await this.loadRoslib() as any;
-        const Service = roslib.Service;
-        const ServiceRequest = roslib.ServiceRequest;
-        
+        const { Service } = await this.loadRoslib();
+
         return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
-            const client = new Service({
+            // roslib v2 services take a plain request object directly (there is
+            // no `ServiceRequest` wrapper class, unlike roslib v1).
+            const client = new Service<{ type: string }, unknown>({
                 ros,
                 name: `/rosapi/${serviceName}`,
-                serviceType: `rosapi/${serviceType}`
+                serviceType: `rosapi/${serviceType}`,
             });
-            const request = new ServiceRequest({ type });
             client.callService(
-                request,
-                (result: any) => {
-                    if (result && Array.isArray(result.typedefs)) {
-                        resolve(result.typedefs);
+                { type },
+                (result) => {
+                    if (result && typeof result === 'object' && Array.isArray((result as { typedefs?: unknown }).typedefs)) {
+                        resolve((result as { typedefs: rosapi.TypeDef[] }).typedefs);
                     } else if (Array.isArray(result)) {
-                        resolve(result);
+                        resolve(result as rosapi.TypeDef[]);
                     } else {
                         resolve([]);
                     }
                 },
-                (error: any) => reject(new Error(error))
+                (error) => reject(new Error(error)),
             );
         });
     }
@@ -193,19 +194,19 @@ export class RosApiService {
      * @param typeName The root type to expand
      * @param typedefs Array of type definitions (from rosapi)
      */
-    static expandTypeDef(typeName: string, typedefs: rosapi.TypeDef[]): any {
+    static expandTypeDef(typeName: string, typedefs: rosapi.TypeDef[]): ExpandedTypeDef {
         const typedef = typedefs.find(t => t.type === typeName);
         if (!typedef) {
             return typeName;
         }
 
-        const result: Record<string, any> = {};
+        const result: { [key: string]: ExpandedTypeDef | ExpandedTypeDef[] } = {};
         for (let i = 0; i < typedef.fieldnames.length; i++) {
             const name = typedef.fieldnames[i];
             const type = typedef.fieldtypes[i];
             const arrayLen = typedef.fieldarraylen[i];
 
-            let expandedType;
+            let expandedType: ExpandedTypeDef;
             if (type === typeName) {
                 expandedType = type;
             } else {

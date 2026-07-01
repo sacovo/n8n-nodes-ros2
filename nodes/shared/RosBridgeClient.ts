@@ -91,7 +91,7 @@ export async function connectRos(credentials: RosBridgeCredentialsData): Promise
 
     const { Ros } = await loadRoslib();
     const ros = new Ros({ url });
-    (ros as any).socketUrl = url;
+    ros.socketUrl = url;
     const timeoutMs = credentials.connectTimeoutMs ?? 5000;
 
     await new Promise<void>((resolve, reject) => {
@@ -146,6 +146,7 @@ export async function connectRos(credentials: RosBridgeCredentialsData): Promise
 }
 
 export function closeRos(ros: Ros): void {
+    void ros;
     // With connection pooling, we don't want to actually close the connection
     // on every node execution, as ROS 2 discovery takes time.
     // The connection will stay open until the process ends or the server closes it.
@@ -194,7 +195,7 @@ export async function publishRosTopic(
         wait: number;
     },
 ): Promise<void> {
-    const url = (ros as any).socketUrl || 'default';
+    const url = ros.socketUrl || 'default';
     const cacheKey = `${url}:${topicName}:${messageType}`;
     let cached = publisherCache.get(cacheKey);
     let isNew = false;
@@ -218,7 +219,7 @@ export async function publishRosTopic(
     cached.timer = setTimeout(() => {
         try {
             topic.unadvertise();
-        } catch (err) {
+        } catch {
             // Ignore error if connection is closed
         }
         publisherCache.delete(cacheKey);
@@ -250,7 +251,7 @@ export async function advertiseRosTopic(
     topicName: string,
     messageType: string,
 ): Promise<void> {
-    const url = (ros as any).socketUrl || 'default';
+    const url = ros.socketUrl || 'default';
     const cacheKey = `${url}:${topicName}:${messageType}`;
     let cached = publisherCache.get(cacheKey);
 
@@ -270,7 +271,7 @@ export async function advertiseRosTopic(
     cached.timer = setTimeout(() => {
         try {
             cached.topic.unadvertise();
-        } catch (err) {
+        } catch {
             // Ignore error
         }
         publisherCache.delete(cacheKey);

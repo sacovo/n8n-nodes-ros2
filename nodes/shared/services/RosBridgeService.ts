@@ -3,7 +3,7 @@
  * This service is independent of n8n framework and can be easily tested
  */
 
-import type { ActionClient, Goal, Ros } from 'roslib';
+import type { ActionClient, Goal, Ros, SimpleActionServer, Topic } from 'roslib';
 
 export type JsonRecord = Record<string, unknown>;
 
@@ -58,10 +58,10 @@ export class RosBridgeService {
         9: 'LOST',
     };
 
-    private static goalRegistry = new Map<string, any>();
+    private static goalRegistry = new Map<string, SimpleActionServer>();
     private static connectionPool = new Map<string, Ros>();
     private static readonly PUBLISHER_TTL_MS = process.env.ROS_PUBLISHER_TTL_MS ? parseInt(process.env.ROS_PUBLISHER_TTL_MS, 10) : 300000;
-    private static publisherCache = new Map<string, { topic: any; timer?: ReturnType<typeof setTimeout> }>();
+    private static publisherCache = new Map<string, { topic: Topic; timer?: ReturnType<typeof setTimeout> }>();
 
     private static async sleep(ms: number): Promise<void> {
         return new Promise((resolve) => setTimeout(resolve, ms));
@@ -125,7 +125,7 @@ export class RosBridgeService {
 
         const { Ros } = await this.loadRoslib();
         const ros = new Ros({ url });
-        (ros as any).socketUrl = url;
+        ros.socketUrl = url;
         const timeoutMs = credentials.connectTimeoutMs ?? 5000;
 
         await new Promise<void>((resolve, reject) => {
@@ -184,16 +184,17 @@ export class RosBridgeService {
     }
 
     static close(ros: Ros | null | undefined): void {
+        void ros;
         // With connection pooling, we don't want to actually close the connection
         // on every node execution, as ROS 2 discovery takes time.
     }
 
     static async publishTopic(ros: Ros, topicName: string, messageType: string, message: JsonRecord): Promise<void> {
-        const url = (ros as any).socketUrl || 'default';
+        const url = ros.socketUrl || 'default';
         const cacheKey = `${url}:${topicName}:${messageType}`;
         let cached = this.publisherCache.get(cacheKey);
         let isNew = false;
-        let topic: any;
+        let topic: Topic;
 
         const { Topic } = await this.loadRoslib();
 
@@ -218,7 +219,7 @@ export class RosBridgeService {
         cached.timer = setTimeout(() => {
             try {
                 topic.unadvertise();
-            } catch (err) {
+            } catch {
                 // Ignore error if connection is closed
             }
             this.publisherCache.delete(cacheKey);
@@ -233,10 +234,10 @@ export class RosBridgeService {
     }
 
     static async advertiseTopic(ros: Ros, topicName: string, messageType: string): Promise<void> {
-        const url = (ros as any).socketUrl || 'default';
+        const url = ros.socketUrl || 'default';
         const cacheKey = `${url}:${topicName}:${messageType}`;
         let cached = this.publisherCache.get(cacheKey);
-        let topic: any;
+        let topic: Topic;
 
         const { Topic } = await this.loadRoslib();
 
@@ -261,7 +262,7 @@ export class RosBridgeService {
         cached.timer = setTimeout(() => {
             try {
                 topic.unadvertise();
-            } catch (err) {
+            } catch {
                 // Ignore error if connection is closed
             }
             this.publisherCache.delete(cacheKey);
@@ -466,29 +467,19 @@ export class RosBridgeService {
             actionName,
         }) as ActionClient<JsonRecord, unknown, unknown>;
 
-        // We create a dummy goal object just to use its result listener, 
-        // but we need to associate it with the existing goalId.
-        // roslib's Goal doesn't easily allow attaching to an existing ID for result listening 
-        // without sending it, so we might need to use the service directly or 
-        // hack the Goal object.
-        
-        // Alternative: Use the service directly /_action/get_result
-        // The result service type is usually {action_type}_GetResult
-        // But rosbridge often handles the mapping.
-        
         return new Promise<JsonRecord>((resolve, reject) => {
             const timer = setTimeout(() => {
                 actionClient.dispose();
                 reject(new RosBridgeTimeoutError(`Timeout waiting for result of goal "${goalId}" on "${serverName}"`));
             }, timeoutMs);
 
-            // Standard roslib ActionClient approach:
+            // We create a dummy goal object just to use its result listener,
+            // then re-key it onto the existing goalId (see attachExistingGoalId).
             const goal = new Goal({
                 actionClient,
                 goalMessage: {},
             });
-            // Override the generated ID
-            (goal as any).goalID = { id: goalId };
+            this.attachExistingGoalId(actionClient, goal, goalId);
 
             goal.on('result', (result) => {
                 clearTimeout(timer);
@@ -522,7 +513,7 @@ export class RosBridgeService {
             actionClient,
             goalMessage: {},
         });
-        (goal as any).goalID = { id: goalId };
+        this.attachExistingGoalId(actionClient, goal, goalId);
 
         return new Promise<JsonRecord>((resolve, reject) => {
             try {
@@ -573,7 +564,7 @@ export class RosBridgeService {
             actionName,
         });
 
-        const onGoal = (goalMessage: any) => {
+        const onGoal = (goalMessage: unknown) => {
             const goalId = server.currentGoal?.goal_id?.id || `goal-${Date.now()}`;
             this.goalRegistry.set(goalId, server);
             callback(goalMessage as JsonRecord, goalId);
@@ -631,7 +622,7 @@ export class RosBridgeService {
             actionClient,
             goalMessage: {},
         });
-        (goal as any).goalID = { id: goalId };
+        this.attachExistingGoalId(actionClient, goal, goalId);
 
         return new Promise<JsonRecord>((resolve, reject) => {
             const timer = setTimeout(() => {
@@ -648,8 +639,25 @@ export class RosBridgeService {
     }
 
     private static extractGoalId(goal: Goal<JsonRecord>): string {
-        const goalWithId = goal as unknown as { goalID?: { id?: string } };
-        return goalWithId.goalID?.id || `goal-${Date.now()}`;
+        return goal.goalID || `goal-${Date.now()}`;
+    }
+
+    /**
+     * Re-keys a freshly constructed dummy Goal so it represents an existing
+     * goal (identified by goalId) instead of the goal roslib auto-generated
+     * at construction time. Needed because Goal's constructor bakes its
+     * random goalID into goalMessage.goal_id.id and actionClient.goals[]
+     * before we get a chance to override it.
+     */
+    private static attachExistingGoalId(
+        actionClient: ActionClient<JsonRecord, unknown, unknown>,
+        goal: Goal<JsonRecord>,
+        goalId: string,
+    ): void {
+        delete actionClient.goals[goal.goalID];
+        goal.goalID = goalId;
+        goal.goalMessage.goal_id.id = goalId;
+        actionClient.goals[goalId] = goal;
     }
 }
 

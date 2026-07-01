@@ -1,6 +1,7 @@
 import { RosServiceTrigger } from '../RosServiceTrigger.node';
 import { RosBridgeService } from '../../shared/services/RosBridgeService';
 import type { ITriggerFunctions } from 'n8n-workflow';
+import type { Ros } from 'roslib';
 
 jest.mock('../../shared/services/RosBridgeService');
 
@@ -23,7 +24,7 @@ describe('RosServiceTrigger', () => {
             },
         } as unknown as jest.Mocked<ITriggerFunctions>;
 
-        (RosBridgeService.connect as jest.Mock).mockResolvedValue({} as any);
+        (RosBridgeService.connect as jest.Mock).mockResolvedValue({} as unknown as Ros);
     });
 
     it('should advertise a service and emit request on call', async () => {
