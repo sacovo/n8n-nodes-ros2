@@ -25,7 +25,7 @@ describe('RosApi', () => {
     let node: RosApi;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        jest.resetAllMocks();
         node = new RosApi();
     });
 
@@ -66,6 +66,119 @@ describe('RosApi', () => {
             expect(mockRosBridgeService.connect).toHaveBeenCalled();
             expect(mockRosApiService.getTopics).toHaveBeenCalled();
             expect(mockRosBridgeService.close).toHaveBeenCalled();
+        });
+
+        it('should get topics filtered by grep pattern successfully', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'list';
+                return '';
+            });
+
+            mockParameterExtractor.extractOptionalString.mockImplementation((node, index, name) => {
+                if (name === 'grep') return 'chat';
+                return undefined;
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getTopics.mockResolvedValue({
+                topics: ['/chatter', '/cmd_vel', '/chatter_debug'],
+                types: ['std_msgs/String', 'geometry_msgs/Twist', 'std_msgs/String'],
+            });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toHaveLength(1);
+            expect(result[0][0].json).toEqual({
+                operation: 'list',
+                resource: 'topic',
+                topics: ['/chatter', '/chatter_debug'],
+                types: ['std_msgs/String', 'std_msgs/String'],
+                retrievedAt: expect.any(String),
+            });
+        });
+
+        it('should get topics filtered by grep regex pattern successfully', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'list';
+                return '';
+            });
+
+            mockParameterExtractor.extractOptionalString.mockImplementation((node, index, name) => {
+                if (name === 'grep') return '^/cmd_.*$';
+                return undefined;
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getTopics.mockResolvedValue({
+                topics: ['/chatter', '/cmd_vel', '/chatter_debug'],
+                types: ['std_msgs/String', 'geometry_msgs/Twist', 'std_msgs/String'],
+            });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toEqual({
+                operation: 'list',
+                resource: 'topic',
+                topics: ['/cmd_vel'],
+                types: ['geometry_msgs/Twist'],
+                retrievedAt: expect.any(String),
+            });
+        });
+
+        it('should fallback to plain substring case-insensitive match when grep regex is invalid', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'list';
+                return '';
+            });
+
+            mockParameterExtractor.extractOptionalString.mockImplementation((node, index, name) => {
+                if (name === 'grep') return 'chatter[';
+                return undefined;
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getTopics.mockResolvedValue({
+                topics: ['/chatter', '/cmd_vel', '/chatter_debug', '/chatter['],
+                types: ['std_msgs/String', 'geometry_msgs/Twist', 'std_msgs/String', 'std_msgs/String'],
+            });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toEqual({
+                operation: 'list',
+                resource: 'topic',
+                topics: ['/chatter['],
+                types: ['std_msgs/String'],
+                retrievedAt: expect.any(String),
+            });
         });
 
         it('should get services successfully', async () => {

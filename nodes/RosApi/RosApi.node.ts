@@ -286,6 +286,18 @@ export class RosApi implements INodeType {
                 },
                 description: 'The ROS type (e.g., std_msgs/String). If not provided, it will be inferred from the name.',
             },
+            {
+                displayName: 'Grep Pattern',
+                name: 'grep',
+                type: 'string',
+                default: '',
+                displayOptions: {
+                    show: {
+                        operation: ['list', 'listForType'],
+                    },
+                },
+                description: 'Filter list results using a regular expression or plain text (case-insensitive)',
+            },
         ],
     };
 
@@ -310,7 +322,7 @@ export class RosApi implements INodeType {
 
                 const metadata: Record<string, unknown> = { operation, resource };
 
-                const result = await runOperation(resource, operation, ros, this);
+                const result = await runOperation(resource, operation, ros, this, i);
 
                 returnData.push({
                     json: {
@@ -344,48 +356,83 @@ export class RosApi implements INodeType {
 type RosResource = 'action' | 'node' | 'parameter' | 'service' | 'topic';
 type RosOperation = 'list' | 'getDetails' | 'get' | 'set' | 'getType' | 'listForType' | 'getDefinition';
 
-async function runOperation(resource: RosResource, operation: RosOperation, ros: Ros, node: IExecuteFunctions) {
+async function runOperation(resource: RosResource, operation: RosOperation, ros: Ros, node: IExecuteFunctions, itemIndex: number) {
     const actionKey: `${RosOperation}:${RosResource}` = `${operation}:${resource}`;
     switch (actionKey) {
         case 'list:topic':
             {
                 const topicsResult = await RosApiService.getTopics(ros);
+                let topics = topicsResult.topics;
+                let types = topicsResult.types;
+                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+                if (grep) {
+                    const filteredTopics: string[] = [];
+                    const filteredTypes: string[] = [];
+                    for (let idx = 0; idx < topics.length; idx++) {
+                        const topic = topics[idx];
+                        const type = types[idx];
+                        if (matchesPattern(topic, grep) || (type && matchesPattern(type, grep))) {
+                            filteredTopics.push(topic);
+                            if (types.length > idx) {
+                                filteredTypes.push(type);
+                            }
+                        }
+                    }
+                    topics = filteredTopics;
+                    types = filteredTypes;
+                }
                 return {
-                    topics: topicsResult.topics,
-                    types: topicsResult.types,
+                    topics,
+                    types,
                 };
             }
         case 'list:service':
             {
-                const services = await RosApiService.getServices(ros);
+                let services = await RosApiService.getServices(ros);
+                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+                if (grep) {
+                    services = services.filter(service => matchesPattern(service, grep));
+                }
                 return {
                     services,
                 };
             }
         case 'list:node':
             {
-                const nodes = await RosApiService.getNodes(ros);
+                let nodes = await RosApiService.getNodes(ros);
+                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+                if (grep) {
+                    nodes = nodes.filter(n => matchesPattern(n, grep));
+                }
                 return {
                     nodes,
                 };
             }
         case 'list:action':
             {
-                const actionServers = await RosApiService.getActionServers(ros);
+                let actionServers = await RosApiService.getActionServers(ros);
+                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+                if (grep) {
+                    actionServers = actionServers.filter(action => matchesPattern(action, grep));
+                }
                 return {
                     actionServers,
                 };
             }
         case 'list:parameter':
             {
-                const parameters = await RosApiService.getParams(ros);
+                let parameters = await RosApiService.getParams(ros);
+                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+                if (grep) {
+                    parameters = parameters.filter(param => matchesPattern(param, grep));
+                }
                 return {
                     parameters,
                 };
             }
         case 'getType:topic':
             {
-                const topicName = ParameterExtractor.extractRequiredString(node, 0, 'topicName');
+                const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
                 const topicType = await RosApiService.getTopicType(ros, topicName);
                 return {
                     topicName,
@@ -394,7 +441,7 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'getDetails:node':
             {
-                const nodeName = ParameterExtractor.extractRequiredString(node, 0, 'nodeName');
+                const nodeName = ParameterExtractor.extractRequiredString(node, itemIndex, 'nodeName');
                 const nodeDetails = await RosApiService.getNodeDetails(ros, nodeName);
                 return {
                     nodeName,
@@ -403,7 +450,7 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'get:parameter':
             {
-                const parameterName = ParameterExtractor.extractRequiredString(node, 0, 'parameterName');
+                const parameterName = ParameterExtractor.extractRequiredString(node, itemIndex, 'parameterName');
                 const parameterValue = await RosApiService.getParam(ros, parameterName);
                 return {
                     parameterName,
@@ -412,8 +459,8 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'set:parameter':
             {
-                const parameterName = ParameterExtractor.extractRequiredString(node, 0, 'parameterName');
-                const parameterValueRaw = ParameterExtractor.extractRequiredString(node, 0, 'parameterValue');
+                const parameterName = ParameterExtractor.extractRequiredString(node, itemIndex, 'parameterName');
+                const parameterValueRaw = ParameterExtractor.extractRequiredString(node, itemIndex, 'parameterValue');
                 let parameterValue: unknown;
                 try {
                     parameterValue = JSON.parse(parameterValueRaw);
@@ -430,7 +477,7 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'getType:service':
             {
-                const serviceName = ParameterExtractor.extractRequiredString(node, 0, 'serviceName');
+                const serviceName = ParameterExtractor.extractRequiredString(node, itemIndex, 'serviceName');
                 const serviceType = await RosApiService.getServiceType(ros, serviceName);
                 return {
                     serviceName,
@@ -439,9 +486,9 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'getDefinition:topic':
             {
-                let messageType = ParameterExtractor.extractOptionalString(node, 0, 'messageType');
+                let messageType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
                 if (!messageType) {
-                    const topicName = ParameterExtractor.extractRequiredString(node, 0, 'topicName');
+                    const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
                     messageType = await RosApiService.getTopicType(ros, topicName);
                 }
                 const typedefs = await RosApiService.getMessageDetails(ros, messageType as string);
@@ -453,9 +500,9 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'getDefinition:service':
             {
-                let serviceType = ParameterExtractor.extractOptionalString(node, 0, 'messageType');
+                let serviceType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
                 if (!serviceType) {
-                    const serviceName = ParameterExtractor.extractRequiredString(node, 0, 'serviceName');
+                    const serviceName = ParameterExtractor.extractRequiredString(node, itemIndex, 'serviceName');
                     serviceType = await RosApiService.getServiceType(ros, serviceName);
                 }
                 const [requestDetails, responseDetails] = await Promise.all([
@@ -470,7 +517,7 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'getDefinition:action':
             {
-                const actionType = ParameterExtractor.extractOptionalString(node, 0, 'messageType');
+                const actionType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
                 if (!actionType) {
                     // We don't have getActionType yet, so for now we require the type
                     throw new NodeApiError(node.getNode(), { message: 'Action Type (Message Type) is required for getDefinition:action' });
@@ -480,6 +527,7 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
                     RosApiService.getActionResultDetails(ros, actionType as string),
                     RosApiService.getActionFeedbackDetails(ros, actionType as string),
                 ]);
+
                 return {
                     actionType,
                     goal: RosApiService.expandTypeDef(actionType as string, goalDetails),
@@ -489,7 +537,7 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'getDetails:topic':
             {
-                const topicName = ParameterExtractor.extractRequiredString(node, 0, 'topicName');
+                const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
                 const topicDetails = await RosApiService.getMessageDetails(ros, topicName);
                 return {
                     topicName,
@@ -499,8 +547,12 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
 
         case 'listForType:topic':
             {
-                const messageType = ParameterExtractor.extractRequiredString(node, 0, 'messageType');
-                const topics = await RosApiService.getTopicsForType(ros, messageType);
+                const messageType = ParameterExtractor.extractRequiredString(node, itemIndex, 'messageType');
+                let topics = await RosApiService.getTopicsForType(ros, messageType);
+                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+                if (grep) {
+                    topics = topics.filter(topic => matchesPattern(topic, grep));
+                }
                 return {
                     messageType,
                     topics,
@@ -508,8 +560,12 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'listForType:service':
             {
-                const messageType = ParameterExtractor.extractRequiredString(node, 0, 'messageType');
-                const services = await RosApiService.getServicesForType(ros, messageType);
+                const messageType = ParameterExtractor.extractRequiredString(node, itemIndex, 'messageType');
+                let services = await RosApiService.getServicesForType(ros, messageType);
+                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+                if (grep) {
+                    services = services.filter(service => matchesPattern(service, grep));
+                }
                 return {
                     messageType,
                     services,
@@ -518,5 +574,14 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
 
         default:
             throw new NodeApiError(node.getNode(), { message: `Unsupported operation: ${operation}:${resource}!` });
+    }
+}
+
+function matchesPattern(text: string, pattern: string): boolean {
+    try {
+        const regex = new RegExp(pattern, 'i');
+        return regex.test(text);
+    } catch {
+        return text.toLowerCase().includes(pattern.toLowerCase());
     }
 }
