@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- ROS2 API node can now return the full topic/service/action structure of a node via Get Definition, with custom message types expanded.
+- Option to combine topic list output into name/type pairs.
+- Working credential Test buttons for the rosbridge and Docker credentials.
+- Trigger nodes (ROS2 Topic/Service/Action Trigger) now automatically reconnect their subscriptions when the rosbridge connection drops.
+- Canvas subtitles on all nodes.
+- AI-agent-oriented tool descriptions so nodes read better when used as AI tools.
+
+### Changed
+
+- Resource mapper fields now show expanded nested type structures for message, service, and action definitions.
+- Payload JSON field descriptions now point at the rosapi Get Definition operation.
+- Consolidated the legacy RosBridgeClient into the shared service classes (internal refactor).
+- **Breaking:** topic messages no longer include a duplicate `rawMessage` field alongside `message`; update workflows that read `rawMessage`.
+
+### Fixed
+
+- Conditions filter on ROS2 Topic Trigger and ROS2 Topic Next Message now actually filters incoming messages.
+- ROS2 Topic Trigger no longer fails on activation when the topic is picked from the list, and ROS2 Topic Next Message reads its parameters per item.
+- rosapi topic Get Details now resolves the message type before fetching its typedefs.
+- Duplicate resource locator mode name in ROS2 Action Status.
+- Removed the broken Fixed (Mapper) payload mode from ROS2 Action Send Feedback.
+- Hardened rosbridge connection pooling against concurrent connect races, closing abandoned handshake sockets instead of leaking them.
+- Goal registry entries are now purged when an action trigger tears down or reconnects, preventing stale goal state.
+
 ## 0.1.0
 
 - Initial ROS2 integration via rosbridge credentials.
