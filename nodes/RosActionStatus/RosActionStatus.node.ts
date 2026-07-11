@@ -79,7 +79,7 @@ export class RosActionStatus implements INodeType {
                 modes: [
                     {
                         displayName: 'Detected',
-                        name: 'list',
+                        name: 'detected',
                         type: 'list',
                         typeOptions: {
                             searchListMethod: 'getDetectedStatusTopic',
