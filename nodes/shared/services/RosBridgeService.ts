@@ -60,6 +60,7 @@ export class RosBridgeService {
 
     private static goalRegistry = new Map<string, SimpleActionServer>();
     private static connectionPool = new Map<string, Ros>();
+    private static pendingConnections = new Map<string, Promise<Ros>>();
     private static readonly PUBLISHER_TTL_MS = process.env.ROS_PUBLISHER_TTL_MS ? parseInt(process.env.ROS_PUBLISHER_TTL_MS, 10) : 300000;
     private static publisherCache = new Map<string, { topic: Topic; timer?: ReturnType<typeof setTimeout> }>();
 
@@ -123,24 +124,49 @@ export class RosBridgeService {
             this.connectionPool.delete(url);
         }
 
+        // Deduplicate concurrent connects to the same URL. Without this,
+        // parallel node executions each open their own websocket, only the
+        // last one stays referenced in the pool and the rest leak — the same
+        // failure mode as the `ros.socket.readyState` bug fixed earlier.
+        const pending = this.pendingConnections.get(url);
+        if (pending) {
+            return pending;
+        }
+
+        const connectPromise = this.establishConnection(url, credentials.connectTimeoutMs ?? 5000)
+            .finally(() => {
+                this.pendingConnections.delete(url);
+            });
+        this.pendingConnections.set(url, connectPromise);
+        return connectPromise;
+    }
+
+    private static async establishConnection(url: string, timeoutMs: number): Promise<Ros> {
         const { Ros } = await this.loadRoslib();
         const ros = new Ros({ url });
         ros.socketUrl = url;
-        const timeoutMs = credentials.connectTimeoutMs ?? 5000;
 
         await new Promise<void>((resolve, reject) => {
             let settled = false;
 
-            const timer = setTimeout(() => {
+            const abort = (error: Error) => {
                 if (settled) {
                     return;
                 }
                 settled = true;
-                reject(
-                    new RosBridgeTimeoutError(
-                        `Connection to rosbridge timed out after ${timeoutMs}ms (${url})`,
-                    ),
-                );
+                clearTimeout(timer);
+                // Close the half-open socket so it cannot finish the handshake
+                // later and linger as an unpooled, never-closed connection.
+                try {
+                    ros.close();
+                } catch {
+                    // Ignore errors from closing a socket that never opened
+                }
+                reject(error);
+            };
+
+            const timer = setTimeout(() => {
+                abort(new RosBridgeTimeoutError(`Connection to rosbridge timed out after ${timeoutMs}ms (${url})`));
             }, timeoutMs);
 
             const onConnection = () => {
@@ -152,17 +178,10 @@ export class RosBridgeService {
                 resolve();
             };
 
-            const onError = (event: unknown) => {
-                if (settled) {
-                    return;
-                }
-                settled = true;
-                clearTimeout(timer);
-                reject(new RosBridgeConnectionError(`Could not connect to rosbridge: ${this.safeJsonStringify(event)}`));
-            };
-
             ros.once('connection', onConnection);
-            ros.once('error', onError);
+            ros.once('error', (event: unknown) => {
+                abort(new RosBridgeConnectionError(`Could not connect to rosbridge: ${this.safeJsonStringify(event)}`));
+            });
         });
 
         // Cache the connection and handle cleanup
