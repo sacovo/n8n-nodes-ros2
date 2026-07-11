@@ -3,10 +3,86 @@
  */
 
 import { RosApiService } from '../services/RosApiService';
+import { RosBridgeService } from '../services/RosBridgeService';
 import type { Ros, rosapi } from 'roslib';
 
 type SuccessCallback<T> = (result: T) => void;
 type ErrorCallback = (error: string) => void;
+
+describe('RosApiService.getInterfaceDescription', () => {
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
+    function buildRosWithTopics(topics: string[]): Ros {
+        return {
+            getTopics: jest.fn((cb: (result: rosapi.TopicsResponse) => void) =>
+                cb({ topics, types: topics.map(() => 'std_msgs/msg/String') }),
+            ),
+        } as unknown as Ros;
+    }
+
+    it('reads the latched /desc topic when it exists', async () => {
+        const ros = buildRosWithTopics(['/cmd_vel', '/cmd_vel/desc']);
+        const waitSpy = jest
+            .spyOn(RosBridgeService, 'waitForTopicMessage')
+            .mockResolvedValue({ data: 'Drive command for the rover base, m/s and rad/s' });
+
+        const description = await RosApiService.getInterfaceDescription(ros, '/cmd_vel');
+
+        expect(description).toBe('Drive command for the rover base, m/s and rad/s');
+        expect(waitSpy).toHaveBeenCalledWith(ros, '/cmd_vel/desc', 'std_msgs/msg/String', 2000);
+    });
+
+    it('returns null without subscribing when no /desc topic exists', async () => {
+        const ros = buildRosWithTopics(['/cmd_vel']);
+        const waitSpy = jest.spyOn(RosBridgeService, 'waitForTopicMessage');
+
+        const description = await RosApiService.getInterfaceDescription(ros, '/cmd_vel');
+
+        expect(description).toBeNull();
+        expect(waitSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns null when the /desc subscription times out', async () => {
+        const ros = buildRosWithTopics(['/cmd_vel', '/cmd_vel/desc']);
+        jest.spyOn(RosBridgeService, 'waitForTopicMessage').mockRejectedValue(new Error('timeout'));
+
+        expect(await RosApiService.getInterfaceDescription(ros, '/cmd_vel')).toBeNull();
+    });
+});
+
+describe('RosApiService.getTopicRawDefinition', () => {
+    const rawTypesResponse = {
+        topics: ['/cmd_vel', '/chatter'],
+        types: ['geometry_msgs/msg/Twist', 'std_msgs/msg/String'],
+        typedefs_full_text: [
+            '# Velocity command\nVector3 linear # m/s\nVector3 angular # rad/s',
+            'string data',
+        ],
+    };
+
+    function buildRos(): Ros {
+        return {
+            getTopicsAndRawTypes: jest.fn((cb: (result: typeof rawTypesResponse) => void) => cb(rawTypesResponse)),
+        } as unknown as Ros;
+    }
+
+    it('returns the raw definition for a topic name', async () => {
+        const raw = await RosApiService.getTopicRawDefinition(buildRos(), '/cmd_vel');
+        expect(raw).toContain('# m/s');
+    });
+
+    it('falls back to matching by message type', async () => {
+        const raw = await RosApiService.getTopicRawDefinition(buildRos(), '/some_other_topic', 'std_msgs/msg/String');
+        expect(raw).toBe('string data');
+    });
+
+    it('returns null when neither topic nor type is active', async () => {
+        const raw = await RosApiService.getTopicRawDefinition(buildRos(), '/unknown', 'pkg/msg/Unknown');
+        expect(raw).toBeNull();
+    });
+});
 
 describe('RosApiService.getNodeDefinition', () => {
     const stringTypeDef: rosapi.TypeDef = {

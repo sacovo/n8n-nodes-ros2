@@ -27,7 +27,7 @@ export class RosApi implements INodeType {
         },
         usableAsTool: {
             replacements: {
-                description: 'Discover the live ROS2 graph: list topics, services, nodes, action servers, and parameters, get their types, and look up node details. Crucially, the "getDefinition" operation returns the fully expanded JSON structure (including nested custom types) of any message, service, or action type. Always call this tool first to learn the exact payload shape before publishing to a topic, calling a service, or starting an action.',
+                description: 'Discover the live ROS2 graph: list topics, services, nodes, action servers, and parameters, get their types, and look up node details. Crucially, the "getDefinition" operation returns the fully expanded JSON structure (including nested custom types) of any message, service, or action type. The "getType" operation can additionally return human-written documentation: a description of how the specific topic/service is used, and the raw message definition whose comments document units and allowed values. Always call this tool first to learn the exact payload shape before publishing to a topic, calling a service, or starting an action.',
             },
         },
         inputs: [NodeConnectionTypes.Main],
@@ -158,7 +158,7 @@ export class RosApi implements INodeType {
                     {
                         name: 'Get Type', value: 'getType',
                         action: 'Get the type of a service',
-                        description: 'Get the service type of a service by its name',
+                        description: 'Get the service type of a service by its name, optionally with its documentation (description)',
                     },
                     {
                         name: 'List', value: 'list',
@@ -198,7 +198,7 @@ export class RosApi implements INodeType {
                     {
                         name: 'Get Type', value: 'getType',
                         action: 'Get the type of a topic',
-                        description: 'Get the message type of a topic by its name',
+                        description: 'Get the message type of a topic by its name, optionally with its documentation (description and raw message definition including comments)',
                     },
                     {
                         name: 'List', value: 'list',
@@ -326,6 +326,32 @@ export class RosApi implements INodeType {
                     },
                 },
                 description: 'The ROS type (e.g., std_msgs/String). If not provided, it will be inferred from the name.',
+            },
+            {
+                displayName: 'Include Description',
+                name: 'includeDescription',
+                type: 'boolean',
+                default: false,
+                displayOptions: {
+                    show: {
+                        resource: ['topic', 'service'],
+                        operation: ['getType'],
+                    },
+                },
+                description: 'Whether to also read the latched &lt;name&gt;/desc documentation topic (std_msgs/String, published by the node owning this interface) and return its text as "description". Null when the interface is undocumented.',
+            },
+            {
+                displayName: 'Include Raw Definition',
+                name: 'includeRawDefinition',
+                type: 'boolean',
+                default: false,
+                displayOptions: {
+                    show: {
+                        resource: ['topic'],
+                        operation: ['getType'],
+                    },
+                },
+                description: 'Whether to also return the raw message definition text as written in the .msg source, including comments that document units and allowed values. Only available for message types currently used by an active topic; null otherwise.',
             },
             {
                 displayName: 'Grep Pattern',
@@ -500,10 +526,17 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             {
                 const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
                 const topicType = await RosApiService.getTopicType(ros, topicName);
-                return {
+                const result: Record<string, unknown> = {
                     topicName,
                     topicType,
                 };
+                if (node.getNodeParameter('includeDescription', itemIndex, false) as boolean) {
+                    result.description = await RosApiService.getInterfaceDescription(ros, topicName);
+                }
+                if (node.getNodeParameter('includeRawDefinition', itemIndex, false) as boolean) {
+                    result.rawDefinition = await RosApiService.getTopicRawDefinition(ros, topicName, topicType);
+                }
+                return result;
             }
         case 'getDetails:node':
             {
@@ -545,10 +578,14 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             {
                 const serviceName = ParameterExtractor.extractRequiredString(node, itemIndex, 'serviceName');
                 const serviceType = await RosApiService.getServiceType(ros, serviceName);
-                return {
+                const result: Record<string, unknown> = {
                     serviceName,
                     serviceType,
                 };
+                if (node.getNodeParameter('includeDescription', itemIndex, false) as boolean) {
+                    result.description = await RosApiService.getInterfaceDescription(ros, serviceName);
+                }
+                return result;
             }
         case 'getDefinition:topic':
             {

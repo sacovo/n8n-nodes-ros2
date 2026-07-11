@@ -483,6 +483,102 @@ describe('RosApi', () => {
             }
         });
 
+        it('should include description and raw definition on getType:topic when the options are enabled', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockImplementation((name) => {
+                    if (name === 'includeDescription') return true;
+                    if (name === 'includeRawDefinition') return true;
+                    return false;
+                }),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'getType';
+                if (name === 'topicName') return '/cmd_vel';
+                return '';
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getTopicType.mockResolvedValue('geometry_msgs/msg/Twist');
+            mockRosApiService.getInterfaceDescription.mockResolvedValue('Drive command for the rover base');
+            mockRosApiService.getTopicRawDefinition.mockResolvedValue('Vector3 linear # m/s');
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({
+                topicName: '/cmd_vel',
+                topicType: 'geometry_msgs/msg/Twist',
+                description: 'Drive command for the rover base',
+                rawDefinition: 'Vector3 linear # m/s',
+            });
+            expect(mockRosApiService.getInterfaceDescription).toHaveBeenCalledWith(expect.anything(), '/cmd_vel');
+            expect(mockRosApiService.getTopicRawDefinition).toHaveBeenCalledWith(expect.anything(), '/cmd_vel', 'geometry_msgs/msg/Twist');
+        });
+
+        it('should not fetch documentation on getType:topic when the options are off', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(false),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'getType';
+                if (name === 'topicName') return '/cmd_vel';
+                return '';
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getTopicType.mockResolvedValue('geometry_msgs/msg/Twist');
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).not.toHaveProperty('description');
+            expect(result[0][0].json).not.toHaveProperty('rawDefinition');
+            expect(mockRosApiService.getInterfaceDescription).not.toHaveBeenCalled();
+            expect(mockRosApiService.getTopicRawDefinition).not.toHaveBeenCalled();
+        });
+
+        it('should include description on getType:service when enabled', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockImplementation((name) => name === 'includeDescription'),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'service';
+                if (name === 'operation') return 'getType';
+                if (name === 'serviceName') return '/set_value';
+                return '';
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getServiceType.mockResolvedValue('fhnw_interfaces/srv/SetValue');
+            mockRosApiService.getInterfaceDescription.mockResolvedValue('Sets the turntable target position in mm');
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({
+                serviceName: '/set_value',
+                serviceType: 'fhnw_interfaces/srv/SetValue',
+                description: 'Sets the turntable target position in mm',
+            });
+        });
+
         it('should get topic definition successfully', async () => {
             const mockExecuteFunctions = {
                 getInputData: jest.fn().mockReturnValue([{}]),

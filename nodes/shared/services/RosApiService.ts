@@ -5,6 +5,8 @@
 
 import type { Ros, rosapi } from 'roslib';
 
+import { RosBridgeService } from './RosBridgeService';
+
 export type ExpandedTypeDef = string | { [key: string]: ExpandedTypeDef | ExpandedTypeDef[] };
 
 export interface NodeTopicDefinition {
@@ -39,10 +41,56 @@ export interface NodeDefinition {
 }
 
 export class RosApiService {
+    /**
+     * Rover convention: nodes publish a latched (transient_local)
+     * std_msgs/String topic next to each interface they own, documenting how
+     * that specific topic/service is used.
+     */
+    static readonly DESCRIPTION_TOPIC_SUFFIX = '/desc';
+
     private static loadRoslib() {
         // We use eval('import(...)') to prevent tsc from transpiling this to require(),
         // as roslib 2.x is an ESM-only package and doesn't support require().
         return (0, eval)('import("roslib")') as Promise<typeof import('roslib')>;
+    }
+
+    /**
+     * Reads the latched `<name>/desc` documentation topic for a topic or
+     * service. Returns null when no such topic exists or nothing arrives in
+     * time (undocumented interfaces must not fail the main lookup).
+     */
+    static async getInterfaceDescription(ros: Ros, name: string, timeoutMs = 2000): Promise<string | null> {
+        const descTopic = `${name}${this.DESCRIPTION_TOPIC_SUFFIX}`;
+        try {
+            const { topics } = await this.getTopics(ros);
+            if (!topics.includes(descTopic)) {
+                return null;
+            }
+            const message = await RosBridgeService.waitForTopicMessage(ros, descTopic, 'std_msgs/msg/String', timeoutMs);
+            return typeof message.data === 'string' ? message.data : null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the raw message definition text (as in the .msg source,
+     * including comments about units and allowed values) for a topic or
+     * message type. rosapi only exposes raw definitions via
+     * topics_and_raw_types, so this works only for message types currently
+     * used by an active topic; returns null otherwise.
+     */
+    static async getTopicRawDefinition(ros: Ros, topicName?: string, messageType?: string): Promise<string | null> {
+        try {
+            const { topics, types, typedefs_full_text: rawDefinitions } = await this.getTopicsAndRawTypes(ros);
+            let index = topicName ? topics.indexOf(topicName) : -1;
+            if (index === -1 && messageType) {
+                index = types.indexOf(messageType);
+            }
+            return index === -1 ? null : rawDefinitions[index] ?? null;
+        } catch {
+            return null;
+        }
     }
 
     static async getTopics(ros: Ros): Promise<rosapi.TopicsResponse> {
