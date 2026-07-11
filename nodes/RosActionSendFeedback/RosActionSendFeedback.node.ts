@@ -17,7 +17,8 @@ export class RosActionSendFeedback implements INodeType {
         icon: { light: 'file:../shared/ros.svg', dark: 'file:../shared/ros.dark.svg' },
         group: ['transform'],
         version: [1],
-        description: 'Send feedback or final result for an active ROS2 action goal',
+        description: 'Send feedback or final result for an active ROS2 action goal. Only works for goals received by a ROS2 Action Trigger running in the same n8n instance.',
+        subtitle: '={{$parameter["operation"]}}',
         defaults: {
             name: 'ROS2 Action Send Feedback',
         },
@@ -37,46 +38,28 @@ export class RosActionSendFeedback implements INodeType {
                 displayName: 'Operation',
                 name: 'operation',
                 type: 'options',
-																noDataExpression: true,
+                noDataExpression: true,
                 options: [
                     {
                         name: 'Send Feedback',
                         value: 'sendFeedback',
                         description: 'Send progress update to the action client',
-																								action: 'Send progress update to the action client',
+                        action: 'Send progress update to the action client',
                     },
                     {
                         name: 'Set Succeeded',
                         value: 'setSucceeded',
                         description: 'Complete the action successfully and send final result',
-																								action: 'Complete the action successfully and send final result',
+                        action: 'Complete the action successfully and send final result',
                     },
                     {
                         name: 'Set Aborted',
                         value: 'setAborted',
                         description: 'Abort the action and send final result',
-																								action: 'Abort the action and send final result',
+                        action: 'Abort the action and send final result',
                     },
                 ],
                 default: 'sendFeedback',
-            },
-            {
-                displayName: 'Payload Input Mode',
-                name: 'payloadInputMode',
-                type: 'options',
-                options: [
-                    {
-                        name: 'Raw (JSON)',
-                        value: 'raw',
-                        description: 'Provide raw JSON object for the feedback/result',
-                    },
-                    {
-                        name: 'Fixed (Mapper)',
-                        value: 'fixed',
-                        description: 'Use the visual mapper to define payload fields',
-                    },
-                ],
-                default: 'raw',
             },
             {
                 displayName: 'Payload JSON',
@@ -85,13 +68,8 @@ export class RosActionSendFeedback implements INodeType {
                 typeOptions: {
                     rows: 6,
                 },
-                displayOptions: {
-                    show: {
-                        payloadInputMode: ['raw'],
-                    },
-                },
                 default: '{}',
-                description: 'JSON object sent as feedback or result payload',
+                description: 'JSON object sent as feedback or result payload. The structure must match the feedback/result part of the action type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields.',
             },
         ],
     };
