@@ -1,13 +1,6 @@
 # ROS2 Rosbridge integration for n8n
 
-This package provides n8n nodes for interacting with ROS2 through a rosbridge WebSocket endpoint.
-
-Supported capabilities:
-- Subscribe to a ROS2 topic and trigger workflows on incoming messages
-- Wait for the next message on a topic in any node
-- Call a ROS2 service and wait for the response
-- Start a ROS2 action goal without waiting for completion
-- Check the status of a previously started ROS2 action goal
+This package provides n8n nodes for interacting with ROS2 through a rosbridge WebSocket endpoint, plus a Docker node for managing containers (e.g. the rosbridge container itself).
 
 ## Installation
 
@@ -17,16 +10,71 @@ Supported capabilities:
 
 ## Nodes
 
-- **ROS2 Topic Trigger** — trigger when a topic message is received.
-- **ROS2 Topic Next Message** — wait for the next message on a topic and pass it downstream.
-- **ROS2 Topic Publish** — publish a message to a ROS2 topic.
-- **ROS2 Service Call** — make a ROS2 service request and return the response.
-- **ROS2 Action Start** — send an action goal and return the goal ID immediately.
-- **ROS2 Action Status** — query the status of an action goal by goal ID.
+### Topics
+
+- **ROS2 Topic Trigger** — starts the workflow whenever a message arrives on a topic. Supports an optional "Conditions" filter to only fire for matching messages. Auto-reconnects if the connection drops.
+- **ROS2 Topic Next Message** — waits for the next message on a topic (with the same optional "Conditions" filter) and returns it as node output.
+- **ROS2 Topic Publish** — publishes a message to a topic. "Publish" sends the message; "Advertise Only" just registers the publisher without sending anything. Message body can be raw JSON or built with the visual field mapper.
+- **ROS2 Topic Capture Image** — waits for the next message on an image topic (`sensor_msgs/CompressedImage`-style) and returns it as a binary file (JPEG/PNG/BMP/GIF detected from the message's `format` field).
+
+### Services
+
+- **ROS2 Service Call** — calls a ROS2 service with a request payload and waits for the response.
+- **ROS2 Service Trigger** — advertises a service; starts the workflow when it's called and immediately answers with a configured response (raw JSON or visual mapper). Auto-reconnects if the connection drops.
+
+### Actions
+
+- **ROS2 Action Start** — sends an action goal and returns immediately with the `goalId` (and the initial status event, if any).
+- **ROS2 Action Status** — looks up the status of a goal (by `goalId`) from the action's status topic.
+- **ROS2 Action Result** — waits for and returns the final result of a goal.
+- **ROS2 Action Feedback** — waits for and returns the next feedback message of a goal.
+- **ROS2 Action Cancel** — sends a cancel request for an active goal.
+- **ROS2 Action Trigger** — advertises an action server; starts the workflow when a goal is received. Auto-reconnects if the connection drops.
+- **ROS2 Action Send Feedback** — from within a workflow started by ROS2 Action Trigger, sends feedback (`Send Feedback`) or completes the goal (`Set Succeeded` / `Set Aborted`) for a given `goalId`.
+
+### Discovery
+
+- **ROS2 API** — queries the ROS2 graph (topics, services, nodes, actions, parameters) via rosapi. See below.
+
+### Other
+
+- **Docker Container** — lists, restarts, executes commands in, and gets logs from Docker containers, via the Docker Engine API or a Unix socket.
+
+## The ROS2 API node
+
+`ROS2 API` is the discovery entry point for the whole package: it lets a workflow (or an AI agent) find out what exists on the ROS2 graph and learn the exact message/service/action structure before calling anything.
+
+It works over a **Resource** (`Topic`, `Service`, `Node`, `Action`, `Parameter`) and an **Operation**, which varies per resource:
+
+- **Topic**: `List` (all topics + types, optionally combined into `{ name, type }` pairs), `List for Type` (topics using a given message type), `Get Type` (type of one topic), `Get Details` (raw type definitions), `Get Definition` (fully expanded message structure).
+- **Service**: `List`, `List for Type`, `Get Type`, `Get Definition` (expanded request and response structures).
+- **Node**: `List` (running nodes), `Get Details` (a node's topic/service names), `Get Definition` (a node's full topic/service/action structure — see below).
+- **Action**: `List` (action servers), `Get Definition` (expanded goal, result and feedback structures).
+- **Parameter**: `List`, `Get`, `Set`.
+
+All `List`/`List for Type` operations accept an optional **Grep Pattern** to filter results (regex, or a plain case-insensitive substring match if the pattern isn't valid regex).
+
+**Get Definition** is the key operation for building payloads: instead of just returning a type name, it recursively expands the message/service/action definition into concrete fields (with their ROS types), including any custom/nested message types, so a caller knows exactly what JSON shape to send or expect. For services this returns `request` and `response`; for actions it returns `goal`, `result` and `feedback`.
+
+Node **Get Definition** goes further: it returns the node's entire interface at once — `publishing` and `subscribing` (each an array of `{ name, type, definition }`), `services` (array of `{ name, type, request, response }`), and `actions` (array of `{ name, type, goal, result, feedback }`). Action servers are detected from their internal `<action>/_action/send_goal` service and reported once as a single action entry rather than as their raw internal topics/services.
+
+## Using these nodes with AI agents
+
+Most nodes (all except the trigger nodes, which n8n doesn't allow as tools) have `usableAsTool: true`, so they can be exposed directly to an AI agent as callable tools.
+
+The intended loop for an agent operating on an unfamiliar ROS2 graph:
+
+1. **Discover** with `ROS2 API` → `List` on the relevant resource (`Topic`, `Service`, `Action`, `Node`) to find candidate names, optionally narrowed with **Grep Pattern**.
+2. **Learn the shape** with `ROS2 API` → `Get Definition` on the chosen topic/service/action (or `Node` → `Get Definition` to get everything a node exposes in one call). This returns the exact JSON structure expected, including any custom message types, fully expanded.
+3. **Act** using that structure as the payload for `ROS2 Topic Publish`, `ROS2 Service Call`, or `ROS2 Action Start` (and follow up with `ROS2 Action Result`/`ROS2 Action Feedback`/`ROS2 Action Status`/`ROS2 Action Cancel` as needed).
+
+This lets an agent operate against ROS2 graphs it has never seen before without hard-coded message definitions.
 
 ## Credentials
 
-This integration uses the `ROS2 Rosbridge` credential type.
+### ROS2 Rosbridge API
+
+Used by all ROS2 nodes.
 
 Required values:
 - Protocol: `ws` or `wss`
@@ -35,23 +83,25 @@ Required values:
 
 Optional values:
 - Path: path segment for the rosbridge endpoint
-- Auth Token: token appended as query parameter for authentication
+- Auth Token: token appended as a query parameter for authentication
 - Auth Query Parameter: parameter name used for the auth token
 - Connect Timeout: connection timeout in milliseconds
 
-## Usage
+### Docker API
 
-1. Create a new credential entry for your rosbridge endpoint.
-2. Add one of the ROS2 nodes to your workflow.
-3. Select the `ROS2 Rosbridge` credential.
-4. Configure the topic, service, or action parameters.
+Used by the `Docker Container` node.
 
-### Example workflow
+- Connection Type: `Unix Socket` or `HTTP`
+- Socket Path (socket mode): path to the Docker socket, e.g. `/var/run/docker.sock`
+- Protocol, Host, Port (HTTP mode)
+- Authentication (HTTP mode): `None` or `Basic Auth` (username/password)
 
-- `ROS2 Topic Trigger` receives topic messages and starts the workflow.
-- `ROS2 Service Call` can be used in the same workflow to request ROS2 services.
-- `ROS2 Action Start` starts a long-running action and returns `goalId`.
-- `ROS2 Action Status` checks the action progress using the returned `goalId`.
+## Operational notes
+
+- **Connection pooling**: connections to rosbridge are pooled per resolved URL and reused across node executions — they are not closed after each run. This avoids repeating ROS2 discovery/handshake overhead on every execution.
+- **Trigger reconnection**: `ROS2 Topic Trigger`, `ROS2 Service Trigger`, and `ROS2 Action Trigger` automatically attempt to reconnect every 5 seconds if the underlying rosbridge websocket drops, re-installing their subscription/advertisement once reconnected.
+- **Action goal state is in-process**: `ROS2 Action Trigger` and `ROS2 Action Send Feedback` share an in-memory goal registry keyed by `goalId`. This only works when both nodes run in the same n8n process — it will not work in queue mode where the trigger and a worker executing `ROS2 Action Send Feedback` are separate processes.
+- **Message filter conditions**: the "Conditions" filter on `ROS2 Topic Trigger` and `ROS2 Topic Next Message` reference message fields by plain field path (e.g. `pose.position.x`), not n8n expressions, since the filter is evaluated against the message payload as it arrives rather than at parameter-resolution time.
 
 ## Compatibility
 
@@ -64,6 +114,4 @@ This package targets n8n nodes API v1 and uses rosbridge WebSocket endpoints. It
 
 ## Version history
 
-### 0.1.0
-- Initial ROS2 rosbridge integration with topic triggers, topic reads, service calls, and action support.
-
+See [CHANGELOG.md](./CHANGELOG.md).
