@@ -14,7 +14,7 @@ import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
-import { checkFilter, type FilterData } from '../shared/utils/MessageFilter';
+import { checkFilter, normalizeFilterConditions, type FilterData } from '../shared/utils/MessageFilter';
 
 export class RosTopicNextMessage implements INodeType {
     description: INodeTypeDescription = {
@@ -228,7 +228,13 @@ export class RosTopicNextMessage implements INodeType {
                 const messageType =
                     typeof messageTypeLocator === 'string' ? messageTypeLocator : messageTypeLocator?.value;
                 const timeoutMs = ParameterExtractor.extractRequiredNumber(this, i, 'timeoutMs');
-                const conditions = this.getNodeParameter('conditions', i, {}) as FilterData;
+                // Read the filter raw: left values are field paths into the arriving
+                // message (legacy workflows stored them as n8n expressions, which must
+                // not be evaluated against the node's input item).
+                const conditions = normalizeFilterConditions(
+                    this.getNodeParameter('conditions', i, {}, { rawExpressions: true }) as FilterData,
+                    (expression) => this.evaluateExpression(expression, i),
+                );
 
                 // Connect to ROS
                 ros = await RosBridgeService.connect(credentials);

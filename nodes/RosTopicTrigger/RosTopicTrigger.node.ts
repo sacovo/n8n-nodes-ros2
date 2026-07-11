@@ -16,7 +16,7 @@ import { RosApiService } from '../shared/services/RosApiService';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
-import { checkFilter, type FilterData } from '../shared/utils/MessageFilter';
+import { checkFilter, normalizeFilterConditions, type FilterData } from '../shared/utils/MessageFilter';
 
 // Trigger nodes cannot be invoked as AI tools, so usableAsTool is omitted
 // eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
@@ -210,7 +210,12 @@ export class RosTopicTrigger implements INodeType {
             const topicName = this.getNodeParameter('topicName', '', { extractValue: true }) as string;
             const messageType = this.getNodeParameter('messageType', '', { extractValue: true }) as string;
             const includeMetadata = this.getNodeParameter('includeMetadata', true) as boolean;
-            const conditions = this.getNodeParameter('conditions', {}) as FilterData;
+            // Read the filter raw: left values are field paths into the arriving
+            // message (legacy workflows stored them as n8n expressions, which must
+            // not be evaluated at activation time).
+            const conditions = normalizeFilterConditions(
+                this.getNodeParameter('conditions', {}, { rawExpressions: true }) as FilterData,
+            );
 
             const onMessage = (message: JsonRecord) => {
                 if (!checkFilter({ json: { message } }, conditions)) {

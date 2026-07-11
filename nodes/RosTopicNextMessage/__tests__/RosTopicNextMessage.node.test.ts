@@ -69,6 +69,53 @@ describe('RosTopicNextMessage', () => {
             expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
+        it('should normalize legacy expression conditions and filter messages (regression for pre-0.2.0 exports)', async () => {
+            const legacyConditions = {
+                options: { caseSensitive: true },
+                combinator: 'and',
+                conditions: [
+                    {
+                        leftValue: '={{ $json.message.data }}',
+                        rightValue: 3,
+                        operator: { type: 'number', operation: 'equals' },
+                    },
+                ],
+            };
+
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                evaluateExpression: jest.fn(),
+                getNodeParameter: jest.fn().mockImplementation((name) => {
+                    if (name === 'topicName') return '/act_value';
+                    if (name === 'messageType') return 'std_msgs/msg/Float32';
+                    if (name === 'conditions') return legacyConditions;
+                    return '';
+                }),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredNumber.mockReturnValue(5000);
+
+            let filterCallback: ((message: Record<string, unknown>) => boolean) | undefined;
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeService.waitForTopicMessage.mockImplementation(async (ros, topic, type, timeout, callback) => {
+                filterCallback = callback;
+                return { data: 3 };
+            });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            await node.execute.call(mockExecuteFunctions);
+
+            // The stored n8n expression must not be evaluated by the engine…
+            expect(mockExecuteFunctions.getNodeParameter).toHaveBeenCalledWith(
+                'conditions', 0, {}, { rawExpressions: true },
+            );
+            // …but converted to a plain path that filters arriving messages
+            expect(filterCallback!({ data: 3 })).toBe(true);
+            expect(filterCallback!({ data: 2 })).toBe(false);
+        });
+
         it('should handle timeout errors with continueOnFail', async () => {
             const mockExecuteFunctions = {
                 getInputData: jest.fn().mockReturnValue([{}]),

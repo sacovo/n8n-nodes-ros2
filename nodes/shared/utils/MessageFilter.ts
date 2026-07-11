@@ -10,8 +10,8 @@ import type { INodeExecutionData } from 'n8n-workflow';
 import get from 'lodash/get';
 
 type Condition = {
-    leftValue: null | string;
-    rightValue: null | string;
+    leftValue: unknown;
+    rightValue: unknown;
     operator: {
         operation: string;
         type: string;
@@ -25,6 +25,82 @@ export type FilterData = {
     conditions: Condition[];
     combinator: string;
 };
+
+/**
+ * Normalizes a filter value that was read with `rawExpressions: true`.
+ *
+ * Workflows exported before the Conditions filter was actually evaluated
+ * store left values as n8n expressions (e.g. `={{ $json.message.data }}`,
+ * built via drag & drop against the node's output). checkFilter expects a
+ * plain field path into the arriving message (e.g. `data`), so legacy
+ * expressions are converted to the path they reference. Expression right
+ * values are resolved through the provided evaluator; without one (or if
+ * evaluation fails) they become null so the condition fails instead of
+ * crashing the execution.
+ */
+export function normalizeFilterConditions(
+    filter: FilterData,
+    evaluateExpression?: (expression: string) => unknown,
+): FilterData {
+    if (!filter?.conditions?.length) {
+        return filter;
+    }
+    return {
+        ...filter,
+        conditions: filter.conditions.map((condition) => ({
+            ...condition,
+            leftValue: normalizeLeftValue(condition.leftValue),
+            rightValue: normalizeRightValue(condition.rightValue, evaluateExpression),
+        })),
+    };
+}
+
+function extractExpressionBody(value: unknown): string | undefined {
+    if (typeof value !== 'string') {
+        return undefined;
+    }
+    const match = value.trim().match(/^=?\s*\{\{([\s\S]*)\}\}$/);
+    return match ? match[1].trim() : undefined;
+}
+
+function normalizeLeftValue(value: unknown): unknown {
+    const expression = extractExpressionBody(value);
+    if (expression === undefined) {
+        return value;
+    }
+    let path = expression;
+    if (path.startsWith('$json')) {
+        path = path.slice('$json'.length).replace(/^\./, '');
+    }
+    // The node output wraps the ROS message as `message`, but checkFilter
+    // already resolves paths within the message itself.
+    if (path === 'message') {
+        path = '';
+    } else if (path.startsWith('message.')) {
+        path = path.slice('message.'.length);
+    } else if (path.startsWith("['message']")) {
+        path = path.slice("['message']".length).replace(/^\./, '');
+    }
+    return path;
+}
+
+function normalizeRightValue(
+    value: unknown,
+    evaluateExpression?: (expression: string) => unknown,
+): unknown {
+    const expression = extractExpressionBody(value);
+    if (expression === undefined) {
+        return value;
+    }
+    if (!evaluateExpression) {
+        return null;
+    }
+    try {
+        return evaluateExpression(`{{ ${expression} }}`);
+    } catch {
+        return null;
+    }
+}
 
 export function checkFilter(item: INodeExecutionData, filterData: FilterData): boolean {
     if (!filterData?.conditions?.length) {
