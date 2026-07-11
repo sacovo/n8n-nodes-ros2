@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- rosapi Get Type can now return interface documentation: an "Include Description" option reads the latched `<name>/desc` topic (new documentation convention, see README), and an "Include Raw Definition" option returns the raw .msg definition text with its comments (units, enum values).
+
 ## 0.2.1
 
 ### Fixed

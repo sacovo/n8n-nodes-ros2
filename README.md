@@ -56,6 +56,15 @@ All `List`/`List for Type` operations accept an optional **Grep Pattern** to fil
 
 **Get Definition** is the key operation for building payloads: instead of just returning a type name, it recursively expands the message/service/action definition into concrete fields (with their ROS types), including any custom/nested message types, so a caller knows exactly what JSON shape to send or expect. For services this returns `request` and `response`; for actions it returns `goal`, `result` and `feedback`.
 
+**Get Type** can additionally return documentation:
+
+- *Include Description* reads the latched `<name>/desc` topic (see the documentation convention below) and returns its text as `description` — this is where instance-level semantics live ("this Float32 is the turntable target in mm").
+- *Include Raw Definition* (topics only) returns the raw `.msg` definition text, including source comments that document units and allowed enum values. rosapi only exposes raw definitions for message types currently used by an active topic; the field is `null` otherwise.
+
+### Documentation convention: latched `/desc` topics
+
+Nodes can document their interfaces by publishing a latched (`transient_local`, depth 1) `std_msgs/String` topic named `<topic-or-service>/desc` describing how that specific interface is used. Topic and service namespaces are separate, so `/my_service/desc` as a topic is valid. The ROS2 API node picks these up via the options above. Publish the `/desc` topics from your ROS nodes (rclpy/rclcpp), not through rosbridge — rosbridge's advertise path does not reliably create transient_local publishers.
+
 Node **Get Definition** goes further: it returns the node's entire interface at once — `publishing` and `subscribing` (each an array of `{ name, type, definition }`), `services` (array of `{ name, type, request, response }`), and `actions` (array of `{ name, type, goal, result, feedback }`). Action servers are detected from their internal `<action>/_action/send_goal` service and reported once as a single action entry rather than as their raw internal topics/services.
 
 ## Using these nodes with AI agents
