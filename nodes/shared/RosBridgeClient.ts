@@ -703,7 +703,7 @@ type Condition = {
     };
 };
 
-type FilterData = {
+export type FilterData = {
     options: {
         caseSensitive: boolean;
     },

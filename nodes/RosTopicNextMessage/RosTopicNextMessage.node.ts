@@ -12,7 +12,7 @@ import { RosBridgeService } from '../shared/services/RosBridgeService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
-import { closeRos, connectRos, formatTopicListForN8n, getRosTopics, getRosTopicType, RosBridgeCredentialsData } from '../shared/RosBridgeClient';
+import { checkFilter, closeRos, connectRos, formatTopicListForN8n, getRosTopics, getRosTopicType, RosBridgeCredentialsData, type FilterData } from '../shared/RosBridgeClient';
 
 export class RosTopicNextMessage implements INodeType {
     description: INodeTypeDescription = {
@@ -101,7 +101,7 @@ export class RosTopicNextMessage implements INodeType {
                 placeholder: 'Add Condition',
                 type: 'filter',
                 default: {},
-                description: 'Filter messages based on their content',
+                description: 'Only accept messages matching these conditions; others are skipped while waiting. Reference message fields by their path as a plain string, e.g. "data" or "pose.position.x".',
                 typeOptions: {
                     filter: {
                         version: 1,
@@ -206,32 +206,34 @@ export class RosTopicNextMessage implements INodeType {
 
                 // Extract parameters
 
-                const topicNameLocator = this.getNodeParameter('topicName', 0, {
+                const topicNameLocator = this.getNodeParameter('topicName', i, {
                     extractValue: true,
                 }) as { value: string } | string;
                 const topicName =
                     typeof topicNameLocator === 'string' ? topicNameLocator : topicNameLocator?.value;
 
-                const messageTypeLocator = this.getNodeParameter('messageType', 0, {
+                const messageTypeLocator = this.getNodeParameter('messageType', i, {
                     extractValue: true,
                 }) as { value: string } | string;
                 const messageType =
                     typeof messageTypeLocator === 'string' ? messageTypeLocator : messageTypeLocator?.value;
                 const timeoutMs = ParameterExtractor.extractRequiredNumber(this, i, 'timeoutMs');
 
+                const conditions = this.getNodeParameter('conditions', i, {}) as FilterData;
                 // Connect to ROS
                 ros = await RosBridgeService.connect(credentials);
 
-                // Wait for next message
+                // Wait for the next message that passes the configured conditions
                 const result = await RosBridgeService.waitForTopicMessage(
                     ros,
                     topicName,
                     messageType,
                     timeoutMs,
                 );
+                    (message) => checkFilter({ json: { message } }, conditions),
 
                 returnData.push({
-                    json: RosN8nFormatter.formatTopicMessage(topicName, messageType, result, result.raw),
+                    json: RosN8nFormatter.formatTopicMessage(topicName, messageType, result),
                     pairedItem: { item: i },
                 });
             } catch (error) {

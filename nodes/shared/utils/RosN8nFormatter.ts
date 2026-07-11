@@ -6,12 +6,11 @@ import type { FieldType, INodePropertyOptions, ResourceMapperFields } from 'n8n-
 import { rosapi } from 'roslib';
 
 export class RosN8nFormatter {
-    static formatTopicMessage(topicName: string, messageType: string, message: unknown, raw: unknown): import("n8n-workflow").IDataObject {
+    static formatTopicMessage(topicName: string, messageType: string, message: unknown): import("n8n-workflow").IDataObject {
         return {
             topic: topicName,
             messageType,
             message: message as Record<string, unknown>,
-            rawMessage: raw as Record<string, unknown>,
             receivedAt: new Date().toISOString(),
         };
     }

@@ -64,6 +64,7 @@ describe('RosTopicNextMessage', () => {
                 '/chatter',
                 'std_msgs/msg/String',
                 5000,
+                expect.any(Function),
             );
             expect(mockRosBridgeService.close).toHaveBeenCalled();
         });

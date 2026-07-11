@@ -1,4 +1,5 @@
 import type {
+    IDataObject,
     INodeType,
     INodeTypeDescription,
     ITriggerFunctions,
@@ -10,10 +11,10 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord } from '../shared/services/RosBridgeService';
-import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
-import { closeRos, connectRos, formatTopicListForN8n, getRosTopics, getRosTopicType, RosBridgeCredentialsData } from '../shared/RosBridgeClient';
+import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
+import { checkFilter, closeRos, connectRos, formatTopicListForN8n, getRosTopics, getRosTopicType, RosBridgeCredentialsData, type FilterData } from '../shared/RosBridgeClient';
 
 export class RosTopicTrigger implements INodeType {
     description: INodeTypeDescription = {
@@ -25,8 +26,8 @@ export class RosTopicTrigger implements INodeType {
         description: 'Start workflow when a message is received on a ROS2 topic',
         defaults: {
             name: 'ROS2 Topic Trigger',
-        },
         usableAsTool: true,
+        },
         inputs: [],
         outputs: [NodeConnectionTypes.Main],
         credentials: [
@@ -102,7 +103,7 @@ export class RosTopicTrigger implements INodeType {
                 placeholder: 'Add Condition',
                 type: 'filter',
                 default: {},
-                description: 'Filter messages based on their content',
+                description: 'Only start the workflow for messages matching these conditions. Reference message fields by their path as a plain string, e.g. "data" or "pose.position.x".',
                 typeOptions: {
                     filter: {
                         version: 1,
@@ -198,29 +199,35 @@ export class RosTopicTrigger implements INodeType {
         try {
             const credentials = await this.getCredentials('rosBridgeApi');
 
-            // Extract parameters
-            const topicName = ParameterExtractor.extractRequiredString(this as unknown as IExecuteFunctions, 0, 'topicName');
-            const messageType = ParameterExtractor.extractRequiredString(this as unknown as IExecuteFunctions, 0, 'messageType');
+            // Extract parameters (resource locators need extractValue to yield the string)
+            const topicName = this.getNodeParameter('topicName', '', { extractValue: true }) as string;
+            const messageType = this.getNodeParameter('messageType', '', { extractValue: true }) as string;
+            const includeMetadata = this.getNodeParameter('includeMetadata', true) as boolean;
+            const conditions = this.getNodeParameter('conditions', {}) as FilterData;
 
-            // Connect to ROS
-            const ros = await RosBridgeService.connect(credentials as unknown as RosBridgeCredentialsData);
+            const onMessage = (message: JsonRecord) => {
+                if (!checkFilter({ json: { message } }, conditions)) {
+                    return;
+                }
+                const json = includeMetadata
+                    ? RosN8nFormatter.formatTopicMessage(topicName, messageType, message)
+                    : (message as IDataObject);
+                this.emit([[{ json }]]);
+            };
 
-            // Subscribe to topic
-            const unsubscribe = await RosBridgeService.subscribeToTopic(
-                ros,
-                topicName,
-                messageType,
-                (message: JsonRecord) => {
-                    const formattedData = RosN8nFormatter.formatTopicMessage(topicName, messageType, message, message);
-                    this.emit([[{ json: formattedData }]]);
+            const stop = await connectWithReconnect(
+                credentials as unknown as RosBridgeCredentialsData,
+                async (ros) => {
+                    const unsubscribe = await RosBridgeService.subscribeToTopic(ros, topicName, messageType, onMessage);
+                    return () => {
+                        unsubscribe();
+                        RosBridgeService.close(ros);
+                    };
                 },
             );
 
             return {
-                closeFunction: async () => {
-                    unsubscribe();
-                    RosBridgeService.close(ros);
-                },
+                closeFunction: stop,
             };
         } catch (error) {
             NodeErrorHandler.handle(this as unknown as IExecuteFunctions, error as Error, 0);
