@@ -12,6 +12,7 @@ import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '..
 import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
 import { getRosMessageStructure } from '../shared/RosBridgeClient';
 
 export class RosServiceTrigger implements INodeType {
@@ -168,40 +169,43 @@ export class RosServiceTrigger implements INodeType {
                 responsePayload = ParameterExtractor.parseJsonParameter(responseJson, 'responseJson');
             }
 
-            const ros = await RosBridgeService.connect(credentials);
+            const onServiceCall = (request: JsonRecord, response: JsonRecord) => {
+                // Immediate response
+                Object.assign(response, responsePayload);
 
-            const unsubscribe = await RosBridgeService.advertiseService(
-                ros,
-                serviceName,
-                serviceType,
-                (request: JsonRecord, response: JsonRecord) => {
-                    // Immediate response
-                    Object.assign(response, responsePayload);
-
-                    // Trigger workflow
-                    this.emit([
-                        [
-                            {
-                                json: {
-                                    request,
-                                    serviceName,
-                                    serviceType,
-                                    respondedWith: responsePayload,
-                                    timestamp: new Date().toISOString(),
-                                },
+                // Trigger workflow
+                this.emit([
+                    [
+                        {
+                            json: {
+                                request,
+                                serviceName,
+                                serviceType,
+                                respondedWith: responsePayload,
+                                timestamp: new Date().toISOString(),
                             },
-                        ],
-                    ]);
+                        },
+                    ],
+                ]);
 
-                    return true;
-                },
-            );
+                return true;
+            };
 
-            return {
-                closeFunction: async () => {
+            const stop = await connectWithReconnect(credentials, async (ros) => {
+                const unsubscribe = await RosBridgeService.advertiseService(
+                    ros,
+                    serviceName,
+                    serviceType,
+                    onServiceCall,
+                );
+                return async () => {
                     await unsubscribe();
                     RosBridgeService.close(ros);
-                },
+                };
+            });
+
+            return {
+                closeFunction: stop,
             };
         } catch (error) {
             NodeErrorHandler.handle(this as unknown as IExecuteFunctions, error as Error, 0);

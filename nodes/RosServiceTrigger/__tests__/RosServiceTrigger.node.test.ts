@@ -24,7 +24,7 @@ describe('RosServiceTrigger', () => {
             },
         } as unknown as jest.Mocked<ITriggerFunctions>;
 
-        (RosBridgeService.connect as jest.Mock).mockResolvedValue({} as unknown as Ros);
+        (RosBridgeService.connect as jest.Mock).mockResolvedValue({ once: jest.fn() } as unknown as Ros);
     });
 
     it('should advertise a service and emit request on call', async () => {

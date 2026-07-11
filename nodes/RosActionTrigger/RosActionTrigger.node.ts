@@ -9,6 +9,7 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
 
 export class RosActionTrigger implements INodeType {
     description: INodeTypeDescription = {
@@ -60,34 +61,37 @@ export class RosActionTrigger implements INodeType {
             const serverName = this.getNodeParameter('serverName') as string;
             const actionName = this.getNodeParameter('actionName') as string;
 
-            const ros = await RosBridgeService.connect(credentials);
-
-            const unsubscribe = await RosBridgeService.registerActionServer(
-                ros,
-                serverName,
-                actionName,
-                (goalMessage: JsonRecord, goalId: string) => {
-                    this.emit([
-                        [
-                            {
-                                json: {
-                                    goal: goalMessage,
-                                    goalId,
-                                    serverName,
-                                    actionName,
-                                    timestamp: new Date().toISOString(),
-                                },
+            const onGoal = (goalMessage: JsonRecord, goalId: string) => {
+                this.emit([
+                    [
+                        {
+                            json: {
+                                goal: goalMessage,
+                                goalId,
+                                serverName,
+                                actionName,
+                                timestamp: new Date().toISOString(),
                             },
-                        ],
-                    ]);
-                },
-            );
+                        },
+                    ],
+                ]);
+            };
 
-            return {
-                closeFunction: async () => {
+            const stop = await connectWithReconnect(credentials, async (ros) => {
+                const unsubscribe = await RosBridgeService.registerActionServer(
+                    ros,
+                    serverName,
+                    actionName,
+                    onGoal,
+                );
+                return async () => {
                     await unsubscribe();
                     RosBridgeService.close(ros);
-                },
+                };
+            });
+
+            return {
+                closeFunction: stop,
             };
         } catch (error) {
             NodeErrorHandler.handle(this as unknown as IExecuteFunctions, error as Error, 0);
