@@ -8,11 +8,12 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import { RosBridgeService } from '../shared/services/RosBridgeService';
+import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
-import { checkFilter, closeRos, connectRos, formatTopicListForN8n, getRosTopics, getRosTopicType, RosBridgeCredentialsData, type FilterData } from '../shared/RosBridgeClient';
+import { checkFilter, type FilterData } from '../shared/utils/MessageFilter';
 
 export class RosTopicNextMessage implements INodeType {
     description: INodeTypeDescription = {
@@ -154,10 +155,10 @@ export class RosTopicNextMessage implements INodeType {
 
                     const credentials = (await this.getCredentials(
                         'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentialsData;
-                    const ros = await connectRos(credentials);
+                    )) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
                     try {
-                        const type = await getRosTopicType(ros, topicName);
+                        const type = await RosApiService.getTopicType(ros, topicName);
                         if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
                             return {
                                 results: [
@@ -169,7 +170,7 @@ export class RosTopicNextMessage implements INodeType {
                             };
                         }
                     } finally {
-                        closeRos(ros);
+                        RosBridgeService.close(ros);
                     }
                 } catch {
                     // Ignore errors
@@ -180,13 +181,13 @@ export class RosTopicNextMessage implements INodeType {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             async getTopicsList(this: ILoadOptionsFunctions, filter?: string, paginationToken?: string): Promise<INodeListSearchResult> {
                 try {
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentialsData;
-                    const ros = await connectRos(credentials);
+                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
                     try {
-                        const topics = await getRosTopics(ros);
-                        return { results: formatTopicListForN8n(topics.topics || [], filter) };
+                        const topics = await RosApiService.getTopics(ros);
+                        return { results: RosN8nFormatter.formatTopicListForN8n(topics.topics || [], filter) };
                     } finally {
-                        closeRos(ros);
+                        RosBridgeService.close(ros);
                     }
                 } catch {
                     return { results: [] };
@@ -203,7 +204,7 @@ export class RosTopicNextMessage implements INodeType {
         for (let i = 0; i < items.length; i++) {
             let ros;
             try {
-                const credentials = await this.getCredentials('rosBridgeApi') as unknown as RosBridgeCredentialsData;
+                const credentials = await this.getCredentials('rosBridgeApi') as unknown as RosBridgeCredentials;
 
                 // Extract parameters
 

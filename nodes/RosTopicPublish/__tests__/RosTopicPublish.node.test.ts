@@ -3,18 +3,24 @@
  */
 
 import { RosTopicPublish } from '../RosTopicPublish.node';
-import * as RosBridgeClient from '../../shared/RosBridgeClient';
+import { RosBridgeService } from '../../shared/services/RosBridgeService';
+import { RosApiService } from '../../shared/services/RosApiService';
+import { RosN8nFormatter } from '../../shared/utils/RosN8nFormatter';
 import { ParameterExtractor } from '../../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../../shared/utils/NodeErrorHandler';
 import type { IExecuteFunctions, ILoadOptionsFunctions  } from 'n8n-workflow';
 import type { Ros } from 'roslib';
 
 // Mock the services
-jest.mock('../../shared/RosBridgeClient');
+jest.mock('../../shared/services/RosBridgeService');
+jest.mock('../../shared/services/RosApiService');
+jest.mock('../../shared/utils/RosN8nFormatter');
 jest.mock('../../shared/utils/ParameterExtractor');
 jest.mock('../../shared/utils/NodeErrorHandler');
 
-const mockRosBridgeClient = RosBridgeClient as jest.Mocked<typeof RosBridgeClient>;
+const mockRosBridgeService = RosBridgeService as jest.Mocked<typeof RosBridgeService>;
+const mockRosApiService = RosApiService as jest.Mocked<typeof RosApiService>;
+const mockRosN8nFormatter = RosN8nFormatter as jest.Mocked<typeof RosN8nFormatter>;
 const mockParameterExtractor = ParameterExtractor as jest.Mocked<typeof ParameterExtractor>;
 const mockNodeErrorHandler = NodeErrorHandler as jest.Mocked<typeof NodeErrorHandler>;
 
@@ -34,9 +40,9 @@ describe('RosTopicPublish', () => {
                     getCredentials: jest.fn().mockResolvedValue({}),
                 } as unknown as ILoadOptionsFunctions;
 
-                mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
-                mockRosBridgeClient.getRosTopics.mockResolvedValue({ topics: ['/topic1', '/topic2'], types: [] });
-                mockRosBridgeClient.formatTopicListForN8n.mockReturnValue([
+                mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+                mockRosApiService.getTopics.mockResolvedValue({ topics: ['/topic1', '/topic2'], types: [] });
+                mockRosN8nFormatter.formatTopicListForN8n.mockReturnValue([
                     { name: '/Topic1', value: '/topic1' },
                     { name: '/Topic2', value: '/topic2' },
                 ]);
@@ -51,9 +57,9 @@ describe('RosTopicPublish', () => {
                         { name: '/Topic2', value: '/topic2' },
                     ],
                 });
-                expect(mockRosBridgeClient.getRosTopics).toHaveBeenCalled();
-                expect(mockRosBridgeClient.formatTopicListForN8n).toHaveBeenCalledWith(['/topic1', '/topic2'], 'top');
-                expect(mockRosBridgeClient.closeRos).toHaveBeenCalled();
+                expect(mockRosApiService.getTopics).toHaveBeenCalled();
+                expect(mockRosN8nFormatter.formatTopicListForN8n).toHaveBeenCalledWith(['/topic1', '/topic2'], 'top');
+                expect(mockRosBridgeService.close).toHaveBeenCalled();
             });
         });
 
@@ -64,8 +70,8 @@ describe('RosTopicPublish', () => {
                     getCredentials: jest.fn().mockResolvedValue({}),
                 } as unknown as ILoadOptionsFunctions;
 
-                mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
-                mockRosBridgeClient.getRosTopicType.mockResolvedValue('std_msgs/String');
+                mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+                mockRosApiService.getTopicType.mockResolvedValue('std_msgs/String');
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
@@ -76,8 +82,8 @@ describe('RosTopicPublish', () => {
                         { name: 'Detected: std_msgs/String', value: 'std_msgs/String' },
                     ],
                 });
-                expect(mockRosBridgeClient.getRosTopicType).toHaveBeenCalledWith(expect.anything(), '/topic1');
-                expect(mockRosBridgeClient.closeRos).toHaveBeenCalled();
+                expect(mockRosApiService.getTopicType).toHaveBeenCalledWith(expect.anything(), '/topic1');
+                expect(mockRosBridgeService.close).toHaveBeenCalled();
             });
 
             it('should return empty list if filter does not match', async () => {
@@ -86,8 +92,8 @@ describe('RosTopicPublish', () => {
                     getCredentials: jest.fn().mockResolvedValue({}),
                 } as unknown as ILoadOptionsFunctions;
 
-                mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
-                mockRosBridgeClient.getRosTopicType.mockResolvedValue('std_msgs/String');
+                mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+                mockRosApiService.getTopicType.mockResolvedValue('std_msgs/String');
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
@@ -116,9 +122,9 @@ describe('RosTopicPublish', () => {
 
             mockParameterExtractor.extractJsonParameter.mockReturnValue({ data: 'Hello ROS!' });
 
-            mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
-            mockRosBridgeClient.publishRosTopic.mockResolvedValue(undefined);
-            mockRosBridgeClient.closeRos.mockImplementation(() => { });
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeService.publishTopic.mockResolvedValue(undefined);
+            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -131,8 +137,8 @@ describe('RosTopicPublish', () => {
                 publishedAt: expect.any(String),
             });
 
-            expect(mockRosBridgeClient.connectRos).toHaveBeenCalled();
-            expect(mockRosBridgeClient.publishRosTopic).toHaveBeenCalledWith(
+            expect(mockRosBridgeService.connect).toHaveBeenCalled();
+            expect(mockRosBridgeService.publishTopic).toHaveBeenCalledWith(
                 {},
                 '/chatter',
                 'std_msgs/msg/String',
@@ -140,7 +146,7 @@ describe('RosTopicPublish', () => {
                 undefined,
                 undefined,
             );
-            expect(mockRosBridgeClient.closeRos).toHaveBeenCalled();
+            expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
         it('should advertise topic only when operation is advertise', async () => {
@@ -157,9 +163,9 @@ describe('RosTopicPublish', () => {
                 }),
             } as unknown as IExecuteFunctions;
 
-            mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
-            mockRosBridgeClient.advertiseRosTopic.mockResolvedValue(undefined);
-            mockRosBridgeClient.closeRos.mockImplementation(() => { });
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeService.advertiseTopic.mockResolvedValue(undefined);
+            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -171,14 +177,14 @@ describe('RosTopicPublish', () => {
                 advertisedAt: expect.any(String),
             });
 
-            expect(mockRosBridgeClient.connectRos).toHaveBeenCalled();
-            expect(mockRosBridgeClient.advertiseRosTopic).toHaveBeenCalledWith(
+            expect(mockRosBridgeService.connect).toHaveBeenCalled();
+            expect(mockRosBridgeService.advertiseTopic).toHaveBeenCalledWith(
                 {},
                 '/chatter',
                 'std_msgs/msg/String',
             );
-            expect(mockRosBridgeClient.publishRosTopic).not.toHaveBeenCalled();
-            expect(mockRosBridgeClient.closeRos).toHaveBeenCalled();
+            expect(mockRosBridgeService.publishTopic).not.toHaveBeenCalled();
+            expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
         it('should publish message with custom options (discoveryDelay and burst)', async () => {
@@ -199,15 +205,15 @@ describe('RosTopicPublish', () => {
 
             mockParameterExtractor.extractJsonParameter.mockReturnValue({ data: 'Hello ROS!' });
 
-            mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
-            mockRosBridgeClient.publishRosTopic.mockResolvedValue(undefined);
-            mockRosBridgeClient.closeRos.mockImplementation(() => { });
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeService.publishTopic.mockResolvedValue(undefined);
+            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
             expect(result).toHaveLength(1);
             expect(result[0]).toHaveLength(1);
-            expect(mockRosBridgeClient.publishRosTopic).toHaveBeenCalledWith(
+            expect(mockRosBridgeService.publishTopic).toHaveBeenCalledWith(
                 {},
                 '/chatter',
                 'std_msgs/msg/String',
@@ -234,9 +240,9 @@ describe('RosTopicPublish', () => {
 
             mockParameterExtractor.extractJsonParameter.mockReturnValue({ data: 'test' });
 
-            mockRosBridgeClient.connectRos.mockResolvedValue({} as unknown as Ros);
-            mockRosBridgeClient.publishRosTopic.mockRejectedValue(new Error('Publish failed'));
-            mockRosBridgeClient.closeRos.mockImplementation(() => { });
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeService.publishTopic.mockRejectedValue(new Error('Publish failed'));
+            mockRosBridgeService.close.mockImplementation(() => { });
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'Publish failed' });
 
             const result = await node.execute.call(mockExecuteFunctions);

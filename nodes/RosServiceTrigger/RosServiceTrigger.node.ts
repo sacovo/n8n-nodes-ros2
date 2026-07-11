@@ -13,7 +13,7 @@ import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
-import { getRosMessageStructure } from '../shared/RosBridgeClient';
+import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 
 // Trigger nodes cannot be invoked as AI tools, so usableAsTool is omitted
 // eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
@@ -139,7 +139,7 @@ export class RosServiceTrigger implements INodeType {
                         }
 
                         const typeDefs = await RosApiService.getServiceResponseDetails(ros, serviceType);
-                        return getRosMessageStructure(typeDefs);
+                        return RosN8nFormatter.getRosMessageStructure(typeDefs);
                     } finally {
                         RosBridgeService.close(ros);
                     }

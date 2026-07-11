@@ -189,7 +189,17 @@ export class RosBridgeService {
         // on every node execution, as ROS 2 discovery takes time.
     }
 
-    static async publishTopic(ros: Ros, topicName: string, messageType: string, message: JsonRecord): Promise<void> {
+    static async publishTopic(
+        ros: Ros,
+        topicName: string,
+        messageType: string,
+        message: JsonRecord,
+        discoveryDelayMs?: number,
+        burst?: {
+            number: number;
+            wait: number;
+        },
+    ): Promise<void> {
         const url = ros.socketUrl || 'default';
         const cacheKey = `${url}:${topicName}:${messageType}`;
         let cached = this.publisherCache.get(cacheKey);
@@ -226,11 +236,24 @@ export class RosBridgeService {
         }, this.PUBLISHER_TTL_MS);
 
         if (isNew) {
+            // Alert the network that we have a new publisher
             topic.advertise();
-            await this.sleep(750);
+            // DDS Discovery Delay: Wait for subscribers to negotiate connection
+            // before firing the first message. 750ms is usually enough.
+            await this.sleep(discoveryDelayMs ?? 750);
         }
 
-        topic.publish(message);
+        if (burst) {
+            const count = burst.number > 0 ? burst.number : 1;
+            for (let j = 0; j < count; j++) {
+                topic.publish(message);
+                if (j < count - 1 && burst.wait > 0) {
+                    await this.sleep(burst.wait);
+                }
+            }
+        } else {
+            topic.publish(message);
+        }
     }
 
     static async advertiseTopic(ros: Ros, topicName: string, messageType: string): Promise<void> {

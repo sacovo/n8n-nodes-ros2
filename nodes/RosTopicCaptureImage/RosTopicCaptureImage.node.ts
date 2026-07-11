@@ -8,10 +8,11 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-import { RosBridgeService } from '../shared/services/RosBridgeService';
+import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
-import { closeRos, connectRos, formatTopicListForN8n, getRosTopics, getRosTopicType, RosBridgeCredentialsData } from '../shared/RosBridgeClient';
+import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 
 export class RosTopicCaptureImage implements INodeType {
     description: INodeTypeDescription = {
@@ -123,10 +124,10 @@ export class RosTopicCaptureImage implements INodeType {
 
                     const credentials = (await this.getCredentials(
                         'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentialsData;
-                    const ros = await connectRos(credentials);
+                    )) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
                     try {
-                        const type = await getRosTopicType(ros, topicName);
+                        const type = await RosApiService.getTopicType(ros, topicName);
                         if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
                             return {
                                 results: [
@@ -138,7 +139,7 @@ export class RosTopicCaptureImage implements INodeType {
                             };
                         }
                     } finally {
-                        closeRos(ros);
+                        RosBridgeService.close(ros);
                     }
                 } catch {
                     // Ignore errors
@@ -149,13 +150,13 @@ export class RosTopicCaptureImage implements INodeType {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             async getTopicsList(this: ILoadOptionsFunctions, filter?: string, paginationToken?: string): Promise<INodeListSearchResult> {
                 try {
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentialsData;
-                    const ros = await connectRos(credentials);
+                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
                     try {
-                        const topics = await getRosTopics(ros);
-                        return { results: formatTopicListForN8n(topics.topics || [], filter) };
+                        const topics = await RosApiService.getTopics(ros);
+                        return { results: RosN8nFormatter.formatTopicListForN8n(topics.topics || [], filter) };
                     } finally {
-                        closeRos(ros);
+                        RosBridgeService.close(ros);
                     }
                 } catch {
                     return { results: [] };
@@ -172,7 +173,7 @@ export class RosTopicCaptureImage implements INodeType {
         for (let i = 0; i < items.length; i++) {
             let ros;
             try {
-                const credentials = await this.getCredentials('rosBridgeApi') as unknown as RosBridgeCredentialsData;
+                const credentials = await this.getCredentials('rosBridgeApi') as unknown as RosBridgeCredentials;
 
                 const topicNameLocator = this.getNodeParameter('topicName', i, {
                     extractValue: true,

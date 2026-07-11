@@ -8,12 +8,11 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
 import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
-import { getRosMessageStructure, type JsonRecord } from '../shared/RosBridgeClient';
 
 
 export class RosServiceCall implements INodeType {
@@ -258,7 +257,7 @@ export class RosServiceCall implements INodeType {
                         // For services, we need the Request part of the type definition
                         const requestType = serviceType.endsWith('_Request') ? serviceType : `${serviceType}_Request`;
                         const typeDefs = await RosApiService.getMessageDetails(ros, requestType);
-                        return getRosMessageStructure(typeDefs);
+                        return RosN8nFormatter.getRosMessageStructure(typeDefs);
                     } finally {
                         RosBridgeService.close(ros);
                     }

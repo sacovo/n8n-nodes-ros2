@@ -8,19 +8,9 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import {
-    advertiseRosTopic,
-    closeRos,
-    connectRos,
-    formatTopicListForN8n,
-    getRosMessageDetails,
-    getRosMessageStructure,
-    getRosTopics,
-    getRosTopicType,
-    publishRosTopic,
-    type JsonRecord,
-    type RosBridgeCredentialsData,
-} from '../shared/RosBridgeClient';
+import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import { RosApiService } from '../shared/services/RosApiService';
+import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 
@@ -262,10 +252,10 @@ export class RosTopicPublish implements INodeType {
 
                     const credentials = (await this.getCredentials(
                         'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentialsData;
-                    const ros = await connectRos(credentials);
+                    )) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
                     try {
-                        const type = await getRosTopicType(ros, topicName);
+                        const type = await RosApiService.getTopicType(ros, topicName);
                         if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
                             return {
                                 results: [
@@ -277,7 +267,7 @@ export class RosTopicPublish implements INodeType {
                             };
                         }
                     } finally {
-                        closeRos(ros);
+                        RosBridgeService.close(ros);
                     }
                 } catch {
                     // Ignore errors
@@ -287,13 +277,13 @@ export class RosTopicPublish implements INodeType {
 
             async getTopicsList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
                 try {
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentialsData;
-                    const ros = await connectRos(credentials);
+                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
                     try {
-                        const topics = await getRosTopics(ros);
-                        return { results: formatTopicListForN8n(topics.topics || [], filter) };
+                        const topics = await RosApiService.getTopics(ros);
+                        return { results: RosN8nFormatter.formatTopicListForN8n(topics.topics || [], filter) };
                     } finally {
-                        closeRos(ros);
+                        RosBridgeService.close(ros);
                     }
                 } catch {
                     return { results: [] };
@@ -305,8 +295,8 @@ export class RosTopicPublish implements INodeType {
                 try {
                     const credentials = (await this.getCredentials(
                         'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentialsData;
-                    const ros = await connectRos(credentials);
+                    )) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
                     try {
                         const messageTypeLocator = this.getNodeParameter('messageType', 0, {
                             extractValue: true,
@@ -326,7 +316,7 @@ export class RosTopicPublish implements INodeType {
                                     ? topicNameLocator
                                     : topicNameLocator?.value;
                             if (topicName) {
-                                messageType = await getRosTopicType(ros, topicName);
+                                messageType = await RosApiService.getTopicType(ros, topicName);
                             }
                         }
 
@@ -334,10 +324,10 @@ export class RosTopicPublish implements INodeType {
                             return { fields: [] };
                         }
 
-                        const typeDefs = await getRosMessageDetails(ros, messageType);
-                        return getRosMessageStructure(typeDefs);
+                        const typeDefs = await RosApiService.getMessageDetails(ros, messageType);
+                        return RosN8nFormatter.getRosMessageStructure(typeDefs);
                     } finally {
-                        closeRos(ros);
+                        RosBridgeService.close(ros);
                     }
                 } catch {
                     return { fields: [] };
@@ -353,7 +343,7 @@ export class RosTopicPublish implements INodeType {
         for (let i = 0; i < items.length; i++) {
             let ros;
             try {
-                const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentialsData;
+                const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
 
                 // Extract topic name from resource locator
                 const topicNameLocator = this.getNodeParameter('topicName', i) as { mode: string; value: string } | string;
@@ -369,11 +359,11 @@ export class RosTopicPublish implements INodeType {
 
                 const operation = (this.getNodeParameter('operation', i, 'publish') || 'publish') as 'publish' | 'advertise';
 
-                ros = await connectRos(credentials);
+                ros = await RosBridgeService.connect(credentials);
 
                 let message: JsonRecord = {};
                 if (operation === 'advertise') {
-                    await advertiseRosTopic(ros, topicName, messageType);
+                    await RosBridgeService.advertiseTopic(ros, topicName, messageType);
                 } else {
                     // Extract message based on input mode
                     const messageInputMode = this.getNodeParameter('messageInputMode', i) as 'fixed' | 'raw';
@@ -405,7 +395,7 @@ export class RosTopicPublish implements INodeType {
                         };
                     }
 
-                    await publishRosTopic(ros, topicName, messageType, message, options.discoveryDelay, burst);
+                    await RosBridgeService.publishTopic(ros, topicName, messageType, message, options.discoveryDelay, burst);
                 }
 
                 returnData.push({
@@ -434,7 +424,7 @@ export class RosTopicPublish implements INodeType {
                 NodeErrorHandler.handle(this, error, i);
             } finally {
                 if (ros) {
-                    closeRos(ros);
+                    RosBridgeService.close(ros);
                 }
             }
         }
