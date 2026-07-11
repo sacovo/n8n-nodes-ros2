@@ -4,6 +4,7 @@
 
 import type { FieldType, INodePropertyOptions, ResourceMapperFields } from 'n8n-workflow';
 import { rosapi } from 'roslib';
+import { RosApiService } from '../services/RosApiService';
 
 export class RosN8nFormatter {
     static formatTopicMessage(topicName: string, messageType: string, message: unknown): import("n8n-workflow").IDataObject {
@@ -110,8 +111,9 @@ export class RosN8nFormatter {
     }
 
     /**
-     * Converts ROS message TypeDef array to n8n ResourceMapperFields
-     * Performs shallow expansion (1 level deep) for nested types
+     * Converts ROS message TypeDef array to n8n ResourceMapperFields.
+     * Nested message types are fully expanded into the field description,
+     * so the user can see which JSON structure a complex field expects.
      */
     static getRosMessageStructure(typeDefs: rosapi.TypeDef[] | undefined): ResourceMapperFields {
         if (!typeDefs || typeDefs.length === 0) {
@@ -124,21 +126,32 @@ export class RosN8nFormatter {
         }
 
         const fields = mainType.fieldnames.map((fieldname, index) => {
-            let fieldtype = (mainType.fieldtypes[index] || 'unknown').trim();
+            const baseType = (mainType.fieldtypes[index] || 'unknown').trim();
             const arrayLen = mainType.fieldarraylen?.[index] ?? -1;
 
+            let fieldtype = baseType;
             if (arrayLen !== -1 && !fieldtype.endsWith('[]')) {
                 fieldtype += '[]';
             }
 
             const n8nType = this.mapRosTypeToN8nFieldType(fieldtype);
 
+            let description = `ROS message field of type ${fieldtype}`;
+            const expanded = RosApiService.expandTypeDef(baseType.replace(/\[\]$/, ''), typeDefs);
+            if (typeof expanded !== 'string') {
+                let structure = JSON.stringify(expanded);
+                if (structure.length > 1000) {
+                    structure = `${structure.slice(0, 1000)}…`;
+                }
+                description += `. Structure: ${structure}`;
+            }
+
             return {
                 id: fieldname,
                 displayName: fieldname,
                 type: n8nType,
                 required: false,
-                description: `ROS message field of type ${fieldtype}`,
+                description,
                 canBeUsedToMatch: false,
                 defaultMatch: false,
                 display: true,
