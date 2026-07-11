@@ -571,10 +571,13 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
         case 'getDetails:topic':
             {
                 const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
-                const topicDetails = await RosApiService.getMessageDetails(ros, topicName);
+                // message_details expects a type, so resolve the topic's type first
+                const topicType = await RosApiService.getTopicType(ros, topicName);
+                const typedefs = await RosApiService.getMessageDetails(ros, topicType);
                 return {
                     topicName,
-                    ...topicDetails,
+                    topicType,
+                    typedefs,
                 };
             }
 
