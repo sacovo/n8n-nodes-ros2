@@ -11,6 +11,8 @@ import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '..
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
 
+// Trigger nodes cannot be invoked as AI tools, so usableAsTool is omitted
+// eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class RosActionTrigger implements INodeType {
     description: INodeTypeDescription = {
         displayName: 'ROS2 Action Trigger',
@@ -22,7 +24,6 @@ export class RosActionTrigger implements INodeType {
         defaults: {
             name: 'ROS2 Action Trigger',
         },
-        usableAsTool: true,
         inputs: [],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

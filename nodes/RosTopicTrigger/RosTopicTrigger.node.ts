@@ -16,6 +16,8 @@ import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
 import { checkFilter, closeRos, connectRos, formatTopicListForN8n, getRosTopics, getRosTopicType, RosBridgeCredentialsData, type FilterData } from '../shared/RosBridgeClient';
 
+// Trigger nodes cannot be invoked as AI tools, so usableAsTool is omitted
+// eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class RosTopicTrigger implements INodeType {
     description: INodeTypeDescription = {
         displayName: 'ROS2 Topic Trigger',
@@ -26,7 +28,6 @@ export class RosTopicTrigger implements INodeType {
         description: 'Start workflow when a message is received on a ROS2 topic',
         defaults: {
             name: 'ROS2 Topic Trigger',
-        usableAsTool: true,
         },
         inputs: [],
         outputs: [NodeConnectionTypes.Main],
