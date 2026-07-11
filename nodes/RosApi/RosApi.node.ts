@@ -10,6 +10,7 @@ import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/
 import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { Ros } from 'roslib';
 
 export class RosApi implements INodeType {
@@ -348,6 +349,12 @@ export class RosApi implements INodeType {
                 description: 'Whether to return a single "topics" array of { name, type } objects instead of the separate "topics" and "types" arrays. Avoids having to match items across two arrays by index.',
             },
         ],
+    };
+
+    methods = {
+        credentialTest: {
+            rosBridgeApi: rosBridgeApiTest,
+        },
     };
 
     async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {

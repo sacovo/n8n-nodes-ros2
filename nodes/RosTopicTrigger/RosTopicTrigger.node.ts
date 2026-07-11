@@ -11,6 +11,7 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { RosApiService } from '../shared/services/RosApiService';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
@@ -142,6 +143,9 @@ export class RosTopicTrigger implements INodeType {
     };
 
     methods = {
+        credentialTest: {
+            rosBridgeApi: rosBridgeApiTest,
+        },
         loadOptions: {},
         listSearch: {
             async getDetectedType(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {

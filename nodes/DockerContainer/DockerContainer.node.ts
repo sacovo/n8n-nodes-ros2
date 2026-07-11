@@ -11,6 +11,8 @@ import type {
 import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
 import Docker from 'dockerode';
 
+import { dockerApiTest } from '../shared/utils/CredentialTests';
+
 function getDockerInstance(credentials: IDataObject): Docker {
     const options: Docker.DockerOptions = {};
 
@@ -179,6 +181,9 @@ export class DockerContainer implements INodeType {
     };
 
     methods = {
+        credentialTest: {
+            dockerApi: dockerApiTest,
+        },
         listSearch: {
             async getContainersList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
                 try {

@@ -10,6 +10,7 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
+import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 
 // Trigger nodes cannot be invoked as AI tools, so usableAsTool is omitted
 // eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
@@ -54,6 +55,12 @@ export class RosActionTrigger implements INodeType {
                 description: 'The ROS 2 action type',
             },
         ],
+    };
+
+    methods = {
+        credentialTest: {
+            rosBridgeApi: rosBridgeApiTest,
+        },
     };
 
     async trigger(this: ITriggerFunctions): Promise<ITriggerResponse> {

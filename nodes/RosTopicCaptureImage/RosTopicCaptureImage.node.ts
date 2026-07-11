@@ -9,6 +9,7 @@ import type {
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
@@ -108,6 +109,9 @@ export class RosTopicCaptureImage implements INodeType {
     };
 
     methods = {
+        credentialTest: {
+            rosBridgeApi: rosBridgeApiTest,
+        },
         loadOptions: {},
         listSearch: {
             async getDetectedType(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
