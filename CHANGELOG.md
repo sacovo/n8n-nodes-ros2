@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+### Fixed
+
+- Workflows exported before 0.2.0 with Conditions containing n8n expressions (e.g. `={{ $json.message.data }}`) no longer fail at execution: expression-style left values are converted to the message field path they reference, and expression right values are evaluated safely.
+
 ## 0.2.0
 
 ### Added
