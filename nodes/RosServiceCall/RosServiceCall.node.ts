@@ -152,7 +152,7 @@ export class RosServiceCall implements INodeType {
                     },
                 },
                 default: '{}',
-                description: 'JSON object sent as service request payload',
+                description: 'JSON object sent as service request payload. The structure must match the request part of the service type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields.',
             },
             {
                 displayName: 'Timeout (Ms)',

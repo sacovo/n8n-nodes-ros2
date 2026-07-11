@@ -188,7 +188,7 @@ export class RosTopicPublish implements INodeType {
                     },
                 },
                 default: '{}',
-                description: 'JSON object sent as the topic message payload',
+                description: 'JSON object sent as the topic message payload. The structure must match the message type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields, e.g. {"linear": {"x": 1.0, "y": 0, "z": 0}, "angular": {"x": 0, "y": 0, "z": 0.5}} for geometry_msgs/Twist.',
             },
             {
                 displayName: 'Options',

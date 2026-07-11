@@ -151,7 +151,7 @@ export class RosActionStart implements INodeType {
                     },
                 },
                 default: '{}',
-                description: 'JSON object sent as action goal payload',
+                description: 'JSON object sent as action goal payload. The structure must match the goal part of the action type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields.',
             },
             {
                 displayName: 'Send Timeout (Ms)',
