@@ -334,6 +334,19 @@ export class RosApi implements INodeType {
                 },
                 description: 'Filter list results using a regular expression or plain text (case-insensitive)',
             },
+            {
+                displayName: 'Combine Topics and Types',
+                name: 'combineTopicsAndTypes',
+                type: 'boolean',
+                default: false,
+                displayOptions: {
+                    show: {
+                        resource: ['topic'],
+                        operation: ['list'],
+                    },
+                },
+                description: 'Whether to return a single "topics" array of { name, type } objects instead of the separate "topics" and "types" arrays. Avoids having to match items across two arrays by index.',
+            },
         ],
     };
 
@@ -416,6 +429,12 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
                     }
                     topics = filteredTopics;
                     types = filteredTypes;
+                }
+                const combineTopicsAndTypes = node.getNodeParameter('combineTopicsAndTypes', itemIndex, false) as boolean;
+                if (combineTopicsAndTypes) {
+                    return {
+                        topics: topics.map((topic, idx) => ({ name: topic, type: types[idx] })),
+                    };
                 }
                 return {
                     topics,

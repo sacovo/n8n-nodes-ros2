@@ -36,6 +36,7 @@ describe('RosApi', () => {
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
                 getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(false),
             } as unknown as IExecuteFunctions;
 
             mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
@@ -74,6 +75,7 @@ describe('RosApi', () => {
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
                 getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(false),
             } as unknown as IExecuteFunctions;
 
             mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
@@ -113,6 +115,7 @@ describe('RosApi', () => {
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
                 getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(false),
             } as unknown as IExecuteFunctions;
 
             mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
@@ -150,6 +153,7 @@ describe('RosApi', () => {
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
                 getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(false),
             } as unknown as IExecuteFunctions;
 
             mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
@@ -177,6 +181,81 @@ describe('RosApi', () => {
                 resource: 'topic',
                 topics: ['/chatter['],
                 types: ['std_msgs/String'],
+                retrievedAt: expect.any(String),
+            });
+        });
+
+        it('should get topics as a combined array when combineTopicsAndTypes is enabled', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(true),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'list';
+                return '';
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getTopics.mockResolvedValue({
+                topics: ['/chatter', '/cmd_vel'],
+                types: ['std_msgs/String', 'geometry_msgs/Twist'],
+            });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toEqual({
+                operation: 'list',
+                resource: 'topic',
+                topics: [
+                    { name: '/chatter', type: 'std_msgs/String' },
+                    { name: '/cmd_vel', type: 'geometry_msgs/Twist' },
+                ],
+                retrievedAt: expect.any(String),
+            });
+        });
+
+        it('should filter combined topics by grep pattern when combineTopicsAndTypes is enabled', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(true),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'list';
+                return '';
+            });
+
+            mockParameterExtractor.extractOptionalString.mockImplementation((node, index, name) => {
+                if (name === 'grep') return 'chat';
+                return undefined;
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getTopics.mockResolvedValue({
+                topics: ['/chatter', '/cmd_vel', '/chatter_debug'],
+                types: ['std_msgs/String', 'geometry_msgs/Twist', 'std_msgs/String'],
+            });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toEqual({
+                operation: 'list',
+                resource: 'topic',
+                topics: [
+                    { name: '/chatter', type: 'std_msgs/String' },
+                    { name: '/chatter_debug', type: 'std_msgs/String' },
+                ],
                 retrievedAt: expect.any(String),
             });
         });
@@ -361,6 +440,7 @@ describe('RosApi', () => {
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
                 getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(false),
             } as unknown as IExecuteFunctions;
 
             for (const { resource, operation } of combinations) {
