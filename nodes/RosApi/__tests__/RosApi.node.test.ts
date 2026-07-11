@@ -450,6 +450,78 @@ describe('RosApi', () => {
             });
         });
 
+        it('should get node definition successfully', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'node';
+                if (name === 'operation') return 'getDefinition';
+                if (name === 'nodeName') return '/talker';
+                return '';
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getNodeDefinition.mockResolvedValue({
+                publishing: [
+                    { name: '/chatter', type: 'std_msgs/msg/String', definition: { data: 'string' } },
+                ],
+                subscribing: [],
+                services: [
+                    {
+                        name: '/talker/describe_parameters',
+                        type: 'rcl_interfaces/srv/DescribeParameters',
+                        request: { names: ['string'] },
+                        response: { descriptors: [{ name: 'string' }] },
+                    },
+                ],
+                actions: [
+                    {
+                        name: '/fibonacci',
+                        type: 'test_msgs/action/Fibonacci',
+                        goal: { order: 'int32' },
+                        result: { sequence: ['int32'] },
+                        feedback: { sequence: ['int32'] },
+                    },
+                ],
+            });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({
+                operation: 'getDefinition',
+                resource: 'node',
+                nodeName: '/talker',
+                publishing: [
+                    { name: '/chatter', type: 'std_msgs/msg/String', definition: { data: 'string' } },
+                ],
+                subscribing: [],
+                services: [
+                    {
+                        name: '/talker/describe_parameters',
+                        type: 'rcl_interfaces/srv/DescribeParameters',
+                        request: { names: ['string'] },
+                        response: { descriptors: [{ name: 'string' }] },
+                    },
+                ],
+                actions: [
+                    {
+                        name: '/fibonacci',
+                        type: 'test_msgs/action/Fibonacci',
+                        goal: { order: 'int32' },
+                        result: { sequence: ['int32'] },
+                        feedback: { sequence: ['int32'] },
+                    },
+                ],
+            });
+            expect(mockRosApiService.getNodeDefinition).toHaveBeenCalledWith(expect.anything(), '/talker');
+        });
+
         it('should get service definition successfully', async () => {
             const mockExecuteFunctions = {
                 getInputData: jest.fn().mockReturnValue([{}]),

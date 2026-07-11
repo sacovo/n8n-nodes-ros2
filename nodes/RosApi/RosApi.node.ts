@@ -83,6 +83,11 @@ export class RosApi implements INodeType {
                 },
                 options: [
                     {
+                        name: 'Get Definition', value: 'getDefinition',
+                        action: 'Get the expanded definitions of all topics and services of a node',
+                        description: 'Get every topic and service of a node together with the expanded structure of their message types',
+                    },
+                    {
                         name: 'Get Details', value: 'getDetails',
                         action: 'Get details a node',
                     },
@@ -198,7 +203,7 @@ export class RosApi implements INodeType {
                 displayOptions: {
                     show: {
                         resource: ['node'],
-                        operation: ['getDetails'],
+                        operation: ['getDetails', 'getDefinition'],
                     },
                 },
             },
@@ -229,6 +234,20 @@ export class RosApi implements INodeType {
                         operation: ['getType', 'getDefinition'],
                     },
                 },
+            },
+            {
+                displayName: 'Action Name',
+                name: 'actionName',
+                type: 'string',
+                default: '',
+                placeholder: '/fibonacci',
+                displayOptions: {
+                    show: {
+                        resource: ['action'],
+                        operation: ['getDefinition'],
+                    },
+                },
+                description: 'The action server name. Used to infer the action type if Message Type is not provided.',
             },
             {
                 displayName: 'Parameter Name',
@@ -517,10 +536,15 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
             }
         case 'getDefinition:action':
             {
-                const actionType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
+                let actionType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
                 if (!actionType) {
-                    // We don't have getActionType yet, so for now we require the type
-                    throw new NodeApiError(node.getNode(), { message: 'Action Type (Message Type) is required for getDefinition:action' });
+                    const actionName = ParameterExtractor.extractOptionalString(node, itemIndex, 'actionName');
+                    if (actionName) {
+                        actionType = await RosApiService.getActionType(ros, actionName);
+                    }
+                }
+                if (!actionType) {
+                    throw new NodeApiError(node.getNode(), { message: 'Provide either Action Name or Message Type for getDefinition:action' });
                 }
                 const [goalDetails, resultDetails, feedbackDetails] = await Promise.all([
                     RosApiService.getActionGoalDetails(ros, actionType as string),
@@ -533,6 +557,15 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
                     goal: RosApiService.expandTypeDef(actionType as string, goalDetails),
                     result: RosApiService.expandTypeDef(actionType as string, resultDetails),
                     feedback: RosApiService.expandTypeDef(actionType as string, feedbackDetails),
+                };
+            }
+        case 'getDefinition:node':
+            {
+                const nodeName = ParameterExtractor.extractRequiredString(node, itemIndex, 'nodeName');
+                const nodeDefinition = await RosApiService.getNodeDefinition(ros, nodeName);
+                return {
+                    nodeName,
+                    ...nodeDefinition,
                 };
             }
         case 'getDetails:topic':

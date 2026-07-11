@@ -7,6 +7,37 @@ import type { Ros, rosapi } from 'roslib';
 
 export type ExpandedTypeDef = string | { [key: string]: ExpandedTypeDef | ExpandedTypeDef[] };
 
+export interface NodeTopicDefinition {
+    name: string;
+    type?: string;
+    definition?: ExpandedTypeDef;
+    error?: string;
+}
+
+export interface NodeServiceDefinition {
+    name: string;
+    type?: string;
+    request?: ExpandedTypeDef;
+    response?: ExpandedTypeDef;
+    error?: string;
+}
+
+export interface NodeActionDefinition {
+    name: string;
+    type?: string;
+    goal?: ExpandedTypeDef;
+    result?: ExpandedTypeDef;
+    feedback?: ExpandedTypeDef;
+    error?: string;
+}
+
+export interface NodeDefinition {
+    publishing: NodeTopicDefinition[];
+    subscribing: NodeTopicDefinition[];
+    services: NodeServiceDefinition[];
+    actions: NodeActionDefinition[];
+}
+
 export class RosApiService {
     private static loadRoslib() {
         // We use eval('import(...)') to prevent tsc from transpiling this to require(),
@@ -220,6 +251,101 @@ export class RosApiService {
             }
         }
         return result;
+    }
+
+    /**
+     * Resolves the full structure of a ROS node: every topic it publishes or
+     * subscribes to, every service it offers and every action server it
+     * provides, each with its expanded type definition. The internal
+     * `_action` services and topics are folded into the action entries.
+     * Failures on individual entries (e.g. internal services that rosapi
+     * cannot introspect) are reported per entry instead of failing the
+     * whole lookup.
+     */
+    static async getNodeDefinition(ros: Ros, nodeName: string): Promise<NodeDefinition> {
+        const details = await this.getNodeDetails(ros, nodeName);
+
+        // Action servers surface in node details only through their internal
+        // `<action>/_action/*` services and topics. Detect them via the
+        // send_goal service and report each action once with its expanded
+        // goal/result/feedback instead of the raw internals.
+        const allServices = details.services ?? [];
+        const actionServers = allServices
+            .filter((service) => service.endsWith('/_action/send_goal'))
+            .map((service) => service.slice(0, -'/_action/send_goal'.length));
+        const isActionInternal = (name: string) =>
+            actionServers.some((action) => name.startsWith(`${action}/_action/`));
+
+        // Nodes often share types (e.g. rcl_interfaces parameter services),
+        // so resolve each distinct type only once.
+        const messageDefinitions = new Map<string, Promise<ExpandedTypeDef>>();
+        const serviceDefinitions = new Map<string, Promise<{ request: ExpandedTypeDef; response: ExpandedTypeDef }>>();
+
+        const describeTopic = async (name: string): Promise<NodeTopicDefinition> => {
+            try {
+                const type = await this.getTopicType(ros, name);
+                let definition = messageDefinitions.get(type);
+                if (!definition) {
+                    definition = this.getMessageDetails(ros, type).then((typedefs) => this.expandTypeDef(type, typedefs));
+                    messageDefinitions.set(type, definition);
+                }
+                return { name, type, definition: await definition };
+            } catch (error) {
+                return { name, error: (error as Error).message };
+            }
+        };
+
+        const describeService = async (name: string): Promise<NodeServiceDefinition> => {
+            try {
+                const type = await this.getServiceType(ros, name);
+                let definition = serviceDefinitions.get(type);
+                if (!definition) {
+                    definition = Promise.all([
+                        this.getServiceRequestDetails(ros, type),
+                        this.getServiceResponseDetails(ros, type),
+                    ]).then(([requestDetails, responseDetails]) => ({
+                        request: this.expandTypeDef(type, requestDetails),
+                        response: this.expandTypeDef(type, responseDetails),
+                    }));
+                    serviceDefinitions.set(type, definition);
+                }
+                return { name, type, ...(await definition) };
+            } catch (error) {
+                return { name, error: (error as Error).message };
+            }
+        };
+
+        const describeAction = async (name: string): Promise<NodeActionDefinition> => {
+            try {
+                const type = await this.getActionType(ros, name);
+                if (!type) {
+                    return { name, error: 'Could not determine action type' };
+                }
+                const [goalDetails, resultDetails, feedbackDetails] = await Promise.all([
+                    this.getActionGoalDetails(ros, type),
+                    this.getActionResultDetails(ros, type),
+                    this.getActionFeedbackDetails(ros, type),
+                ]);
+                return {
+                    name,
+                    type,
+                    goal: this.expandTypeDef(type, goalDetails),
+                    result: this.expandTypeDef(type, resultDetails),
+                    feedback: this.expandTypeDef(type, feedbackDetails),
+                };
+            } catch (error) {
+                return { name, error: (error as Error).message };
+            }
+        };
+
+        const [publishing, subscribing, services, actions] = await Promise.all([
+            Promise.all((details.publishing ?? []).filter((topic) => !isActionInternal(topic)).map(describeTopic)),
+            Promise.all((details.subscribing ?? []).filter((topic) => !isActionInternal(topic)).map(describeTopic)),
+            Promise.all(allServices.filter((service) => !isActionInternal(service)).map(describeService)),
+            Promise.all(actionServers.map(describeAction)),
+        ]);
+
+        return { publishing, subscribing, services, actions };
     }
 
     static async getTopicsAndRawTypes(ros: Ros): Promise<rosapi.TopicsAndRawTypesResponse> {
