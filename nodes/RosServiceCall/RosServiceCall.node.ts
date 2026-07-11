@@ -24,6 +24,7 @@ export class RosServiceCall implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Call a ROS2 service and wait for the response',
+        subtitle: '={{$parameter["serviceName"]["value"]}}',
         defaults: {
             name: 'ROS2 Service Call',
         },

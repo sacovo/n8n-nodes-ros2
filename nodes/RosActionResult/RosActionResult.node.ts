@@ -22,6 +22,7 @@ export class RosActionResult implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Wait for and retrieve the result of a ROS2 action goal',
+        subtitle: '={{$parameter["serverName"]["value"]}}',
         defaults: {
             name: 'ROS2 Action Result',
         },

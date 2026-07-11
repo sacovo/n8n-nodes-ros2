@@ -22,6 +22,7 @@ export class RosTopicNextMessage implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Wait for the next message on a ROS2 topic',
+        subtitle: '={{$parameter["topicName"]["value"]}}',
         defaults: {
             name: 'ROS2 Topic Next Message',
         },
@@ -218,8 +219,8 @@ export class RosTopicNextMessage implements INodeType {
                 const messageType =
                     typeof messageTypeLocator === 'string' ? messageTypeLocator : messageTypeLocator?.value;
                 const timeoutMs = ParameterExtractor.extractRequiredNumber(this, i, 'timeoutMs');
-
                 const conditions = this.getNodeParameter('conditions', i, {}) as FilterData;
+
                 // Connect to ROS
                 ros = await RosBridgeService.connect(credentials);
 
@@ -229,8 +230,8 @@ export class RosTopicNextMessage implements INodeType {
                     topicName,
                     messageType,
                     timeoutMs,
-                );
                     (message) => checkFilter({ json: { message } }, conditions),
+                );
 
                 returnData.push({
                     json: RosN8nFormatter.formatTopicMessage(topicName, messageType, result),

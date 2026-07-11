@@ -22,6 +22,7 @@ export class RosActionFeedback implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Listen for the next feedback message of a ROS2 action goal',
+        subtitle: '={{$parameter["serverName"]["value"]}}',
         defaults: {
             name: 'ROS2 Action Feedback',
         },

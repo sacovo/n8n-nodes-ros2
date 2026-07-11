@@ -21,6 +21,7 @@ export class RosActionTrigger implements INodeType {
         group: ['trigger'],
         version: [1],
         description: 'Advertise a ROS2 action server and start workflow when a goal is received',
+        subtitle: '={{$parameter["serverName"]}}',
         defaults: {
             name: 'ROS2 Action Trigger',
         },

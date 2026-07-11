@@ -26,6 +26,7 @@ export class RosTopicTrigger implements INodeType {
         group: ['trigger'],
         version: [1],
         description: 'Start workflow when a message is received on a ROS2 topic',
+        subtitle: '={{$parameter["topicName"]["value"]}}',
         defaults: {
             name: 'ROS2 Topic Trigger',
         },

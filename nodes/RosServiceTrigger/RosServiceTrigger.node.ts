@@ -25,6 +25,7 @@ export class RosServiceTrigger implements INodeType {
         group: ['trigger'],
         version: [1],
         description: 'Advertise a ROS2 service and start workflow when called',
+        subtitle: '={{$parameter["serviceName"]}}',
         defaults: {
             name: 'ROS2 Service Trigger',
         },

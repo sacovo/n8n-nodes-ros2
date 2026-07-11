@@ -22,6 +22,7 @@ export class RosActionCancel implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Cancel an active ROS2 action goal',
+        subtitle: '={{$parameter["serverName"]["value"]}}',
         defaults: {
             name: 'ROS2 Action Cancel',
         },

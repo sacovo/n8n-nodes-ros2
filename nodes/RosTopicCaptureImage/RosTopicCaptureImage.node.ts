@@ -21,6 +21,7 @@ export class RosTopicCaptureImage implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Capture a compressed image (JPEG/PNG) from a ROS2 topic',
+        subtitle: '={{$parameter["topicName"]["value"]}}',
         defaults: {
             name: 'ROS2 Topic Capture Image',
         },

@@ -41,6 +41,7 @@ export class DockerContainer implements INodeType {
         group: ['transform'],
         version: 1,
         description: 'Control Docker containers',
+        subtitle: '={{$parameter["operation"]}}',
         defaults: {
             name: 'Docker Container',
         },

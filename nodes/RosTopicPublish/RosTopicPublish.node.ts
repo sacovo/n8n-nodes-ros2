@@ -32,6 +32,7 @@ export class RosTopicPublish implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Publish a message to a ROS2 topic via rosbridge',
+        subtitle: '={{$parameter["topicName"]["value"]}}',
         defaults: {
             name: 'ROS2 Topic Publish',
         },

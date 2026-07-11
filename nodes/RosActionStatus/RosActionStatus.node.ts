@@ -22,6 +22,7 @@ export class RosActionStatus implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Check status of a previously started ROS2 action goal',
+        subtitle: '={{$parameter["serverName"]["value"]}}',
         defaults: {
             name: 'ROS2 Action Status',
         },

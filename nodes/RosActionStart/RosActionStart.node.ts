@@ -23,6 +23,7 @@ export class RosActionStart implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Start a ROS2 action goal and return immediately',
+        subtitle: '={{$parameter["serverName"]["value"]}}',
         defaults: {
             name: 'ROS2 Action Start',
         },
