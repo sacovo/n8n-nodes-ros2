@@ -616,6 +616,17 @@ export class RosBridgeService {
 
         return () => {
             server.removeAllListeners('goal');
+            // Drop every goal registered against this server. On trigger
+            // deactivation this prevents unbounded growth from goals that were
+            // never completed; on reconnect (connectWithReconnect tears down and
+            // re-registers a fresh SimpleActionServer) it invalidates goalIds
+            // that would otherwise point at a dead server, so feedback/result
+            // calls fail loudly instead of silently talking to it.
+            for (const [goalId, registeredServer] of this.goalRegistry.entries()) {
+                if (registeredServer === server) {
+                    this.goalRegistry.delete(goalId);
+                }
+            }
         };
     }
 

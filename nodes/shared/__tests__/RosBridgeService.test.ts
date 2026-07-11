@@ -296,6 +296,136 @@ describe('RosBridgeService', () => {
         });
     });
 
+    describe('registerActionServer (goal registry cleanup)', () => {
+        // Fake roslib SimpleActionServer: records feedback and lets tests drive
+        // incoming goals via emit('goal').
+        class FakeSimpleActionServer {
+            static instances: FakeSimpleActionServer[] = [];
+
+            currentGoal: { goal_id: { id: string } } | undefined;
+            feedback: JsonRecord[] = [];
+            private handlers = new Map<string, Array<(event?: unknown) => void>>();
+
+            constructor() {
+                FakeSimpleActionServer.instances.push(this);
+            }
+
+            on(event: string, handler: (event?: unknown) => void): void {
+                const list = this.handlers.get(event) ?? [];
+                list.push(handler);
+                this.handlers.set(event, list);
+            }
+
+            removeAllListeners(event: string): void {
+                this.handlers.delete(event);
+            }
+
+            emit(event: string, payload?: unknown): void {
+                for (const handler of [...(this.handlers.get(event) ?? [])]) {
+                    handler(payload);
+                }
+            }
+
+            sendFeedback(feedback: JsonRecord): void {
+                this.feedback.push(feedback);
+            }
+
+            receiveGoal(goalId: string, goalMessage: JsonRecord): void {
+                this.currentGoal = { goal_id: { id: goalId } };
+                this.emit('goal', goalMessage);
+            }
+        }
+
+        const mockRos = {} as unknown as Ros;
+
+        const getGoalRegistry = () =>
+            (RosBridgeService as unknown as { goalRegistry: Map<string, unknown> }).goalRegistry;
+
+        beforeEach(() => {
+            FakeSimpleActionServer.instances = [];
+            jest.spyOn(
+                RosBridgeService as unknown as { loadRoslib: () => Promise<unknown> },
+                'loadRoslib',
+            ).mockResolvedValue({ SimpleActionServer: FakeSimpleActionServer });
+        });
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+            getGoalRegistry().clear();
+        });
+
+        it('drops goals received before teardown so stale feedback fails loudly', async () => {
+            const teardown = await RosBridgeService.registerActionServer(
+                mockRos,
+                '/fibonacci',
+                'action_tutorials_interfaces/action/Fibonacci',
+                () => {},
+            );
+
+            const server = FakeSimpleActionServer.instances[0];
+            server.receiveGoal('goal_1', { order: 5 });
+
+            // Before teardown the goal is live and feedback is delivered.
+            expect(() => RosBridgeService.sendActionFeedback('goal_1', { partial: [1] })).not.toThrow();
+            expect(server.feedback).toEqual([{ partial: [1] }]);
+
+            teardown();
+
+            // After teardown the goalId is invalidated (e.g. trigger deactivation
+            // or reconnect), so the call throws instead of talking to a dead server.
+            expect(() => RosBridgeService.sendActionFeedback('goal_1', { partial: [1, 1] })).toThrow(
+                'No active action goal found for ID "goal_1"',
+            );
+        });
+
+        it('a reconnected server does not resurrect goals from the previous server', async () => {
+            const firstTeardown = await RosBridgeService.registerActionServer(
+                mockRos,
+                '/fibonacci',
+                'action_tutorials_interfaces/action/Fibonacci',
+                () => {},
+            );
+            const firstServer = FakeSimpleActionServer.instances[0];
+            firstServer.receiveGoal('goal_old', { order: 3 });
+
+            // Simulate reconnect: old teardown runs, a new server is registered.
+            firstTeardown();
+            await RosBridgeService.registerActionServer(
+                mockRos,
+                '/fibonacci',
+                'action_tutorials_interfaces/action/Fibonacci',
+                () => {},
+            );
+
+            expect(() => RosBridgeService.sendActionFeedback('goal_old', { partial: [1] })).toThrow(
+                'No active action goal found for ID "goal_old"',
+            );
+        });
+
+        it('teardown only removes goals for its own server', async () => {
+            const firstTeardown = await RosBridgeService.registerActionServer(
+                mockRos,
+                '/a',
+                'pkg/action/A',
+                () => {},
+            );
+            await RosBridgeService.registerActionServer(mockRos, '/b', 'pkg/action/B', () => {});
+
+            const [firstServer, secondServer] = FakeSimpleActionServer.instances;
+            firstServer.receiveGoal('goal_a', {});
+            secondServer.receiveGoal('goal_b', {});
+
+            firstTeardown();
+
+            expect(() => RosBridgeService.sendActionFeedback('goal_a', {})).toThrow(
+                'No active action goal found for ID "goal_a"',
+            );
+            // The second server's goal is untouched.
+            expect(() => RosBridgeService.sendActionFeedback('goal_b', {})).not.toThrow();
+            expect(secondServer.feedback).toEqual([{}]);
+        });
+    });
+
     describe('extractGoalId', () => {
         const extractGoalId = (goal: Goal<JsonRecord>): string =>
             (RosBridgeService as unknown as { extractGoalId: (goal: Goal<JsonRecord>) => string }).extractGoalId(goal);
