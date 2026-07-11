@@ -20,6 +20,7 @@ export class RosApi implements INodeType {
         group: ['transform'],
         version: [1],
         description: 'Query ROS2 master information via rosapi',
+        subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
         defaults: {
             name: 'ROS2 API',
         },
@@ -60,12 +61,14 @@ export class RosApi implements INodeType {
                 },
                 options: [
                     {
-                        name: 'List', value: 'list',
-                        action: 'List an action',
-                    },
-                    {
                         name: 'Get Definition', value: 'getDefinition',
                         action: 'Get the expanded definition of an action',
+                        description: 'Get the expanded goal, result and feedback structure of an action type',
+                    },
+                    {
+                        name: 'List', value: 'list',
+                        action: 'List action servers',
+                        description: 'List all available action servers',
                     },
                 ],
                 default: 'list',
@@ -85,15 +88,17 @@ export class RosApi implements INodeType {
                     {
                         name: 'Get Definition', value: 'getDefinition',
                         action: 'Get the expanded definitions of all topics and services of a node',
-                        description: 'Get every topic and service of a node together with the expanded structure of their message types',
+                        description: 'Get every topic, service and action of a node together with the expanded structure of their message types',
                     },
                     {
                         name: 'Get Details', value: 'getDetails',
-                        action: 'Get details a node',
+                        action: 'Get details of a node',
+                        description: 'List the names of the topics and services of a node',
                     },
                     {
                         name: 'List', value: 'list',
-                        action: 'List a node',
+                        action: 'List nodes',
+                        description: 'List all running nodes',
                     },
                 ],
                 default: 'list',
@@ -113,14 +118,17 @@ export class RosApi implements INodeType {
                     {
                         name: 'Get', value: 'get',
                         action: 'Get a parameter',
+                        description: 'Get the value of a parameter',
                     },
                     {
                         name: 'List', value: 'list',
-                        action: 'List a parameter',
+                        action: 'List parameters',
+                        description: 'List all parameter names',
                     },
                     {
                         name: 'Set', value: 'set',
                         action: 'Set a parameter',
+                        description: 'Set the value of a parameter',
                     },
                 ],
                 default: 'list',
@@ -138,20 +146,24 @@ export class RosApi implements INodeType {
                 },
                 options: [
                     {
-                        name: 'Get Type', value: 'getType',
-                        action: 'Get type a service',
-                    },
-                    {
                         name: 'Get Definition', value: 'getDefinition',
                         action: 'Get the expanded definition of a service',
+                        description: 'Get the expanded request and response structure of a service, so you know which fields a call expects and returns',
+                    },
+                    {
+                        name: 'Get Type', value: 'getType',
+                        action: 'Get the type of a service',
+                        description: 'Get the service type of a service by its name',
                     },
                     {
                         name: 'List', value: 'list',
-                        action: 'List a service',
+                        action: 'List services',
+                        description: 'List all available services',
                     },
                     {
                         name: 'List for Type', value: 'listForType',
-                        action: 'List for type a service',
+                        action: 'List services of a type',
+                        description: 'List all services that use a given service type',
                     },
                 ],
                 default: 'list',
@@ -171,22 +183,27 @@ export class RosApi implements INodeType {
                     {
                         name: 'Get Definition', value: 'getDefinition',
                         action: 'Get the expanded definition of a topic message type',
+                        description: 'Get the expanded message structure of a topic, so you know which fields to publish or expect when subscribing',
                     },
                     {
                         name: 'Get Details', value: 'getDetails',
-                        action: 'Get details a topic',
+                        action: 'Get details of a topic',
+                        description: 'Get the raw type definitions of a topic message type',
                     },
                     {
                         name: 'Get Type', value: 'getType',
-                        action: 'Get type a topic',
+                        action: 'Get the type of a topic',
+                        description: 'Get the message type of a topic by its name',
                     },
                     {
                         name: 'List', value: 'list',
-                        action: 'List a topic',
+                        action: 'List topics',
+                        description: 'List all available topics and their message types',
                     },
                     {
                         name: 'List for Type', value: 'listForType',
-                        action: 'List for type a topic',
+                        action: 'List topics of a type',
+                        description: 'List all topics that use a given message type',
                     },
                 ],
                 default: 'list',
