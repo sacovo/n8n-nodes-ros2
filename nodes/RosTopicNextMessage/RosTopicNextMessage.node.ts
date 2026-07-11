@@ -28,7 +28,11 @@ export class RosTopicNextMessage implements INodeType {
         defaults: {
             name: 'ROS2 Topic Next Message',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Wait (blocking, with a configurable timeout) for the next message published on a ROS2 topic and return its contents. Use this to read the current value of a sensor or state topic (e.g. battery level, robot pose) on demand. Use the ROS2 API tool\'s "getDefinition" operation to know what fields the returned message will contain.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

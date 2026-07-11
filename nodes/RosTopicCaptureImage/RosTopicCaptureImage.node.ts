@@ -27,7 +27,11 @@ export class RosTopicCaptureImage implements INodeType {
         defaults: {
             name: 'ROS2 Topic Capture Image',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Capture a single compressed image (JPEG/PNG) from a ROS2 image topic and return it as a binary file. Use this when the agent needs to see what a camera currently sees, e.g. for visual inspection or scene description.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

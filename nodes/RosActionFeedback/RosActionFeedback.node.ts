@@ -27,7 +27,11 @@ export class RosActionFeedback implements INodeType {
         defaults: {
             name: 'ROS2 Action Feedback',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Wait (blocking) for the next feedback message of a ROS2 action goal previously started with the ROS2 Action Start tool. Requires the goalId returned by that tool. Use this to check on progress of a long-running action without waiting for its final result.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

@@ -25,7 +25,11 @@ export class RosApi implements INodeType {
         defaults: {
             name: 'ROS2 API',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Discover the live ROS2 graph: list topics, services, nodes, action servers, and parameters, get their types, and look up node details. Crucially, the "getDefinition" operation returns the fully expanded JSON structure (including nested custom types) of any message, service, or action type. Always call this tool first to learn the exact payload shape before publishing to a topic, calling a service, or starting an action.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

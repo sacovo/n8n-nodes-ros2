@@ -27,7 +27,11 @@ export class RosActionStatus implements INodeType {
         defaults: {
             name: 'ROS2 Action Status',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Check the current status (e.g. accepted, executing, succeeded, canceled) of a ROS2 action goal previously started with the ROS2 Action Start tool. Requires the goalId returned by that tool. Returns immediately without waiting, unlike ROS2 Action Result.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

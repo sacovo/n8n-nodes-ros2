@@ -28,7 +28,11 @@ export class RosServiceCall implements INodeType {
         defaults: {
             name: 'ROS2 Service Call',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Call a ROS2 service and wait for its response. The request payload must exactly match the service type\'s request structure - use the ROS2 API tool\'s "getDefinition" operation first to discover the required fields. Returns the service response once the server replies.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

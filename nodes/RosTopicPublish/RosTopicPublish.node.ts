@@ -27,7 +27,11 @@ export class RosTopicPublish implements INodeType {
         defaults: {
             name: 'ROS2 Topic Publish',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Publish a message to a ROS2 topic (operation "publish"; "advertise" only registers the topic without sending anything). The message payload must exactly match the topic\'s message type - use the ROS2 API tool\'s "getDefinition" operation first to discover the required field structure. Fire-and-forget: it does not wait for subscribers to process the message.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

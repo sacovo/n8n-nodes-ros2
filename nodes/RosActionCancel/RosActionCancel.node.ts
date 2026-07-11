@@ -27,7 +27,11 @@ export class RosActionCancel implements INodeType {
         defaults: {
             name: 'ROS2 Action Cancel',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Cancel an active ROS2 action goal previously started with the ROS2 Action Start tool. Requires the goalId returned by that tool. Use this to stop a long-running action (e.g. navigation, manipulation) before it completes on its own.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

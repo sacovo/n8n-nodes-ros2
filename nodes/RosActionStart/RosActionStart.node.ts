@@ -27,7 +27,11 @@ export class RosActionStart implements INodeType {
         defaults: {
             name: 'ROS2 Action Start',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Send a goal to a ROS2 action server and return immediately with a goalId, without waiting for the action to complete. The goal payload must match the action type\'s goal structure - discover it via the ROS2 API tool\'s "getDefinition" operation. Follow up with the ROS2 Action Result, Status, or Feedback tools, passing them this goalId, to track progress and get the outcome.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

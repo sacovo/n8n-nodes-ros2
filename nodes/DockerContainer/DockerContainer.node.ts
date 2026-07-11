@@ -47,7 +47,11 @@ export class DockerContainer implements INodeType {
         defaults: {
             name: 'Docker Container',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Manage Docker containers via the Docker API: list containers, start/stop/restart them, fetch logs, and exec commands inside a running container. Use this to inspect or control containerized processes (e.g. restarting a stuck ROS2 node\'s container, or checking its logs for errors).',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [

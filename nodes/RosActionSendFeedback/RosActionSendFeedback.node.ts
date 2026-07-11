@@ -22,7 +22,11 @@ export class RosActionSendFeedback implements INodeType {
         defaults: {
             name: 'ROS2 Action Send Feedback',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Send feedback for, or complete, a ROS2 action goal that this same n8n instance received via a ROS2 Action Trigger node. Only useful inside workflows started by that trigger - it operates on the goalId from the triggering event, not on goals started elsewhere. Not usable for goals started with the ROS2 Action Start tool.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         properties: [

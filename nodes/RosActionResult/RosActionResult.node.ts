@@ -27,7 +27,11 @@ export class RosActionResult implements INodeType {
         defaults: {
             name: 'ROS2 Action Result',
         },
-        usableAsTool: true,
+        usableAsTool: {
+            replacements: {
+                description: 'Wait (blocking) for the final result of a ROS2 action goal previously started with the ROS2 Action Start tool. Requires the goalId returned by that tool. Returns the action\'s result payload once the goal finishes, or times out if it takes too long.',
+            },
+        },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
         credentials: [
