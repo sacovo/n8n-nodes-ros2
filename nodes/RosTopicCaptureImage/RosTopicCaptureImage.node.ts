@@ -176,7 +176,6 @@ export class RosTopicCaptureImage implements INodeType {
     async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
         const items = this.getInputData();
         const returnData: INodeExecutionData[] = [];
-        const continueOnFail = this.continueOnFail();
 
         for (let i = 0; i < items.length; i++) {
             let ros;
@@ -248,7 +247,7 @@ export class RosTopicCaptureImage implements INodeType {
                     pairedItem: { item: i },
                 });
             } catch (error) {
-                if (continueOnFail) {
+                if (NodeErrorHandler.shouldReturnErrorOutput(this)) {
                     returnData.push({
                         json: NodeErrorHandler.buildErrorOutput(error as Error),
                         pairedItem: { item: i },

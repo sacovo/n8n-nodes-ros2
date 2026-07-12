@@ -336,7 +336,7 @@ export class RosServiceCall implements INodeType {
                     pairedItem: { item: i },
                 });
             } catch (error) {
-                if (this.continueOnFail()) {
+                if (NodeErrorHandler.shouldReturnErrorOutput(this)) {
                     returnData.push({
                         json: NodeErrorHandler.buildErrorOutput(error),
                         pairedItem: { item: i },

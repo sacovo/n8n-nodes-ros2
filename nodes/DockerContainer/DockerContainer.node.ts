@@ -12,6 +12,7 @@ import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
 import Docker from 'dockerode';
 
 import { dockerApiTest } from '../shared/utils/CredentialTests';
+import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 
 function getDockerInstance(credentials: IDataObject): Docker {
     const options: Docker.DockerOptions = {};
@@ -297,7 +298,7 @@ export class DockerContainer implements INodeType {
                     pairedItem: { item: i },
                 });
             } catch (error) {
-                if (this.continueOnFail()) {
+                if (NodeErrorHandler.shouldReturnErrorOutput(this)) {
                     returnData.push({
                         json: { error: error.message },
                         pairedItem: { item: i },

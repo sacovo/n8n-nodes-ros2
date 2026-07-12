@@ -123,6 +123,7 @@ describe('RosActionStatus', () => {
             } as unknown as IExecuteFunctions;
 
             mockRosBridgeService.connect.mockRejectedValue(new Error('Connection failed'));
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation((ctx) => ctx.continueOnFail());
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'Connection failed' });
 
             const result = await node.execute.call(mockExecuteFunctions);

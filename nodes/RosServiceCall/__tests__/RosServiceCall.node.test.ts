@@ -148,6 +148,7 @@ describe('RosServiceCall', () => {
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.callService.mockRejectedValue(new Error('Service not available'));
             mockRosBridgeService.close.mockImplementation(() => { });
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation((ctx) => ctx.continueOnFail());
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'Service not available' });
 
             const result = await node.execute.call(mockExecuteFunctions);

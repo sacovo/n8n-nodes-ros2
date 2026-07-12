@@ -363,11 +363,42 @@ describe('RosApi', () => {
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getTopics.mockRejectedValue(new Error('ROS API unavailable'));
             mockRosBridgeService.close.mockImplementation(() => { });
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation((ctx) => ctx.continueOnFail());
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'ROS API unavailable' });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
             expect(result[0][0].json).toEqual({ error: 'ROS API unavailable' });
+            expect(mockNodeErrorHandler.handle).not.toHaveBeenCalled();
+        });
+
+        it('should return errors as output instead of throwing when running as an AI agent tool', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                isToolExecution: jest.fn().mockReturnValue(true),
+                getNode: jest.fn().mockReturnValue({}),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'topic';
+                if (name === 'operation') return 'list';
+                return '';
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getTopics.mockRejectedValue(new Error('rosbridge unreachable'));
+            mockRosBridgeService.close.mockImplementation(() => { });
+            // Use the real decision logic so tool executions actually take the soft-fail path
+            const { NodeErrorHandler: realNodeErrorHandler } =
+                jest.requireActual<typeof import('../../shared/utils/NodeErrorHandler')>('../../shared/utils/NodeErrorHandler');
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation(realNodeErrorHandler.shouldReturnErrorOutput);
+            mockNodeErrorHandler.buildErrorOutput.mockImplementation(realNodeErrorHandler.buildErrorOutput);
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toEqual({ error: 'rosbridge unreachable' });
             expect(mockNodeErrorHandler.handle).not.toHaveBeenCalled();
         });
 

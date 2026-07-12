@@ -133,6 +133,7 @@ describe('RosTopicNextMessage', () => {
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.waitForTopicMessage.mockRejectedValue(new Error('Timeout waiting for message'));
             mockRosBridgeService.close.mockImplementation(() => { });
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation((ctx) => ctx.continueOnFail());
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'Timeout waiting for message' });
 
             const result = await node.execute.call(mockExecuteFunctions);

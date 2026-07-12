@@ -123,6 +123,7 @@ describe('RosActionStart', () => {
                 throw new Error('Parameter error');
             });
 
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation((ctx) => ctx.continueOnFail());
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'Parameter error' });
 
             const result = await node.execute.call(mockExecuteFunctions);

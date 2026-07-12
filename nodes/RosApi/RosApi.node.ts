@@ -409,13 +409,11 @@ export class RosApi implements INodeType {
     async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
         const items = this.getInputData();
         const returnData: INodeExecutionData[] = [];
-        const continueOnFail = this.continueOnFail();
 
         for (let i = 0; i < items.length; i++) {
             let ros;
             try {
                 const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
-                this.continueOnFail();
 
                 // Extract operation parameter
                 const resource = ParameterExtractor.extractRequiredString(this, i, 'resource') as RosResource;
@@ -438,7 +436,7 @@ export class RosApi implements INodeType {
                     pairedItem: { item: i },
                 });
             } catch (error) {
-                if (continueOnFail) {
+                if (NodeErrorHandler.shouldReturnErrorOutput(this)) {
                     returnData.push({
                         json: NodeErrorHandler.buildErrorOutput(error as Error),
                         pairedItem: { item: i },
