@@ -49,7 +49,7 @@ It works over a **Resource** (`Topic`, `Service`, `Node`, `Action`, `Parameter`)
 - **Topic**: `List` (all topics + types, optionally combined into `{ name, type }` pairs), `List for Type` (topics using a given message type), `Get Type` (type of one topic), `Get Details` (raw type definitions), `Get Definition` (fully expanded message structure).
 - **Service**: `List`, `List for Type`, `Get Type`, `Get Definition` (expanded request and response structures).
 - **Node**: `List` (running nodes), `Get Details` (a node's topic/service names), `Get Definition` (a node's full topic/service/action structure — see below).
-- **Action**: `List` (action servers), `Get Definition` (expanded goal, result and feedback structures).
+- **Action**: `List` (action servers), `Get Type` (action type of one action server), `Get Definition` (expanded goal, result and feedback structures).
 - **Parameter**: `List`, `Get`, `Set`.
 
 All `List`/`List for Type` operations accept an optional **Grep Pattern** to filter results (regex, or a plain case-insensitive substring match if the pattern isn't valid regex).
@@ -58,7 +58,7 @@ All `List`/`List for Type` operations accept an optional **Grep Pattern** to fil
 
 **Get Type** can additionally return documentation:
 
-- *Include Description* reads the latched `<name>/desc` topic (see the documentation convention below) and returns its text as `description` — this is where instance-level semantics live ("this Float32 is the turntable target in mm").
+- *Include Description* (topics, services and actions) reads the latched `<name>/desc` topic (see the documentation convention below) and returns its text as `description` — this is where instance-level semantics live ("this Float32 is the turntable target in mm").
 - *Include Raw Definition* (topics only) returns the raw `.msg` definition text, including source comments that document units and allowed enum values. rosapi only exposes raw definitions for message types currently used by an active topic; the field is `null` otherwise.
 
 ### Documentation convention: latched `/desc` topics

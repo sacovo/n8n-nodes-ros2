@@ -71,6 +71,11 @@ export class RosApi implements INodeType {
                         description: 'Get the expanded goal, result and feedback structure of an action type',
                     },
                     {
+                        name: 'Get Type', value: 'getType',
+                        action: 'Get the type of an action',
+                        description: 'Get the action type of an action server by its name, optionally with its documentation (description)',
+                    },
+                    {
                         name: 'List', value: 'list',
                         action: 'List action servers',
                         description: 'List all available action servers',
@@ -272,6 +277,20 @@ export class RosApi implements INodeType {
                 description: 'The action server name. Used to infer the action type if Message Type is not provided.',
             },
             {
+                displayName: 'Action Name',
+                name: 'actionName',
+                type: 'string',
+                default: '',
+                required: true,
+                placeholder: '/fibonacci',
+                displayOptions: {
+                    show: {
+                        resource: ['action'],
+                        operation: ['getType'],
+                    },
+                },
+            },
+            {
                 displayName: 'Parameter Name',
                 name: 'parameterName',
                 type: 'string',
@@ -334,7 +353,7 @@ export class RosApi implements INodeType {
                 default: false,
                 displayOptions: {
                     show: {
-                        resource: ['topic', 'service'],
+                        resource: ['topic', 'service', 'action'],
                         operation: ['getType'],
                     },
                 },
@@ -587,6 +606,22 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
                 }
                 return result;
             }
+        case 'getType:action':
+            {
+                const actionName = ParameterExtractor.extractRequiredString(node, itemIndex, 'actionName');
+                const actionType = await RosApiService.getActionType(ros, actionName);
+                if (!actionType) {
+                    throw new NodeApiError(node.getNode(), { message: `Could not determine the action type of ${actionName}. Is the action server running?` });
+                }
+                const result: Record<string, unknown> = {
+                    actionName,
+                    actionType,
+                };
+                if (node.getNodeParameter('includeDescription', itemIndex, false) as boolean) {
+                    result.description = await RosApiService.getInterfaceDescription(ros, actionName);
+                }
+                return result;
+            }
         case 'getDefinition:topic':
             {
                 let messageType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
@@ -595,7 +630,7 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
                     messageType = await RosApiService.getTopicType(ros, topicName);
                 }
                 const typedefs = await RosApiService.getMessageDetails(ros, messageType as string);
-                const definition = RosApiService.expandTypeDef(messageType as string, typedefs);
+                const definition = RosApiService.expandRootTypeDef(messageType as string, typedefs);
                 return {
                     messageType,
                     definition,
@@ -614,8 +649,8 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
                 ]);
                 return {
                     serviceType,
-                    request: RosApiService.expandTypeDef(serviceType as string, requestDetails),
-                    response: RosApiService.expandTypeDef(serviceType as string, responseDetails),
+                    request: RosApiService.expandRootTypeDef(serviceType as string, requestDetails),
+                    response: RosApiService.expandRootTypeDef(serviceType as string, responseDetails),
                 };
             }
         case 'getDefinition:action':
@@ -638,9 +673,9 @@ async function runOperation(resource: RosResource, operation: RosOperation, ros:
 
                 return {
                     actionType,
-                    goal: RosApiService.expandTypeDef(actionType as string, goalDetails),
-                    result: RosApiService.expandTypeDef(actionType as string, resultDetails),
-                    feedback: RosApiService.expandTypeDef(actionType as string, feedbackDetails),
+                    goal: RosApiService.expandRootTypeDef(actionType as string, goalDetails),
+                    result: RosApiService.expandRootTypeDef(actionType as string, resultDetails),
+                    feedback: RosApiService.expandRootTypeDef(actionType as string, feedbackDetails),
                 };
             }
         case 'getDefinition:node':

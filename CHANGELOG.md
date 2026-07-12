@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+### Fixed
+
+- rosapi Get Definition for services and actions now actually returns the expanded structure. rosapi names service/action sub-definitions after their generated classes (e.g. `rcl_interfaces/GetParameters_Request` for `rcl_interfaces/srv/GetParameters`), so the previous exact-name root lookup found nothing and silently returned the bare type name string instead of the request/response (or goal/result/feedback) structure. The same fix applies to Node Get Definition, so AI agents and workflows can now discover service and action payload shapes the same way the editor's resource mapper does.
+
+### Added
+
+- rosapi Action resource now has a Get Type operation: resolves the action type of a running action server by name, with the same optional Include Description (`<name>/desc`) documentation lookup that topics and services have.
+
 ## 0.3.0
 
 ### Added

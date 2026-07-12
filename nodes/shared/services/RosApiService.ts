@@ -269,6 +269,23 @@ export class RosApiService {
     }
 
     /**
+     * Expands the root type of a rosapi typedef response. Service and action
+     * sub-definitions (request/response, goal/result/feedback) come back with
+     * root type names derived from the generated Python classes (e.g.
+     * `rcl_interfaces/GetParameters_Request` for
+     * `rcl_interfaces/srv/GetParameters`), so an exact-name lookup never
+     * matches the interface type the caller asked about. rosapi always
+     * returns the root typedef first, so fall back to the first entry when
+     * the requested name has no exact match.
+     */
+    static expandRootTypeDef(typeName: string, typedefs: rosapi.TypeDef[]): ExpandedTypeDef {
+        if (typedefs.length > 0 && !typedefs.some((typedef) => typedef.type === typeName)) {
+            return this.expandTypeDef(typedefs[0].type, typedefs);
+        }
+        return this.expandTypeDef(typeName, typedefs);
+    }
+
+    /**
      * Expands a ROS message definition by recursively resolving nested types.
      * @param typeName The root type to expand
      * @param typedefs Array of type definitions (from rosapi)
@@ -334,7 +351,7 @@ export class RosApiService {
                 const type = await this.getTopicType(ros, name);
                 let definition = messageDefinitions.get(type);
                 if (!definition) {
-                    definition = this.getMessageDetails(ros, type).then((typedefs) => this.expandTypeDef(type, typedefs));
+                    definition = this.getMessageDetails(ros, type).then((typedefs) => this.expandRootTypeDef(type, typedefs));
                     messageDefinitions.set(type, definition);
                 }
                 return { name, type, definition: await definition };
@@ -352,8 +369,8 @@ export class RosApiService {
                         this.getServiceRequestDetails(ros, type),
                         this.getServiceResponseDetails(ros, type),
                     ]).then(([requestDetails, responseDetails]) => ({
-                        request: this.expandTypeDef(type, requestDetails),
-                        response: this.expandTypeDef(type, responseDetails),
+                        request: this.expandRootTypeDef(type, requestDetails),
+                        response: this.expandRootTypeDef(type, responseDetails),
                     }));
                     serviceDefinitions.set(type, definition);
                 }
@@ -377,9 +394,9 @@ export class RosApiService {
                 return {
                     name,
                     type,
-                    goal: this.expandTypeDef(type, goalDetails),
-                    result: this.expandTypeDef(type, resultDetails),
-                    feedback: this.expandTypeDef(type, feedbackDetails),
+                    goal: this.expandRootTypeDef(type, goalDetails),
+                    result: this.expandRootTypeDef(type, resultDetails),
+                    feedback: this.expandRootTypeDef(type, feedbackDetails),
                 };
             } catch (error) {
                 return { name, error: (error as Error).message };

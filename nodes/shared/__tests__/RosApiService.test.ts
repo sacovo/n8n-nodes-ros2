@@ -84,6 +84,37 @@ describe('RosApiService.getTopicRawDefinition', () => {
     });
 });
 
+describe('RosApiService.expandRootTypeDef', () => {
+    const requestTypeDef: rosapi.TypeDef = {
+        type: 'rcl_interfaces/GetParameters_Request',
+        fieldnames: ['names', 'options'],
+        fieldtypes: ['string', 'rcl_interfaces/ListParametersResult'],
+        fieldarraylen: [0, -1],
+        examples: [],
+    };
+    const nestedTypeDef: rosapi.TypeDef = {
+        type: 'rcl_interfaces/ListParametersResult',
+        fieldnames: ['names'],
+        fieldtypes: ['string'],
+        fieldarraylen: [0],
+        examples: [],
+    };
+
+    it('expands via exact root name when it matches', () => {
+        const result = RosApiService.expandRootTypeDef('rcl_interfaces/GetParameters_Request', [requestTypeDef, nestedTypeDef]);
+        expect(result).toEqual({ names: ['string'], options: { names: ['string'] } });
+    });
+
+    it('falls back to the first typedef when the root name is mangled by rosapi', () => {
+        const result = RosApiService.expandRootTypeDef('rcl_interfaces/srv/GetParameters', [requestTypeDef, nestedTypeDef]);
+        expect(result).toEqual({ names: ['string'], options: { names: ['string'] } });
+    });
+
+    it('returns the type name when there are no typedefs at all', () => {
+        expect(RosApiService.expandRootTypeDef('std_msgs/msg/Empty', [])).toBe('std_msgs/msg/Empty');
+    });
+});
+
 describe('RosApiService.getNodeDefinition', () => {
     const stringTypeDef: rosapi.TypeDef = {
         type: 'std_msgs/msg/String',
@@ -93,8 +124,11 @@ describe('RosApiService.getNodeDefinition', () => {
         examples: [],
     };
 
+    // rosapi derives typedef root names from the generated Python classes,
+    // so service sub-definitions come back as `<pkg>/<Type>_Request` — never
+    // as the `<pkg>/srv/<Type>` name the lookup was made with.
     const getParametersRequestTypeDef: rosapi.TypeDef = {
-        type: 'rcl_interfaces/srv/GetParameters',
+        type: 'rcl_interfaces/GetParameters_Request',
         fieldnames: ['names'],
         fieldtypes: ['string'],
         fieldarraylen: [0],
@@ -102,7 +136,7 @@ describe('RosApiService.getNodeDefinition', () => {
     };
 
     const getParametersResponseTypeDef: rosapi.TypeDef = {
-        type: 'rcl_interfaces/srv/GetParameters',
+        type: 'rcl_interfaces/GetParameters_Response',
         fieldnames: ['values'],
         fieldtypes: ['string'],
         fieldarraylen: [0],
@@ -201,14 +235,14 @@ describe('RosApiService.getNodeDefinition', () => {
 
     it('should fold internal _action services and topics into action definitions', async () => {
         const fibonacciGoalTypeDef: rosapi.TypeDef = {
-            type: 'test_msgs/action/Fibonacci',
+            type: 'test_msgs/Fibonacci_Goal',
             fieldnames: ['order'],
             fieldtypes: ['int32'],
             fieldarraylen: [-1],
             examples: [],
         };
         const fibonacciSequenceTypeDef: rosapi.TypeDef = {
-            type: 'test_msgs/action/Fibonacci',
+            type: 'test_msgs/Fibonacci_Result',
             fieldnames: ['sequence'],
             fieldtypes: ['int32'],
             fieldarraylen: [0],

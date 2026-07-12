@@ -468,6 +468,7 @@ describe('RosApi', () => {
                 mockRosApiService.getParam.mockResolvedValue({});
                 mockRosApiService.setParam.mockResolvedValue(undefined);
                 mockRosApiService.getServiceType.mockResolvedValue('std_srvs/Trigger');
+                mockRosApiService.getActionType.mockResolvedValue('test_msgs/action/Fibonacci');
                 mockRosApiService.getMessageDetails.mockResolvedValue([] as any);
                 mockRosApiService.getTopicsForType.mockResolvedValue([]);
                 mockRosApiService.getServicesForType.mockResolvedValue([]);
@@ -613,7 +614,7 @@ describe('RosApi', () => {
                     examples: [],
                 }
             ]);
-            mockRosApiService.expandTypeDef.mockReturnValue({ data: 'string' });
+            mockRosApiService.expandRootTypeDef.mockReturnValue({ data: 'string' });
             mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
@@ -725,7 +726,7 @@ describe('RosApi', () => {
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getServiceRequestDetails.mockResolvedValue([]);
             mockRosApiService.getServiceResponseDetails.mockResolvedValue([]);
-            mockRosApiService.expandTypeDef.mockReturnValueOnce({}).mockReturnValueOnce({ success: 'bool', message: 'string' });
+            mockRosApiService.expandRootTypeDef.mockReturnValueOnce({}).mockReturnValueOnce({ success: 'bool', message: 'string' });
             mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
@@ -737,6 +738,107 @@ describe('RosApi', () => {
                 request: {},
                 response: { success: 'bool', message: 'string' },
             });
+        });
+
+        it('should get action definition successfully', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(false),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'action';
+                if (name === 'operation') return 'getDefinition';
+                return '';
+            });
+            mockParameterExtractor.extractOptionalString.mockImplementation((node, index, name) => {
+                if (name === 'actionName') return '/fibonacci';
+                return undefined;
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getActionType.mockResolvedValue('test_msgs/action/Fibonacci');
+            mockRosApiService.getActionGoalDetails.mockResolvedValue([]);
+            mockRosApiService.getActionResultDetails.mockResolvedValue([]);
+            mockRosApiService.getActionFeedbackDetails.mockResolvedValue([]);
+            mockRosApiService.expandRootTypeDef
+                .mockReturnValueOnce({ order: 'int32' })
+                .mockReturnValueOnce({ sequence: ['int32'] })
+                .mockReturnValueOnce({ partial_sequence: ['int32'] });
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({
+                operation: 'getDefinition',
+                resource: 'action',
+                actionType: 'test_msgs/action/Fibonacci',
+                goal: { order: 'int32' },
+                result: { sequence: ['int32'] },
+                feedback: { partial_sequence: ['int32'] },
+            });
+            expect(mockRosApiService.getActionType).toHaveBeenCalledWith(expect.anything(), '/fibonacci');
+        });
+
+        it('should get action type with description successfully', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockImplementation((name) => name === 'includeDescription'),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'action';
+                if (name === 'operation') return 'getType';
+                if (name === 'actionName') return '/fibonacci';
+                return '';
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getActionType.mockResolvedValue('test_msgs/action/Fibonacci');
+            mockRosApiService.getInterfaceDescription.mockResolvedValue('Computes the Fibonacci sequence up to the given order');
+            mockRosBridgeService.close.mockImplementation(() => { });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({
+                actionName: '/fibonacci',
+                actionType: 'test_msgs/action/Fibonacci',
+                description: 'Computes the Fibonacci sequence up to the given order',
+            });
+            expect(mockRosApiService.getInterfaceDescription).toHaveBeenCalledWith(expect.anything(), '/fibonacci');
+        });
+
+        it('should fail getType:action when the action type cannot be determined', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({}),
+                getNodeParameter: jest.fn().mockReturnValue(false),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'action';
+                if (name === 'operation') return 'getType';
+                if (name === 'actionName') return '/gone';
+                return '';
+            });
+
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getActionType.mockResolvedValue('');
+            mockRosBridgeService.close.mockImplementation(() => { });
+            mockNodeErrorHandler.handle.mockImplementation((context, error: unknown) => {
+                throw error;
+            });
+
+            await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow();
+            expect(mockNodeErrorHandler.handle).toHaveBeenCalled();
         });
     });
 });
