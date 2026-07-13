@@ -79,7 +79,7 @@ The intended loop for an agent operating on an unfamiliar ROS2 graph:
 
 This lets an agent operate against ROS2 graphs it has never seen before without hard-coded message definitions.
 
-When invoked as a tool, a failing node does not abort the agent run: the error is returned to the model as the tool result (`{ "error": "..." }`), so the agent can correct its arguments, try another interface, or report the problem. In regular workflow executions errors still fail the node as usual (respecting the On Error setting). This relies on n8n's `isToolExecution()` API (n8n ≥ 2.19).
+When invoked as a tool, a failing node does not abort the agent run: the error is returned to the model as the tool result (`{ "error": "..." }`), so the agent can correct its arguments, try another interface, or report the problem. In regular workflow executions errors still fail the node as usual (respecting the On Error setting). Tool invocations are recognized by n8n's `isToolExecution()` API or by the node running as its generated `*Tool` variant (single `ai_tool` output), which covers both n8n's legacy direct-invocation path and the newer engine-driven tool execution.
 
 ## Credentials
 

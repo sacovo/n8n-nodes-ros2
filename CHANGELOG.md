@@ -12,7 +12,7 @@
 
 ### Changed
 
-- All non-trigger nodes now return errors as `{ "error": "..." }` output instead of throwing when invoked as AI agent tools (detected via n8n's `isToolExecution()`, available since n8n 2.19). A failing tool call becomes an observation the agent can read and react to; previously the thrown error aborted the entire agent run, because n8n's tool wrapper rethrows it and the agent's LangChain executor has no tool-error handling. Regular workflow executions are unchanged: errors still fail the node unless On Error is set to continue.
+- All non-trigger nodes now return errors as `{ "error": "..." }` output instead of throwing when invoked as AI agent tools. A failing tool call becomes an observation the agent can read and react to; previously the thrown error aborted the entire agent run. Tool execution is detected via n8n's `isToolExecution()` (legacy direct-invocation path) plus the `ai_tool` output of the generated `*Tool` node variant — the latter is required because newer n8n runs agent tool calls through the regular workflow engine, where `isToolExecution()` always reports false. Regular workflow executions are unchanged: errors still fail the node unless On Error is set to continue.
 
 ## 0.3.0
 

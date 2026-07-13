@@ -3,7 +3,7 @@
  */
 
 import type { IExecuteFunctions } from 'n8n-workflow';
-import { NodeApiError, NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import { RosBridgeConnectionError, RosBridgeTimeoutError } from '../services/RosBridgeService';
 
 export class NodeErrorHandler {
@@ -15,7 +15,17 @@ export class NodeErrorHandler {
      * to, so tool executions always soft-fail like continue-on-fail.
      */
     static shouldReturnErrorOutput(executeFunctions: IExecuteFunctions): boolean {
-        return executeFunctions.continueOnFail() || executeFunctions.isToolExecution();
+        if (executeFunctions.continueOnFail() || executeFunctions.isToolExecution()) {
+            return true;
+        }
+        // isToolExecution() only covers the legacy direct-invocation tool
+        // path (SupplyDataContext); newer n8n runs agent tool calls through
+        // the regular workflow engine, whose ExecuteContext hardcodes it to
+        // false. The generated *Tool node variant is still recognizable
+        // there by its single ai_tool output.
+        return executeFunctions
+            .getNodeOutputs()
+            .some((output) => output.type === NodeConnectionTypes.AiTool);
     }
 
     static handle(

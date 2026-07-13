@@ -373,11 +373,14 @@ describe('RosApi', () => {
         });
 
         it('should return errors as output instead of throwing when running as an AI agent tool', async () => {
+            // Engine-driven tool execution: isToolExecution() lies (false),
+            // the ai_tool output of the generated *Tool variant is the signal.
             const mockExecuteFunctions = {
                 getInputData: jest.fn().mockReturnValue([{}]),
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
-                isToolExecution: jest.fn().mockReturnValue(true),
+                isToolExecution: jest.fn().mockReturnValue(false),
+                getNodeOutputs: jest.fn().mockReturnValue([{ type: 'ai_tool' }]),
                 getNode: jest.fn().mockReturnValue({}),
             } as unknown as IExecuteFunctions;
 
