@@ -8,10 +8,10 @@ ARG N8N_IMAGE=n8n-src-builder
 # =========================================================
 FROM node:24-trixie AS n8n-src-builder
 ARG N8N_REPO=https://github.com/sacovo/n8n.git
-ARG N8N_BRANCH=master
+ARG N8N_BRANCH=7b266633ca6f0c74bb31e9ec8bb38743644873cd
 
 RUN apt-get update && apt-get install -y git python3 build-essential && rm -rf /var/lib/apt/lists/*
-RUN git clone --depth 1 --branch ${N8N_BRANCH} ${N8N_REPO} /n8n-src
+RUN git clone ${N8N_REPO} /n8n-src && cd /n8n-src && git checkout ${N8N_BRANCH}
 
 WORKDIR /n8n-src
 RUN npm install -g pnpm
