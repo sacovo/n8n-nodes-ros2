@@ -1,9 +1,44 @@
 # Enable BuildKit syntax for advanced caching
 # syntax=docker/dockerfile:1
 
-FROM node:24-trixie
+ARG N8N_IMAGE=n8n-src-builder
 
-ARG N8N_VERSION=2.21.5
+# =========================================================
+# Stage 1: Build n8n from source (default server-side build)
+# =========================================================
+FROM node:24-trixie AS n8n-src-builder
+ARG N8N_REPO=https://github.com/sacovo/n8n.git
+ARG N8N_BRANCH=master
+
+RUN apt-get update && apt-get install -y git python3 build-essential && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 --branch ${N8N_BRANCH} ${N8N_REPO} /n8n-src
+
+WORKDIR /n8n-src
+RUN npm install -g pnpm
+RUN pnpm install --frozen-lockfile
+RUN pnpm build
+RUN pnpm --filter=n8n --prod --legacy deploy --no-optional /usr/local/lib/node_modules/n8n
+
+# =========================================================
+# Stage 2: Load n8n from local filesystem context (dev fallback)
+# =========================================================
+FROM scratch AS n8n-local-context
+COPY docker/n8n/n8n-compiled/ /usr/local/lib/node_modules/n8n/
+
+# =========================================================
+# Stage 3: Selector stage
+# =========================================================
+# Choose where to copy n8n from. Options:
+# - n8n-src-builder (default: clone and compile from source)
+# - n8n-local-context (copy local folder docker/n8n/n8n-compiled)
+# - Any prebuilt docker image name (e.g. ghcr.io/sacovo/n8n:master)
+ARG N8N_IMAGE
+FROM ${N8N_IMAGE} AS n8n-provider
+
+# =========================================================
+# Stage 4: Main runtime stage
+# =========================================================
+FROM node:24-trixie
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
@@ -20,9 +55,10 @@ RUN set -ex; \
   rm /usr/local/bin/su-exec.c; \
   rm -rf /var/lib/apt/lists/*
 
-# 3. Cache Global npm installs
-RUN --mount=type=cache,target=/root/.npm \
-  npm install -g "n8n@${N8N_VERSION}"
+# Copy the compiled n8n from our chosen provider stage
+COPY --from=n8n-provider /usr/local/lib/node_modules/n8n /usr/local/lib/node_modules/n8n
+RUN cd /usr/local/lib/node_modules/n8n && (npm rebuild sqlite3 isolated-vm || echo "Native rebuild failed/skipped, using pre-compiled binaries")
+RUN ln -s /usr/local/lib/node_modules/n8n/bin/n8n /usr/local/bin/n8n
 
 WORKDIR /work
 

@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: docker/n8n/Dockerfile
+      args:
+        - N8N_IMAGE=n8n-local-context
 
     network_mode: host
     volumes:

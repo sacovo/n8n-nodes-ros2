@@ -133,3 +133,6 @@ dist
 
 node_modules
 dist/
+
+# Docker compiled cache
+docker/n8n/n8n-compiled/
