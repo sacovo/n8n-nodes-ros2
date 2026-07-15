@@ -9,11 +9,14 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import type { Ros } from 'roslib';
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { RosApiService } from '../shared/services/RosApiService';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
+import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
 
 export class RosTopicPublish implements INodeType {
     description: INodeTypeDescription = {
@@ -159,7 +162,7 @@ export class RosTopicPublish implements INodeType {
                     resourceMapper: {
                         resourceMapperMethod: 'getMessageFieldsForType',
                         hideNoDataError: true,
-                        addAllFields: false,
+                        addAllFields: true,
                         supportAutoMap: false,
                         mode: 'add',
                         fieldWords: {
@@ -183,6 +186,7 @@ export class RosTopicPublish implements INodeType {
                     },
                 },
                 default: '{}',
+                hint: 'Prefer a guided form? Switch "Message Input Mode" to "Fixed (Mapper)" to get every field of the selected message type pre-filled and editable.',
                 description: 'JSON object sent as the topic message payload. The structure must match the message type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields, e.g. {"linear": {"x": 1.0, "y": 0, "z": 0}, "angular": {"x": 0, "y": 0, "z": 0.5}} for geometry_msgs/Twist.',
             },
             {
@@ -349,7 +353,7 @@ export class RosTopicPublish implements INodeType {
         const returnData: INodeExecutionData[] = [];
 
         for (let i = 0; i < items.length; i++) {
-            let ros;
+            let ros: Ros | undefined;
             try {
                 const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
 
@@ -377,15 +381,29 @@ export class RosTopicPublish implements INodeType {
                     const messageInputMode = this.getNodeParameter('messageInputMode', i) as 'fixed' | 'raw';
 
                     if (messageInputMode === 'fixed') {
-                        // Extract message from resource mapper and remove n8n internal fields
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const messageStructure = this.getNodeParameter('messageStructure', i) as any;
-                        if (messageStructure) {
-                            const { value, ...actualFields } = messageStructure;
-                            message = value || actualFields || {};
-                        }
+                        // Extract message from the resource mapper, parsing each
+                        // field into the type its ROS message expects.
+                        const messageStructure = this.getNodeParameter('messageStructure', i);
+                        message = ResourceMapperCoercer.coerceMessage(messageStructure, this, i);
                     } else {
                         message = ParameterExtractor.extractJsonParameter(this, i, 'messageJson');
+                    }
+
+                    // Validate the assembled payload against the real message
+                    // type before sending. Skipped if the type can't be
+                    // introspected; mismatches abort the publish.
+                    if (messageType) {
+                        const rosClient = ros;
+                        message = await MessageTypeValidator.validateAgainstType(
+                            message,
+                            this,
+                            i,
+                            async () =>
+                                RosApiService.expandRootTypeDef(
+                                    messageType,
+                                    await RosApiService.getMessageDetails(rosClient, messageType),
+                                ),
+                        );
                     }
 
                     const options = (this.getNodeParameter('options', i, {}) || {}) as {

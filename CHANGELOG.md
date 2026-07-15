@@ -4,10 +4,14 @@
 
 ### Fixed
 
+- Resource mapper ("Fixed" input mode) fields are now parsed into the type each ROS message expects before publishing. Manually entered values were stored as raw strings, so a nested/array field like `data` on `std_msgs/Float64MultiArray` was sent as the literal string `"[0.5, 0.5]"` instead of an array (previously this required an expression such as `{{ [0.5, 0.5] }}`). Numbers, booleans, arrays and objects are now parsed from their entered strings using the mapper schema; if a value cannot be parsed into the expected type, the node errors and the message is not sent. Applies to Topic Publish, Service Call and Action Start.
+- Payloads are now validated against the real message type before sending (both "Raw (JSON)" and "Fixed (Mapper)" input modes). At execution the node fetches the expanded type definition via rosapi and recursively checks the whole payload: numeric/boolean strings are coerced, JSON strings are parsed into the arrays/objects the type expects, and unknown fields or values that cannot be coerced abort the send with an error naming the offending path (e.g. `layout.dim[0].size`) and the expected structure. If the type cannot be introspected, validation is skipped and the payload is sent as before. Applies to Topic Publish, Service Call and Action Start. Previously raw JSON was only checked for being valid JSON, not against the message type.
 - rosapi Get Definition for services and actions now actually returns the expanded structure. rosapi names service/action sub-definitions after their generated classes (e.g. `rcl_interfaces/GetParameters_Request` for `rcl_interfaces/srv/GetParameters`), so the previous exact-name root lookup found nothing and silently returned the bare type name string instead of the request/response (or goal/result/feedback) structure. The same fix applies to Node Get Definition, so AI agents and workflows can now discover service and action payload shapes the same way the editor's resource mapper does.
 
 ### Added
 
+- The "Fixed (Mapper)" input mode (Topic Publish, Service Call, Action Start) now pre-populates the mapper with every field of the selected message/service/action type (`addAllFields: true`), so the whole structure appears as an editable form without adding fields one by one. A hint under the raw JSON box points users to this mode.
+- Resource mapper fields now show their ROS type — and, for nested messages, the sub-field names — in the field label (e.g. `data (float64[])`, `layout (std_msgs/MultiArrayLayout) {dim, data_offset}`). n8n's resource mapper has no per-field description/hint slot below the input, so the label is the only place the structure can be surfaced inline.
 - rosapi Action resource now has a Get Type operation: resolves the action type of a running action server by name, with the same optional Include Description (`<name>/desc`) documentation lookup that topics and services have.
 
 ### Changed

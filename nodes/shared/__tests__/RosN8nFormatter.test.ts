@@ -74,6 +74,7 @@ describe('RosN8nFormatter', () => {
             expect(result.fields).toEqual([
                 expect.objectContaining({
                     id: 'data',
+                    displayName: 'data (string)',
                     type: 'string',
                     description: 'ROS message field of type string',
                 }),
@@ -87,6 +88,8 @@ describe('RosN8nFormatter', () => {
             expect(result.fields[0]).toEqual(
                 expect.objectContaining({
                     id: 'linear',
+                    // Nested type: label carries the type and its sub-field names.
+                    displayName: 'linear (geometry_msgs/msg/Vector3) {x, y, z}',
                     type: 'object',
                     description:
                         'ROS message field of type geometry_msgs/msg/Vector3. Structure: {"x":"float64","y":"float64","z":"float64"}',

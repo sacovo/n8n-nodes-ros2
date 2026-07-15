@@ -137,6 +137,11 @@ export class RosN8nFormatter {
             const n8nType = this.mapRosTypeToN8nFieldType(fieldtype);
 
             let description = `ROS message field of type ${fieldtype}`;
+            // n8n's resource mapper does not render a per-field description or
+            // hint below the input — the field label (displayName) is the only
+            // text shown. So the type (and, for nested messages, the sub-field
+            // names) are folded into the label to keep the structure visible.
+            let displayName = `${fieldname} (${fieldtype})`;
             const expanded = RosApiService.expandTypeDef(baseType.replace(/\[\]$/, ''), typeDefs);
             if (typeof expanded !== 'string') {
                 let structure = JSON.stringify(expanded);
@@ -144,11 +149,20 @@ export class RosN8nFormatter {
                     structure = `${structure.slice(0, 1000)}…`;
                 }
                 description += `. Structure: ${structure}`;
+
+                const keys = Object.keys(expanded);
+                if (keys.length > 0) {
+                    let shape = keys.join(', ');
+                    if (shape.length > 60) {
+                        shape = `${shape.slice(0, 60)}…`;
+                    }
+                    displayName += ` {${shape}}`;
+                }
             }
 
             return {
                 id: fieldname,
-                displayName: fieldname,
+                displayName,
                 type: n8nType,
                 required: false,
                 description,

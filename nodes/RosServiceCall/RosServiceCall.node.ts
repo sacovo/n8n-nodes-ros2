@@ -9,11 +9,14 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import type { Ros } from 'roslib';
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
+import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
+import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
 
 
 export class RosServiceCall implements INodeType {
@@ -133,7 +136,7 @@ export class RosServiceCall implements INodeType {
                     resourceMapper: {
                         resourceMapperMethod: 'getRequestFieldsForType',
                         hideNoDataError: true,
-                        addAllFields: false,
+                        addAllFields: true,
                         supportAutoMap: false,
                         mode: 'add',
                         fieldWords: {
@@ -156,6 +159,7 @@ export class RosServiceCall implements INodeType {
                     },
                 },
                 default: '{}',
+                hint: 'Prefer a guided form? Switch "Request Input Mode" to "Fixed (Mapper)" to get every field of the selected service request pre-filled and editable.',
                 description: 'JSON object sent as service request payload. The structure must match the request part of the service type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields.',
             },
             {
@@ -281,7 +285,7 @@ export class RosServiceCall implements INodeType {
         const returnData: INodeExecutionData[] = [];
 
         for (let i = 0; i < items.length; i++) {
-            let ros;
+            let ros: Ros | undefined;
             try {
                 const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
 
@@ -303,13 +307,10 @@ export class RosServiceCall implements INodeType {
                 let request: JsonRecord = {};
 
                 if (requestInputMode === 'fixed') {
-                    // Extract request from resource mapper and remove n8n internal fields
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const requestStructure = this.getNodeParameter('requestStructure', i) as any;
-                    if (requestStructure) {
-                        const { value, ...actualFields } = requestStructure;
-                        request = value || actualFields || {};
-                    }
+                    // Extract request from the resource mapper, parsing each
+                    // field into the type its ROS request expects.
+                    const requestStructure = this.getNodeParameter('requestStructure', i);
+                    request = ResourceMapperCoercer.coerceMessage(requestStructure, this, i);
                 } else {
                     const requestJson = this.getNodeParameter('requestJson', i) as string;
                     request = ParameterExtractor.parseJsonParameter(requestJson, 'requestJson');
@@ -318,6 +319,24 @@ export class RosServiceCall implements INodeType {
                 const timeoutMs = ParameterExtractor.extractRequiredNumber(this, i, 'timeoutMs');
 
                 ros = await RosBridgeService.connect(credentials);
+
+                // Validate the assembled request against the real service
+                // request type before sending. Skipped if the type can't be
+                // introspected; mismatches abort the call.
+                if (serviceType) {
+                    const rosClient = ros;
+                    request = await MessageTypeValidator.validateAgainstType(
+                        request,
+                        this,
+                        i,
+                        async () =>
+                            RosApiService.expandRootTypeDef(
+                                serviceType,
+                                await RosApiService.getServiceRequestDetails(rosClient, serviceType),
+                            ),
+                    );
+                }
+
                 const response = await RosBridgeService.callService(
                     ros,
                     serviceName,

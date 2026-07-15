@@ -9,11 +9,14 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import type { Ros } from 'roslib';
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
+import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
+import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
 
 export class RosActionStart implements INodeType {
     description: INodeTypeDescription = {
@@ -132,7 +135,7 @@ export class RosActionStart implements INodeType {
                     resourceMapper: {
                         resourceMapperMethod: 'getGoalFieldsForType',
                         hideNoDataError: true,
-                        addAllFields: false,
+                        addAllFields: true,
                         supportAutoMap: false,
                         mode: 'add',
                         fieldWords: {
@@ -155,6 +158,7 @@ export class RosActionStart implements INodeType {
                     },
                 },
                 default: '{}',
+                hint: 'Prefer a guided form? Switch "Goal Input Mode" to "Fixed (Mapper)" to get every field of the selected action goal pre-filled and editable.',
                 description: 'JSON object sent as action goal payload. The structure must match the goal part of the action type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields.',
             },
             {
@@ -278,7 +282,7 @@ export class RosActionStart implements INodeType {
         const returnData: INodeExecutionData[] = [];
 
         for (let i = 0; i < items.length; i++) {
-            let ros;
+            let ros: Ros | undefined;
             try {
                 const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
 
@@ -300,13 +304,10 @@ export class RosActionStart implements INodeType {
                 let goalPayload: JsonRecord = {};
 
                 if (goalInputMode === 'fixed') {
-                    // Extract goal from resource mapper and remove n8n internal fields
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const goalStructure = this.getNodeParameter('goalStructure', i) as any;
-                    if (goalStructure) {
-                        const { value, ...actualFields } = goalStructure;
-                        goalPayload = value || actualFields || {};
-                    }
+                    // Extract goal from the resource mapper, parsing each field
+                    // into the type its ROS goal expects.
+                    const goalStructure = this.getNodeParameter('goalStructure', i);
+                    goalPayload = ResourceMapperCoercer.coerceMessage(goalStructure, this, i);
                 } else {
                     const goalJson = this.getNodeParameter('goalJson', i) as string;
                     goalPayload = ParameterExtractor.parseJsonParameter(goalJson, 'goalJson');
@@ -315,6 +316,24 @@ export class RosActionStart implements INodeType {
                 const sendTimeoutMs = ParameterExtractor.extractRequiredNumber(this, i, 'sendTimeoutMs');
 
                 ros = await RosBridgeService.connect(credentials);
+
+                // Validate the assembled goal against the real action goal type
+                // before sending. Skipped if the type can't be introspected;
+                // mismatches abort the goal.
+                if (actionName) {
+                    const rosClient = ros;
+                    goalPayload = await MessageTypeValidator.validateAgainstType(
+                        goalPayload,
+                        this,
+                        i,
+                        async () =>
+                            RosApiService.expandRootTypeDef(
+                                actionName,
+                                await RosApiService.getActionGoalDetails(rosClient, actionName),
+                            ),
+                    );
+                }
+
                 const result = await RosBridgeService.startAction(
                     ros,
                     serverName,
