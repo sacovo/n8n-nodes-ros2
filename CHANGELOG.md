@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- ROS2 Topic Capture Image can now optionally resize the captured image before output. Enabling "Resize Image" downscales it to fit within a configurable Max Width/Max Height (aspect ratio preserved, never enlarged) with an adjustable JPEG/WebP quality, which cuts the image size and the token cost when the image is fed to a vision language model. Resizing re-encodes via sharp, so formats sharp cannot output (e.g. BMP/GIF) are normalized to JPEG, and the output dimensions are reported on the JSON output.
+
 ## 0.4.0
 
 ### Fixed
