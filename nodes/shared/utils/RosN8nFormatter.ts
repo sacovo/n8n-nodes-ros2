@@ -72,42 +72,39 @@ export class RosN8nFormatter {
     }
 
     /**
+     * Filters a list of ROS resource names by an optional case-insensitive
+     * substring and maps them to n8n dropdown options.
+     */
+    private static formatListForN8n(names: string[], filter?: string): INodePropertyOptions[] {
+        const needle = filter?.toLowerCase();
+        return names
+            .filter((name) => name && typeof name === 'string')
+            .filter((name) => !needle || name.toLowerCase().includes(needle))
+            .map((name) => ({
+                name,
+                value: name,
+            }));
+    }
+
+    /**
      * Formats topic list from getRosTopics into n8n dropdown options
      */
     static formatTopicListForN8n(topics: string[], filter?: string): INodePropertyOptions[] {
-        return topics
-            .filter((topic) => topic && typeof topic === 'string')
-            .filter((topic) => !filter || topic.toLowerCase().includes(filter.toLowerCase()))
-            .map((topic) => ({
-                name: topic,
-                value: topic,
-            }));
+        return this.formatListForN8n(topics, filter);
     }
 
     /**
      * Formats service list from getRosServices into n8n dropdown options
      */
     static formatServiceListForN8n(services: string[], filter?: string): INodePropertyOptions[] {
-        return services
-            .filter((service) => service && typeof service === 'string')
-            .filter((service) => !filter || service.toLowerCase().includes(filter.toLowerCase()))
-            .map((service) => ({
-                name: service,
-                value: service,
-            }));
+        return this.formatListForN8n(services, filter);
     }
 
     /**
      * Formats action server list from getRosActionServers into n8n dropdown options
      */
     static formatActionListForN8n(actions: string[], filter?: string): INodePropertyOptions[] {
-        return actions
-            .filter((action) => action && typeof action === 'string')
-            .filter((action) => !filter || action.toLowerCase().includes(filter.toLowerCase()))
-            .map((action) => ({
-                name: action,
-                value: action,
-            }));
+        return this.formatListForN8n(actions, filter);
     }
 
     /**
