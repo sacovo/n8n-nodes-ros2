@@ -301,4 +301,112 @@ describe('RosTopicPublish', () => {
             expect(mockNodeErrorHandler.handle).toHaveBeenCalled();
         });
     });
+
+    describe('allowed namespaces', () => {
+        const buildExecuteFunctions = (
+            topicName: string,
+            allowedNamespaces: string,
+            operation: 'publish' | 'advertise' = 'publish',
+        ) =>
+            ({
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({ name: 'ROS2 Topic Publish', type: 'rosTopicPublish' }),
+                getNodeParameter: jest.fn().mockImplementation((name: string) => {
+                    if (name === 'operation') return operation;
+                    if (name === 'topicName') return topicName;
+                    if (name === 'messageType') return 'std_msgs/msg/String';
+                    if (name === 'messageInputMode') return 'raw';
+                    if (name === 'messageJson') return '{"data":"Hello ROS!"}';
+                    if (name === 'options') return { allowedNamespaces };
+                    return undefined;
+                }),
+            }) as unknown as IExecuteFunctions;
+
+        beforeEach(() => {
+            mockParameterExtractor.extractJsonParameter.mockReturnValue({ data: 'Hello ROS!' });
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeService.publishTopic.mockResolvedValue(undefined);
+            mockRosBridgeService.advertiseTopic.mockResolvedValue(undefined);
+            mockRosBridgeService.close.mockImplementation(() => { });
+        });
+
+        it('should publish a topic inside an allowed namespace', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions('/mani/cmd_vel', '/mani, /any-safe-system');
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({ topic: '/mani/cmd_vel' });
+            expect(mockRosBridgeService.publishTopic).toHaveBeenCalled();
+        });
+
+        it('should reject a topic outside the allowed namespaces without connecting', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions('/cmd_vel', '/mani');
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockReturnValue(true);
+            mockNodeErrorHandler.buildErrorOutput.mockImplementation((error) => ({
+                error: (error as Error).message,
+            }));
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json.error).toContain('/cmd_vel');
+            expect(result[0][0].json.error).toContain('/mani');
+            expect(mockRosBridgeService.connect).not.toHaveBeenCalled();
+            expect(mockRosBridgeService.publishTopic).not.toHaveBeenCalled();
+        });
+
+        it('should reject a name that only shares a string prefix', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions('/manipulator/cmd_vel', '/mani');
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockReturnValue(true);
+            mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'out of scope' });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toEqual({ error: 'out of scope' });
+            expect(mockRosBridgeService.publishTopic).not.toHaveBeenCalled();
+        });
+
+        it('should gate the advertise operation as well', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions('/cmd_vel', '/mani', 'advertise');
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockReturnValue(true);
+            mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'out of scope' });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toEqual({ error: 'out of scope' });
+            expect(mockRosBridgeService.advertiseTopic).not.toHaveBeenCalled();
+        });
+
+        it('should publish any topic when no namespaces are configured', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions('/cmd_vel', '');
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({ topic: '/cmd_vel' });
+            expect(mockRosBridgeService.publishTopic).toHaveBeenCalled();
+        });
+
+        it('should hide out-of-scope topics from the topic picker', async () => {
+            const mockLoadOptionsFunctions = {
+                getCredentials: jest.fn().mockResolvedValue({}),
+                getNodeParameter: jest.fn().mockReturnValue({ allowedNamespaces: '/mani' }),
+            } as unknown as ILoadOptionsFunctions;
+
+            mockRosApiService.getTopics.mockResolvedValue({
+                topics: ['/mani/cmd_vel', '/cmd_vel'],
+                types: [],
+            });
+            mockRosN8nFormatter.formatTopicListForN8n.mockReturnValue([]);
+
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            await node.methods.listSearch.getTopicsList.call(mockLoadOptionsFunctions);
+
+            expect(mockRosN8nFormatter.formatTopicListForN8n).toHaveBeenCalledWith(
+                ['/mani/cmd_vel'],
+                undefined,
+            );
+        });
+    });
 });

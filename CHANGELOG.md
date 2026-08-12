@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+
+### Added
+
+- ROS2 Topic Publish can now be restricted to one or more namespaces via an "Allowed Namespaces" option (comma- or newline-separated, e.g. `/mani, /any-safe-system`). Publishing or advertising a topic outside them fails with an error naming the attempted topic and the allowed namespaces, and the topic picker only lists in-scope topics. Matching is on name segments, so `/mani` covers `/mani/cmd_vel` but not `/manipulator`; a `*` segment matches any single segment (e.g. `/robot/*/cmd_vel`). This is aimed at AI agent tooling: the agent chooses the topic name, but cannot change the restriction, since agents only fill parameters the workflow author exposes via `$fromAI`. Leaving the option empty keeps the previous unrestricted behaviour. Note that n8n resolves a tool's description from the static node type or the raw "Description" field before parameters are evaluated, so the configured namespaces cannot be injected into it automatically; the agent learns them from the error, or from a manually written tool description.
+
 ## 0.5.0
 
 ### Added

@@ -17,6 +17,7 @@ import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
 import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
+import { assertInScope, filterByScope, parseTopicScope } from '../shared/utils/TopicScope';
 
 export class RosTopicPublish implements INodeType {
     description: INodeTypeDescription = {
@@ -32,7 +33,7 @@ export class RosTopicPublish implements INodeType {
         },
         usableAsTool: {
             replacements: {
-                description: 'Publish a message to a ROS2 topic (operation "publish"; "advertise" only registers the topic without sending anything). The message payload must exactly match the topic\'s message type - use the ROS2 API tool\'s "getDefinition" operation first to discover the required field structure. Fire-and-forget: it does not wait for subscribers to process the message.',
+                description: 'Publish a message to a ROS2 topic (operation "publish"; "advertise" only registers the topic without sending anything). The message payload must exactly match the topic\'s message type - use the ROS2 API tool\'s "getDefinition" operation first to discover the required field structure. Fire-and-forget: it does not wait for subscribers to process the message. Publishing may be restricted to certain topic namespaces; a topic outside them returns an error naming the allowed namespaces.',
             },
         },
         inputs: [NodeConnectionTypes.Main],
@@ -195,25 +196,15 @@ export class RosTopicPublish implements INodeType {
                 type: 'collection',
                 placeholder: 'Add Option',
                 default: {},
-                displayOptions: {
-                    show: {
-                        operation: ['publish'],
-                    },
-                },
                 options: [
                     {
-                        displayName: 'Timeout for Waiting (Ms)',
-                        name: 'discoveryDelay',
-                        type: 'number',
-                        default: 750,
-                        description: 'Time to wait (in milliseconds) after advertising the topic before publishing, to allow subscribers to discover the publisher',
-                    },
-                    {
-                        displayName: 'Burst Option',
-                        name: 'burstOption',
-                        type: 'boolean',
-                        default: false,
-                        description: 'Whether to publish the message multiple times in a burst',
+                        displayName: 'Allowed Namespaces',
+                        name: 'allowedNamespaces',
+                        type: 'string',
+                        default: '',
+                        placeholder: 'e.g. /mani, /any-safe-system',
+                        hint: 'As a tool, the agent only learns of this restriction when a call fails. To state it upfront, set the tool node\'s Description to "Set Manually" and name the namespaces there — n8n sends that text verbatim and does not evaluate expressions in it.',
+                        description: 'Restrict this node to topics below the listed namespaces (comma- or newline-separated). Matching is on name segments, so "/mani" covers "/mani/cmd_vel" but not "/manipulator"; a "*" segment matches any single segment (e.g. "/robot/*/cmd_vel"). Publishing or advertising anything else fails with an error. Leave empty to allow every topic. Useful when the node is attached to an AI agent, which picks the topic name but cannot change this restriction.',
                     },
                     {
                         displayName: 'Burst Number',
@@ -222,10 +213,35 @@ export class RosTopicPublish implements INodeType {
                         default: 2,
                         displayOptions: {
                             show: {
+                                '/operation': ['publish'],
                                 burstOption: [true],
                             },
                         },
                         description: 'Number of messages to send in the burst',
+                    },
+                    {
+                        displayName: 'Burst Option',
+                        name: 'burstOption',
+                        type: 'boolean',
+                        default: false,
+                        displayOptions: {
+                            show: {
+                                '/operation': ['publish'],
+                            },
+                        },
+                        description: 'Whether to publish the message multiple times in a burst',
+                    },
+                    {
+                        displayName: 'Timeout for Waiting (Ms)',
+                        name: 'discoveryDelay',
+                        type: 'number',
+                        default: 750,
+                        displayOptions: {
+                            show: {
+                                '/operation': ['publish'],
+                            },
+                        },
+                        description: 'Time to wait (in milliseconds) after advertising the topic before publishing, to allow subscribers to discover the publisher',
                     },
                     {
                         displayName: 'Wait Between Messages (Ms)',
@@ -234,6 +250,7 @@ export class RosTopicPublish implements INodeType {
                         default: 100,
                         displayOptions: {
                             show: {
+                                '/operation': ['publish'],
                                 burstOption: [true],
                             },
                         },
@@ -289,11 +306,27 @@ export class RosTopicPublish implements INodeType {
 
             async getTopicsList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
                 try {
+                    // Convenience only - the enforced gate is in execute().
+                    let scope: string[] = [];
+                    try {
+                        const options = (this.getNodeParameter('options', 0, {}) || {}) as {
+                            allowedNamespaces?: string;
+                        };
+                        scope = parseTopicScope(options.allowedNamespaces);
+                    } catch {
+                        // Options not resolvable in this context: show everything
+                    }
+
                     const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
                     const ros = await RosBridgeService.connect(credentials);
                     try {
                         const topics = await RosApiService.getTopics(ros);
-                        return { results: RosN8nFormatter.formatTopicListForN8n(topics.topics || [], filter) };
+                        return {
+                            results: RosN8nFormatter.formatTopicListForN8n(
+                                filterByScope(topics.topics || [], scope),
+                                filter,
+                            ),
+                        };
                     } finally {
                         RosBridgeService.close(ros);
                     }
@@ -371,6 +404,18 @@ export class RosTopicPublish implements INodeType {
 
                 const operation = (this.getNodeParameter('operation', i, 'publish') || 'publish') as 'publish' | 'advertise';
 
+                const options = (this.getNodeParameter('options', i, {}) || {}) as {
+                    allowedNamespaces?: string;
+                    discoveryDelay?: number;
+                    burstOption?: boolean;
+                    burstNumber?: number;
+                    burstWait?: number;
+                };
+
+                // Checked before connecting: advertising alone already
+                // registers a publisher, so both operations are gated.
+                assertInScope(this, topicName, parseTopicScope(options.allowedNamespaces), i);
+
                 ros = await RosBridgeService.connect(credentials);
 
                 let message: JsonRecord = {};
@@ -405,13 +450,6 @@ export class RosTopicPublish implements INodeType {
                                 ),
                         );
                     }
-
-                    const options = (this.getNodeParameter('options', i, {}) || {}) as {
-                        discoveryDelay?: number;
-                        burstOption?: boolean;
-                        burstNumber?: number;
-                        burstWait?: number;
-                    };
 
                     let burst: { number: number; wait: number } | undefined;
                     if (options.burstOption) {
