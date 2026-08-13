@@ -179,15 +179,33 @@ export class RosApiService {
         });
     }
 
+    /**
+     * Resolves the type of an action server. `/rosapi/action_type` answers
+     * this directly and is the only reliable route: the `_action/send_goal`
+     * service an action type could otherwise be derived from is a *hidden*
+     * service, and rosapi's `service_type` lookup only searches non-hidden
+     * services, so that derivation returns an empty type on any current
+     * rosbridge. It stays as a fallback for builds without `action_type`.
+     */
     static async getActionType(ros: Ros, actionServer: string): Promise<string> {
-        // In ROS 2, action servers have a set of services. 
-        // We can try to get the type from the 'send_goal' service.
-        const sendGoalService = actionServer.endsWith('/') 
-            ? `${actionServer}_action/send_goal` 
-            : `${actionServer}/_action/send_goal`;
-        
+        const actionName = actionServer.endsWith('/') ? actionServer.slice(0, -1) : actionServer;
+
         try {
-            const serviceType = await this.getServiceType(ros, sendGoalService);
+            const response = await this.callRosapi<{ action: string }, { type?: string }>(
+                ros,
+                'action_type',
+                'ActionType',
+                { action: actionName },
+            );
+            if (response?.type) {
+                return response.type;
+            }
+        } catch {
+            // rosapi without an `action_type` service - fall through.
+        }
+
+        try {
+            const serviceType = await this.getServiceType(ros, `${actionName}/_action/send_goal`);
             // Service type is usually something like 'action_tutorials_interfaces/action/Fibonacci_SendGoal'
             // We want 'action_tutorials_interfaces/action/Fibonacci'
             if (serviceType.endsWith('_SendGoal')) {
@@ -241,31 +259,45 @@ export class RosApiService {
         return this.callRosapiService(ros, 'action_feedback_details', 'ActionFeedbackDetails', type);
     }
 
-    private static async callRosapiService(ros: Ros, serviceName: string, serviceType: string, type: string): Promise<rosapi.TypeDef[]> {
+    /**
+     * Calls a `/rosapi/<serviceName>` service. roslib only wraps part of the
+     * rosapi surface, so anything beyond that (e.g. `action_type`) goes
+     * through here.
+     */
+    private static async callRosapi<Request, Response>(
+        ros: Ros,
+        serviceName: string,
+        serviceType: string,
+        request: Request,
+    ): Promise<Response> {
         const { Service } = await this.loadRoslib();
 
-        return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
+        return new Promise<Response>((resolve, reject) => {
             // roslib v2 services take a plain request object directly (there is
             // no `ServiceRequest` wrapper class, unlike roslib v1).
-            const client = new Service<{ type: string }, unknown>({
+            const client = new Service<Request, Response>({
                 ros,
                 name: `/rosapi/${serviceName}`,
                 serviceType: `rosapi/${serviceType}`,
             });
             client.callService(
-                { type },
-                (result) => {
-                    if (result && typeof result === 'object' && Array.isArray((result as { typedefs?: unknown }).typedefs)) {
-                        resolve((result as { typedefs: rosapi.TypeDef[] }).typedefs);
-                    } else if (Array.isArray(result)) {
-                        resolve(result as rosapi.TypeDef[]);
-                    } else {
-                        resolve([]);
-                    }
-                },
+                request,
+                (result) => resolve(result),
                 (error) => reject(new Error(error)),
             );
         });
+    }
+
+    private static async callRosapiService(ros: Ros, serviceName: string, serviceType: string, type: string): Promise<rosapi.TypeDef[]> {
+        const result = await this.callRosapi<{ type: string }, unknown>(ros, serviceName, serviceType, { type });
+
+        if (result && typeof result === 'object' && Array.isArray((result as { typedefs?: unknown }).typedefs)) {
+            return (result as { typedefs: rosapi.TypeDef[] }).typedefs;
+        }
+        if (Array.isArray(result)) {
+            return result as rosapi.TypeDef[];
+        }
+        return [];
     }
 
     /**

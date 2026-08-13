@@ -1,4 +1,5 @@
 import { RosApiService } from '../RosApiService';
+import type { Ros } from 'roslib';
 import { rosapi } from 'roslib';
 
 describe('RosApiService', () => {
@@ -117,6 +118,107 @@ describe('RosApiService', () => {
             expect(result).toEqual({
                 self: 'recursive/Type'
             });
+        });
+    });
+
+    describe('getActionType', () => {
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
+
+        /**
+         * Stubs the dynamically imported roslib `Service` so `/rosapi/*` calls
+         * are answered by `respond`, which either resolves or rejects.
+         */
+        function mockRosapiService(
+            respond: (serviceName: string, request: unknown) => unknown,
+        ): jest.Mock {
+            const callService = jest.fn(
+                (
+                    request: unknown,
+                    onSuccess: (result: unknown) => void,
+                    onError: (error: string) => void,
+                    serviceName?: string,
+                ) => {
+                    try {
+                        onSuccess(respond(serviceName as string, request));
+                    } catch (error) {
+                        onError((error as Error).message);
+                    }
+                },
+            );
+
+            class ServiceStub {
+                constructor(private readonly options: { name: string }) {}
+                callService(request: unknown, onSuccess: (result: unknown) => void, onError: (error: string) => void) {
+                    callService(request, onSuccess, onError, this.options.name);
+                }
+            }
+
+            jest.spyOn(
+                RosApiService as unknown as { loadRoslib: () => Promise<unknown> },
+                'loadRoslib',
+            ).mockResolvedValue({ Service: ServiceStub });
+
+            return callService;
+        }
+
+        function buildRos(serviceTypes: Record<string, string>): Ros {
+            return {
+                getServiceType: jest.fn((service: string, onSuccess: (type: string) => void, onError: (error: string) => void) => {
+                    const type = serviceTypes[service];
+                    // rosapi answers with an empty type for services it cannot see.
+                    if (type === undefined) {
+                        onError('no such service');
+                        return;
+                    }
+                    onSuccess(type);
+                }),
+            } as unknown as Ros;
+        }
+
+        it('resolves the type through /rosapi/action_type', async () => {
+            const callService = mockRosapiService(() => ({ type: 'test_msgs/action/Fibonacci' }));
+
+            const type = await RosApiService.getActionType(buildRos({}), '/fibonacci');
+
+            expect(type).toBe('test_msgs/action/Fibonacci');
+            expect(callService).toHaveBeenCalledWith(
+                { action: '/fibonacci' },
+                expect.any(Function),
+                expect.any(Function),
+                '/rosapi/action_type',
+            );
+        });
+
+        it('strips a trailing slash from the action name', async () => {
+            const callService = mockRosapiService(() => ({ type: 'test_msgs/action/Fibonacci' }));
+
+            await RosApiService.getActionType(buildRos({}), '/fibonacci/');
+
+            expect(callService).toHaveBeenCalledWith(
+                { action: '/fibonacci' },
+                expect.any(Function),
+                expect.any(Function),
+                '/rosapi/action_type',
+            );
+        });
+
+        it('falls back to the send_goal service type when action_type is unavailable', async () => {
+            mockRosapiService(() => {
+                throw new Error('service /rosapi/action_type does not exist');
+            });
+            const ros = buildRos({
+                '/fibonacci/_action/send_goal': 'test_msgs/action/Fibonacci_SendGoal',
+            });
+
+            expect(await RosApiService.getActionType(ros, '/fibonacci')).toBe('test_msgs/action/Fibonacci');
+        });
+
+        it('returns an empty type when neither lookup resolves', async () => {
+            mockRosapiService(() => ({ type: '' }));
+
+            expect(await RosApiService.getActionType(buildRos({}), '/fibonacci')).toBe('');
         });
     });
 });
