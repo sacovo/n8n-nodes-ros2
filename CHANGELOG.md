@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+### Added
+
+- Both credentials now have a "Read-Only" switch that restricts every node using them to observing the system. On the ROS2 Rosbridge API credential, subscribing to topics (Topic Trigger, Topic Next Message, Topic Capture Image), listing topics/services/actions/nodes/parameters and resolving their types and definitions, and observing an existing goal (Action Status/Result/Feedback) keep working; publishing or advertising a topic, calling a service, starting or cancelling a goal, sending action feedback/results, advertising a service or action server, and setting a parameter fail with an error naming the refused operation. On the Docker API credential, `list` and `logs` keep working while `start`, `stop`, `restart` and `exec` fail. The check runs before the node connects, so a blocked operation never reaches the robot. Existing credentials have no such flag stored and stay writable. Like "Allowed Namespaces", this targets AI agent tooling: the switch lives on the credential, which an agent cannot choose or change, and the resulting error is returned as a tool observation the agent can react to.
+
+### Changed
+
+- ROS2 Action Send Feedback now requires the ROS2 Rosbridge API credential. It still talks to the action client through the in-process goal registry rather than opening its own connection, but sending feedback or a final result is a write, and the credential is what decides whether writes are allowed. **Existing workflows using this node need a credential selected on it.**
+
 ## 0.6.0
 
 ### Added

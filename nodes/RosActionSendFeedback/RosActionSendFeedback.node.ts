@@ -9,6 +9,8 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 import { RosBridgeService } from '../shared/services/RosBridgeService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 export class RosActionSendFeedback implements INodeType {
     description: INodeTypeDescription = {
@@ -29,6 +31,18 @@ export class RosActionSendFeedback implements INodeType {
         },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
+        // The node talks to an action client through a server registered by
+        // the ROS2 Action Trigger, so it never opens a connection itself. It
+        // still requires the credential: sending feedback or a final result
+        // is a write, and the credential is what decides whether writes are
+        // allowed at all.
+        credentials: [
+            {
+                name: 'rosBridgeApi',
+                required: true,
+                testedBy: 'rosBridgeApi',
+            },
+        ],
         properties: [
             {
                 displayName: 'Goal ID',
@@ -78,14 +92,23 @@ export class RosActionSendFeedback implements INodeType {
         ],
     };
 
+    methods = {
+        credentialTest: {
+            rosBridgeApi: rosBridgeApiTest,
+        },
+    };
+
     async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
         const items = this.getInputData();
         const returnData: INodeExecutionData[] = [];
 
         for (let i = 0; i < items.length; i++) {
             try {
+                const credentials = await this.getCredentials('rosBridgeApi');
                 const goalId = this.getNodeParameter('goalId', i) as string;
                 const operation = this.getNodeParameter('operation', i) as 'sendFeedback' | 'setSucceeded' | 'setAborted';
+
+                assertWriteAllowed(this, credentials, `Operation "${operation}" on goal "${goalId}"`, i);
                 const payloadJson = this.getNodeParameter('payloadJson', i) as string;
                 const payload = ParameterExtractor.parseJsonParameter(payloadJson, 'payloadJson');
 

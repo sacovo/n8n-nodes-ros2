@@ -15,6 +15,8 @@ export interface RosBridgeCredentials {
     authToken?: string;
     authQueryParameter?: string;
     connectTimeoutMs?: number;
+    /** When true the credential may only observe; see ReadOnlyGuard. */
+    readOnly?: boolean;
 }
 
 export interface ActionStartResult {

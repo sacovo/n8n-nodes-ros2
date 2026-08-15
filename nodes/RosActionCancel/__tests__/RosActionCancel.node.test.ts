@@ -60,4 +60,27 @@ describe('RosActionCancel', () => {
             );
         });
     });
+
+    describe('read-only credential', () => {
+        it('should refuse to cancel a goal without connecting', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({ readOnly: true }),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                isToolExecution: jest.fn().mockReturnValue(false),
+                getNodeOutputs: jest.fn().mockReturnValue([]),
+                getNode: jest.fn().mockReturnValue({ name: 'ROS2 Action Cancel', type: 'rosActionCancel' }),
+                getNodeParameter: jest.fn(),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredString.mockReturnValue('goal-123');
+            (mockExecuteFunctions.getNodeParameter as jest.Mock)
+                .mockReturnValueOnce({ mode: 'id', value: '/fibonacci' }) // serverName
+                .mockReturnValueOnce({ mode: 'id', value: 'action_tutorials_interfaces/Fibonacci' }); // actionName
+
+            await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow(/read-only/);
+            expect(mockRosBridgeService.connect).not.toHaveBeenCalled();
+            expect(mockRosBridgeService.cancelAction).not.toHaveBeenCalled();
+        });
+    });
 });

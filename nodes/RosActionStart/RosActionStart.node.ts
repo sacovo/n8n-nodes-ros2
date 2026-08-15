@@ -17,6 +17,7 @@ import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
 import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 export class RosActionStart implements INodeType {
     description: INodeTypeDescription = {
@@ -298,6 +299,13 @@ export class RosActionStart implements INodeType {
                 const actionName = typeof actionNameLocator === 'string'
                     ? actionNameLocator
                     : actionNameLocator.value;
+
+                assertWriteAllowed(
+                    this,
+                    credentials,
+                    `Starting a goal on action server "${serverName}"`,
+                    i,
+                );
 
                 // Extract goal based on input mode
                 const goalInputMode = this.getNodeParameter('goalInputMode', i) as 'fixed' | 'raw';

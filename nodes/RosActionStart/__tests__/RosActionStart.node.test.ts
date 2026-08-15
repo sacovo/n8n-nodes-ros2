@@ -197,4 +197,32 @@ describe('RosActionStart', () => {
             expect(result[0][1].json.goalId).toBe('goal-456');
         });
     });
+
+    describe('read-only credential', () => {
+        it('should refuse to start a goal without connecting', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({ readOnly: true }),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({ name: 'ROS2 Action Start', type: 'rosActionStart' }),
+                getNodeParameter: jest.fn(),
+            } as unknown as IExecuteFunctions;
+
+            (mockExecuteFunctions.getNodeParameter as jest.Mock)
+                .mockReturnValueOnce({ mode: 'id', value: '/fibonacci' }) // serverName
+                .mockReturnValueOnce({ mode: 'id', value: 'test_msgs/action/Fibonacci' }); // actionName
+
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockReturnValue(true);
+            mockNodeErrorHandler.buildErrorOutput.mockImplementation((error) => ({
+                error: (error as Error).message,
+            }));
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json.error).toContain('read-only');
+            expect(result[0][0].json.error).toContain('/fibonacci');
+            expect(mockRosBridgeService.connect).not.toHaveBeenCalled();
+            expect(mockRosBridgeService.startAction).not.toHaveBeenCalled();
+        });
+    });
 });

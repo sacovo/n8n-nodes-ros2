@@ -14,6 +14,7 @@ import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 export class RosActionCancel implements INodeType {
     description: INodeTypeDescription = {
@@ -189,6 +190,13 @@ export class RosActionCancel implements INodeType {
                 const actionName = typeof actionNameLocator === 'string'
                     ? actionNameLocator
                     : actionNameLocator.value;
+
+                assertWriteAllowed(
+                    this,
+                    credentials,
+                    `Cancelling goal "${goalId}" on action server "${serverName}"`,
+                    i,
+                );
 
                 ros = await RosBridgeService.connect(credentials);
                 const cancelResult = await RosBridgeService.cancelAction(

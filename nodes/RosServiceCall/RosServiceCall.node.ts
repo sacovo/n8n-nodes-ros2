@@ -17,6 +17,7 @@ import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
 import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 
 export class RosServiceCall implements INodeType {
@@ -295,6 +296,10 @@ export class RosServiceCall implements INodeType {
                     | string;
                 const serviceName =
                     typeof serviceNameLocator === 'string' ? serviceNameLocator : serviceNameLocator.value;
+
+                // A service call runs code on the robot, so it is refused
+                // before the request is even assembled.
+                assertWriteAllowed(this, credentials, `Calling service "${serviceName}"`, i);
 
                 // Extract service type from resource locator
                 const serviceTypeLocator = this.getNodeParameter('serviceType', i) as { mode: string; value: string } | string;

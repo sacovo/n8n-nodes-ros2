@@ -123,4 +123,43 @@ describe('DockerContainer Node', () => {
             expect(result.results[0].name).toBe('container1');
         });
     });
+
+    describe('read-only credential', () => {
+        beforeEach(() => {
+            mockExecuteFunctions.getInputData.mockReturnValue([{ json: {} }]);
+            mockExecuteFunctions.getCredentials.mockResolvedValue({
+                connectionType: 'socket',
+                socketPath: '/var/run/docker.sock',
+                readOnly: true,
+            });
+            // Errors are returned as output so the assertions can read the message
+            mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+        });
+
+        it.each(['start', 'stop', 'restart', 'exec'])('should refuse the %s operation', async (operation) => {
+            mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
+                if (paramName === 'operation') return operation;
+                if (paramName === 'containerId') return { mode: 'id', value: 'test-container' };
+                if (paramName === 'command') return 'rm -rf /';
+                return undefined;
+            });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json.error).toContain('read-only');
+            expect(result[0][0].json.error).toContain(operation);
+        });
+
+        it('should still list containers', async () => {
+            mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
+                if (paramName === 'operation') return 'list';
+                return undefined;
+            });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toHaveProperty('success', true);
+            expect(result[0][0].json).toHaveProperty('containers');
+        });
+    });
 });

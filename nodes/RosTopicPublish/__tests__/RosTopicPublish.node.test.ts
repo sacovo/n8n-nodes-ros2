@@ -409,4 +409,45 @@ describe('RosTopicPublish', () => {
             );
         });
     });
+
+    describe('read-only credential', () => {
+        const buildExecuteFunctions = (operation: 'publish' | 'advertise' = 'publish') =>
+            ({
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({ readOnly: true }),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({ name: 'ROS2 Topic Publish', type: 'rosTopicPublish' }),
+                getNodeParameter: jest.fn().mockImplementation((name: string) => {
+                    if (name === 'operation') return operation;
+                    if (name === 'topicName') return '/cmd_vel';
+                    if (name === 'messageType') return 'geometry_msgs/msg/Twist';
+                    if (name === 'messageInputMode') return 'raw';
+                    if (name === 'messageJson') return '{}';
+                    return undefined;
+                }),
+            }) as unknown as IExecuteFunctions;
+
+        beforeEach(() => {
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockReturnValue(true);
+            mockNodeErrorHandler.buildErrorOutput.mockImplementation((error) => ({
+                error: (error as Error).message,
+            }));
+        });
+
+        it('should refuse to publish without connecting', async () => {
+            const result = await node.execute.call(buildExecuteFunctions());
+
+            expect(result[0][0].json.error).toContain('read-only');
+            expect(mockRosBridgeService.connect).not.toHaveBeenCalled();
+            expect(mockRosBridgeService.publishTopic).not.toHaveBeenCalled();
+        });
+
+        it('should refuse to advertise as well', async () => {
+            const result = await node.execute.call(buildExecuteFunctions('advertise'));
+
+            expect(result[0][0].json.error).toContain('read-only');
+            expect(mockRosBridgeService.advertiseTopic).not.toHaveBeenCalled();
+        });
+    });
 });

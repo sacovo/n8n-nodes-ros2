@@ -11,7 +11,8 @@ import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { rosApiProperties } from './RosApiDescription';
-import { runOperation, type RosOperation, type RosResource } from './RosApiOperations';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
+import { isWriteOperation, runOperation, type RosOperation, type RosResource } from './RosApiOperations';
 
 export class RosApi implements INodeType {
     description: INodeTypeDescription = {
@@ -61,6 +62,9 @@ export class RosApi implements INodeType {
                 const resource = ParameterExtractor.extractRequiredString(this, i, 'resource') as RosResource;
                 const operation = ParameterExtractor.extractRequiredString(this, i, 'operation') as RosOperation;
 
+                if (isWriteOperation(resource, operation)) {
+                    assertWriteAllowed(this, credentials, `Operation "${operation}: ${resource}"`, i);
+                }
 
                 // Connect to ROS
                 ros = await RosBridgeService.connect(credentials);

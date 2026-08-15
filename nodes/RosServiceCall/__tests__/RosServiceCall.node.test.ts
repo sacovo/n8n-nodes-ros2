@@ -212,4 +212,34 @@ describe('RosServiceCall', () => {
             expect(mockNodeErrorHandler.handle).toHaveBeenCalled();
         });
     });
+
+    describe('read-only credential', () => {
+        it('should refuse to call a service without connecting', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({ readOnly: true }),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({ name: 'ROS2 Service Call', type: 'rosServiceCall' }),
+                getNodeParameter: jest.fn().mockImplementation((name: string) => {
+                    if (name === 'serviceName') return { mode: 'id', value: '/reset' };
+                    if (name === 'serviceType') return { mode: 'id', value: 'std_srvs/srv/Empty' };
+                    if (name === 'requestInputMode') return 'raw';
+                    if (name === 'requestJson') return '{}';
+                    return undefined;
+                }),
+            } as unknown as IExecuteFunctions;
+
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockReturnValue(true);
+            mockNodeErrorHandler.buildErrorOutput.mockImplementation((error) => ({
+                error: (error as Error).message,
+            }));
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json.error).toContain('read-only');
+            expect(result[0][0].json.error).toContain('/reset');
+            expect(mockRosBridgeService.connect).not.toHaveBeenCalled();
+            expect(mockRosBridgeService.callService).not.toHaveBeenCalled();
+        });
+    });
 });

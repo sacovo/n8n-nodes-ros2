@@ -183,5 +183,28 @@ describe('RosTopicNextMessage', () => {
             await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow('Connection error');
             expect(mockNodeErrorHandler.handle).toHaveBeenCalled();
         });
+
+        it('should still listen with a read-only credential', async () => {
+            const mockExecuteFunctions = {
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({ readOnly: true }),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({ name: 'ROS2 Topic Next Message', type: 'rosTopicNextMessage' }),
+                getNodeParameter: jest.fn().mockImplementation((name) => {
+                    if (name === 'topicName') return '/chatter';
+                    if (name === 'messageType') return 'std_msgs/msg/String';
+                    return '';
+                }),
+            } as unknown as IExecuteFunctions;
+
+            mockParameterExtractor.extractRequiredNumber.mockReturnValue(5000);
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosBridgeService.waitForTopicMessage.mockResolvedValue({ data: 'Hello' });
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(mockRosBridgeService.waitForTopicMessage).toHaveBeenCalled();
+            expect(result[0][0].json).toMatchObject({ message: { data: 'Hello' } });
+        });
     });
 });

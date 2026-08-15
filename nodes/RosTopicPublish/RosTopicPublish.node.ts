@@ -18,6 +18,7 @@ import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
 import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
 import { assertInScope, filterByScope, parseTopicScope } from '../shared/utils/TopicScope';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 export class RosTopicPublish implements INodeType {
     description: INodeTypeDescription = {
@@ -414,6 +415,14 @@ export class RosTopicPublish implements INodeType {
 
                 // Checked before connecting: advertising alone already
                 // registers a publisher, so both operations are gated.
+                assertWriteAllowed(
+                    this,
+                    credentials,
+                    operation === 'advertise'
+                        ? `Advertising topic "${topicName}"`
+                        : `Publishing to topic "${topicName}"`,
+                    i,
+                );
                 assertInScope(this, topicName, parseTopicScope(options.allowedNamespaces), i);
 
                 ros = await RosBridgeService.connect(credentials);
