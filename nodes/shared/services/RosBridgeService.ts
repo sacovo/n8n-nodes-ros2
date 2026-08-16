@@ -3,7 +3,7 @@
  * This service is independent of n8n framework and can be easily tested
  */
 
-import type { ActionClient, Goal, Ros, SimpleActionServer, Topic } from 'roslib';
+import type { Ros, Topic } from 'roslib';
 
 export type JsonRecord = Record<string, unknown>;
 
@@ -15,19 +15,6 @@ export interface RosBridgeCredentials {
     authToken?: string;
     authQueryParameter?: string;
     connectTimeoutMs?: number;
-}
-
-export interface ActionStartResult {
-    goalId: string;
-    status?: JsonRecord;
-}
-
-export interface ActionStatusSnapshot {
-    goalId: string;
-    statusCode: number;
-    status: string;
-    text?: string;
-    raw: JsonRecord;
 }
 
 class RosBridgeConnectionError extends Error {
@@ -45,20 +32,6 @@ class RosBridgeTimeoutError extends Error {
 }
 
 export class RosBridgeService {
-    private static readonly ACTION_STATUS_LABELS: Record<number, string> = {
-        0: 'PENDING',
-        1: 'ACTIVE',
-        2: 'PREEMPTED',
-        3: 'SUCCEEDED',
-        4: 'ABORTED',
-        5: 'REJECTED',
-        6: 'PREEMPTING',
-        7: 'RECALLING',
-        8: 'RECALLED',
-        9: 'LOST',
-    };
-
-    private static goalRegistry = new Map<string, SimpleActionServer>();
     private static connectionPool = new Map<string, Ros>();
     private static pendingConnections = new Map<string, Promise<Ros>>();
     private static readonly PUBLISHER_TTL_MS = process.env.ROS_PUBLISHER_TTL_MS ? parseInt(process.env.ROS_PUBLISHER_TTL_MS, 10) : 300000;
@@ -206,6 +179,23 @@ export class RosBridgeService {
         void ros;
         // With connection pooling, we don't want to actually close the connection
         // on every node execution, as ROS 2 discovery takes time.
+    }
+
+    /**
+     * Tears down every pooled connection. Node executions must not call this -
+     * the pool deliberately outlives them - but a process that wants to exit
+     * (the system tests, or a future n8n shutdown hook) needs a way to release
+     * the sockets that otherwise keep the event loop alive.
+     */
+    static closeAll(): void {
+        for (const [url, ros] of this.connectionPool.entries()) {
+            try {
+                ros.close();
+            } catch {
+                // Ignore errors from a socket that is already gone
+            }
+            this.connectionPool.delete(url);
+        }
     }
 
     static async publishTopic(
@@ -379,96 +369,6 @@ export class RosBridgeService {
         });
     }
 
-    static async startAction(
-        ros: Ros,
-        serverName: string,
-        actionName: string,
-        goalPayload: JsonRecord,
-        sendTimeoutMs: number,
-    ): Promise<ActionStartResult> {
-        const { ActionClient, Goal } = await this.loadRoslib();
-
-        const actionClient = new ActionClient({
-            ros,
-            serverName,
-            actionName,
-        }) as ActionClient<JsonRecord, unknown, unknown>;
-
-        const goal = new Goal<JsonRecord>({
-            actionClient,
-            goalMessage: goalPayload,
-        });
-
-        return new Promise<ActionStartResult>((resolve) => {
-            let settled = false;
-
-            const finalize = (status?: JsonRecord) => {
-                if (settled) {
-                    return;
-                }
-                settled = true;
-                const goalId = this.extractGoalId(goal);
-                actionClient.dispose();
-                resolve({ goalId, status });
-            };
-
-            const timer = setTimeout(() => {
-                finalize();
-            }, sendTimeoutMs);
-
-            goal.on('status', (event: unknown) => {
-                clearTimeout(timer);
-                finalize((event || {}) as JsonRecord);
-            });
-
-            goal.send(sendTimeoutMs);
-        });
-    }
-
-    static async getActionStatusByTopic(
-        ros: Ros,
-        statusTopicName: string,
-        statusMessageType: string,
-        goalId: string,
-        timeoutMs: number,
-    ): Promise<ActionStatusSnapshot> {
-        const statusMessage = await this.waitForTopicMessage(
-            ros,
-            statusTopicName,
-            statusMessageType,
-            timeoutMs,
-        );
-        const statusList = Array.isArray(statusMessage.status_list)
-            ? (statusMessage.status_list as Array<Record<string, unknown>>)
-            : [];
-
-        const match = statusList.find((entry) => {
-            const nestedGoal = entry.goal_id as Record<string, unknown> | undefined;
-            return nestedGoal?.id === goalId;
-        });
-
-        if (!match) {
-            return {
-                goalId,
-                statusCode: -1,
-                status: 'UNKNOWN',
-                text: 'Goal not present in latest status message',
-                raw: statusMessage,
-            };
-        }
-
-        const statusCode = Number(match.status ?? -1);
-        const text = typeof match.text === 'string' ? match.text : undefined;
-
-        return {
-            goalId,
-            statusCode,
-            status: this.ACTION_STATUS_LABELS[statusCode] ?? 'UNKNOWN',
-            text,
-            raw: statusMessage,
-        };
-    }
-
     static async subscribeToTopic(
         ros: Ros,
         topicName: string,
@@ -494,83 +394,6 @@ export class RosBridgeService {
         };
     }
 
-    static async getActionResult(
-        ros: Ros,
-        serverName: string,
-        actionName: string,
-        goalId: string,
-        timeoutMs: number,
-    ): Promise<JsonRecord> {
-        const { ActionClient, Goal } = await this.loadRoslib();
-
-        const actionClient = new ActionClient({
-            ros,
-            serverName,
-            actionName,
-        }) as ActionClient<JsonRecord, unknown, unknown>;
-
-        return new Promise<JsonRecord>((resolve, reject) => {
-            const timer = setTimeout(() => {
-                actionClient.dispose();
-                reject(new RosBridgeTimeoutError(`Timeout waiting for result of goal "${goalId}" on "${serverName}"`));
-            }, timeoutMs);
-
-            // We create a dummy goal object just to use its result listener,
-            // then re-key it onto the existing goalId (see attachExistingGoalId).
-            const goal = new Goal({
-                actionClient,
-                goalMessage: {},
-            });
-            this.attachExistingGoalId(actionClient, goal, goalId);
-
-            goal.on('result', (result) => {
-                clearTimeout(timer);
-                actionClient.dispose();
-                resolve(result as JsonRecord);
-            });
-
-            goal.on('timeout', () => {
-                clearTimeout(timer);
-                actionClient.dispose();
-                reject(new RosBridgeTimeoutError(`roslib timeout waiting for result of goal "${goalId}"`));
-            });
-        });
-    }
-
-    static async cancelAction(
-        ros: Ros,
-        serverName: string,
-        actionName: string,
-        goalId: string,
-    ): Promise<JsonRecord> {
-        const { ActionClient, Goal } = await this.loadRoslib();
-
-        const actionClient = new ActionClient({
-            ros,
-            serverName,
-            actionName,
-        }) as ActionClient<JsonRecord, unknown, unknown>;
-
-        const goal = new Goal({
-            actionClient,
-            goalMessage: {},
-        });
-        this.attachExistingGoalId(actionClient, goal, goalId);
-
-        return new Promise<JsonRecord>((resolve, reject) => {
-            try {
-                // roslib's cancel() doesn't return a promise or have a specific 'canceled' event on the goal.
-                // It sends the cancel request via service.
-                goal.cancel();
-                actionClient.dispose();
-                resolve({ status: 'cancel_request_sent', goalId });
-            } catch (error) {
-                actionClient.dispose();
-                reject(error);
-            }
-        });
-    }
-
     static async advertiseService(
         ros: Ros,
         serviceName: string,
@@ -593,125 +416,6 @@ export class RosBridgeService {
         };
     }
 
-    static async registerActionServer(
-        ros: Ros,
-        serverName: string,
-        actionName: string,
-        callback: (goalMessage: JsonRecord, goalId: string) => void,
-    ): Promise<() => void> {
-        const { SimpleActionServer } = await this.loadRoslib();
-        const server = new SimpleActionServer({
-            ros,
-            serverName,
-            actionName,
-        });
-
-        const onGoal = (goalMessage: unknown) => {
-            const goalId = server.currentGoal?.goal_id?.id || `goal-${Date.now()}`;
-            this.goalRegistry.set(goalId, server);
-            callback(goalMessage as JsonRecord, goalId);
-        };
-
-        server.on('goal', onGoal);
-
-        return () => {
-            server.removeAllListeners('goal');
-            // Drop every goal registered against this server. On trigger
-            // deactivation this prevents unbounded growth from goals that were
-            // never completed; on reconnect (connectWithReconnect tears down and
-            // re-registers a fresh SimpleActionServer) it invalidates goalIds
-            // that would otherwise point at a dead server, so feedback/result
-            // calls fail loudly instead of silently talking to it.
-            for (const [goalId, registeredServer] of this.goalRegistry.entries()) {
-                if (registeredServer === server) {
-                    this.goalRegistry.delete(goalId);
-                }
-            }
-        };
-    }
-
-    static sendActionFeedback(goalId: string, feedback: JsonRecord): void {
-        const server = this.goalRegistry.get(goalId);
-        if (!server) {
-            throw new Error(`No active action goal found for ID "${goalId}"`);
-        }
-        server.sendFeedback(feedback);
-    }
-
-    static setActionSucceeded(goalId: string, result: JsonRecord): void {
-        const server = this.goalRegistry.get(goalId);
-        if (!server) {
-            throw new Error(`No active action goal found for ID "${goalId}"`);
-        }
-        server.setSucceeded(result);
-        this.goalRegistry.delete(goalId);
-    }
-
-    static setActionAborted(goalId: string, result: JsonRecord): void {
-        const server = this.goalRegistry.get(goalId);
-        if (!server) {
-            throw new Error(`No active action goal found for ID "${goalId}"`);
-        }
-        server.setAborted(result);
-        this.goalRegistry.delete(goalId);
-    }
-
-    static async waitForActionFeedback(
-        ros: Ros,
-        serverName: string,
-        actionName: string,
-        goalId: string,
-        timeoutMs: number,
-    ): Promise<JsonRecord> {
-        const { ActionClient, Goal } = await this.loadRoslib();
-
-        const actionClient = new ActionClient({
-            ros,
-            serverName,
-            actionName,
-        }) as ActionClient<JsonRecord, unknown, unknown>;
-
-        const goal = new Goal({
-            actionClient,
-            goalMessage: {},
-        });
-        this.attachExistingGoalId(actionClient, goal, goalId);
-
-        return new Promise<JsonRecord>((resolve, reject) => {
-            const timer = setTimeout(() => {
-                actionClient.dispose();
-                reject(new RosBridgeTimeoutError(`Timeout waiting for feedback of goal "${goalId}" on "${serverName}"`));
-            }, timeoutMs);
-
-            goal.on('feedback', (feedback) => {
-                clearTimeout(timer);
-                actionClient.dispose();
-                resolve(feedback as JsonRecord);
-            });
-        });
-    }
-
-    private static extractGoalId(goal: Goal<JsonRecord>): string {
-        return goal.goalID || `goal-${Date.now()}`;
-    }
-
-    /**
-     * Re-keys a freshly constructed dummy Goal so it represents an existing
-     * goal (identified by goalId) instead of the goal roslib auto-generated
-     * at construction time. Needed because Goal's constructor bakes its
-     * random goalID into goalMessage.goal_id.id and actionClient.goals[]
-     * before we get a chance to override it.
-     */
-    private static attachExistingGoalId(
-        actionClient: ActionClient<JsonRecord, unknown, unknown>,
-        goal: Goal<JsonRecord>,
-        goalId: string,
-    ): void {
-        delete actionClient.goals[goal.goalID];
-        goal.goalID = goalId;
-        goal.goalMessage.goal_id.id = goalId;
-        actionClient.goals[goalId] = goal;
-    }
 }
 
 export { RosBridgeConnectionError, RosBridgeTimeoutError };

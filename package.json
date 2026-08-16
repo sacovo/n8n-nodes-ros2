@@ -1,6 +1,6 @@
 {
 	"name": "@fhnw-rover/n8n-nodes-ros2",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"description": "ROS2 rosbridge integration for n8n workflows.",
 	"license": "MIT",
 	"homepage": "https://github.com/fhnw-rover/n8n/n8n-nodes-ros2",
@@ -27,7 +27,8 @@
 		"test:watch": "jest --watch",
 		"test:coverage": "jest --coverage",
 		"release": "n8n-node release",
-		"prepublishOnly": "n8n-node prerelease"
+		"prepublishOnly": "n8n-node prerelease",
+		"test:system": "./test/system/run.sh"
 	},
 	"files": [
 		"dist"
@@ -47,13 +48,9 @@
 			"dist/nodes/RosTopicCaptureImage/RosTopicCaptureImage.node.js",
 			"dist/nodes/RosServiceCall/RosServiceCall.node.js",
 			"dist/nodes/RosServiceTrigger/RosServiceTrigger.node.js",
-			"dist/nodes/RosActionStart/RosActionStart.node.js",
+			"dist/nodes/RosAction/RosAction.node.js",
 			"dist/nodes/RosActionTrigger/RosActionTrigger.node.js",
-			"dist/nodes/RosActionSendFeedback/RosActionSendFeedback.node.js",
-			"dist/nodes/RosActionStatus/RosActionStatus.node.js",
-			"dist/nodes/RosActionResult/RosActionResult.node.js",
-			"dist/nodes/RosActionCancel/RosActionCancel.node.js",
-			"dist/nodes/RosActionFeedback/RosActionFeedback.node.js",
+			"dist/nodes/RosActionRespond/RosActionRespond.node.js",
 			"dist/nodes/RosApi/RosApi.node.js"
 		]
 	},

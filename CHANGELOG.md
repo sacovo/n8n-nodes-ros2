@@ -1,6 +1,38 @@
 # Changelog
 
+## 0.7.0
+
+### Changed
+
+- **Breaking.** The seven action nodes are replaced by three. `ROS2 Action Start`, `Result`, `Status`, `Feedback` and `Cancel` are now one `ROS2 Action` node with a `Send Goal and Wait` / `Send Goal` / `Get Result` / `Cancel Goal` / `Watch Feedback` / `Watch Status` operation, and `ROS2 Action Send Feedback` becomes `ROS2 Action Respond` (gaining `Set Canceled`, and `Set Failed` in place of `Set Aborted`). `ROS2 Action Trigger` keeps its name. Existing workflows using the removed node types must be rebuilt; they could not have been working, see below.
+
+### Fixed
+
+- The action nodes could not drive a ROS 2 action server at all. They used roslib's `ActionClient`/`Goal`/`SimpleActionServer`, which are ROS 1 actionlib: they advertised `<server>/goal` with type `<Type>Goal` and subscribed `<server>/result|feedback|status` with `actionlib_msgs/GoalStatusArray`. An rclpy action server exposes `<name>/_action/send_goal|get_result|cancel_goal` services and `_action/feedback|status` topics instead — zero overlap, so goals landed nowhere and Action Result only ever timed out. Everything now goes through rosbridge's native action protocol (`send_action_goal` / `cancel_action_goal` / `action_feedback` / `action_result`) on the client side and `advertise_action` on the server side.
+
+  Note this cannot be done with the `_action/*` services directly, which is the obvious-looking fix: rosbridge cannot reach them. They are hidden names, so `call_service`'s lookup through `get_service_names_and_types()` never finds them; and `ros_loader` resolves `pkg/action/X_SendGoal` as `getattr(pkg.action, 'X_SendGoal')`, which the generated `action/__init__.py` does not export (only `X_SendGoal_Request`/`_Response`/`_Event`). Only `_FeedbackMessage` is special-cased there, which is why the feedback and status topics do work.
+
+- Action Status matched goals against `status_list[].goal_id.id`, the ROS 1 shape. ROS 2 nests it one level deeper as `status_list[].goal_info.goal_id.uuid`, and the id is a 16-byte UUID that rosbridge base64-encodes rather than a string, so the lookup never matched and every goal reported `UNKNOWN`. Goal ids are now decoded to canonical `8-4-4-4-12` hex, and the status labels are `action_msgs/msg/GoalStatus` (`ACCEPTED`/`EXECUTING`/`CANCELING`/`SUCCEEDED`/`CANCELED`/`ABORTED`) instead of the ROS 1 set (`PENDING`/`ACTIVE`/`PREEMPTED`/...).
+
+- A goal that ends in any state other than SUCCEEDED is now reported as data, with its status code and label, rather than thrown. roslib's own `Action` class routes every non-SUCCEEDED result into its failure callback as a stringified error, which loses the distinction between a cancelled goal, an aborted one and a rejected one.
+
+### Added
+
+- `ROS2 Action` gains `Send Goal and Wait`, which sends a goal and returns its result in one step — the common case for a robot task — optionally collecting every feedback message received while it ran.
+- `ROS2 Action Trigger` can now emit client cancel requests (`Emit Cancel Requests`), so a workflow acting as an action server can react to them; the ROS 1 `SimpleActionServer` it used before had no cancel callback at all.
+- Dockerised system tests (`npm run test:system`, see `test/system/README.md`): every ROS-facing node's real `execute()`/`trigger()` run against a live rosbridge and an `rclpy` fixture node providing a topic, a subscriber, a service and an action. The previous suite mocked the service layer wholesale, which is why the ROS 1 action protocol shipped with a fully green test run. The fixture builds `rosapi` from our rosbridge fork, matching what `ros-fhnw-rosbridge` deploys — stock jazzy rosapi crashes on three separate paths the nodes depend on, and since `rosapi_node` runs a bare `rclpy.spin()` each one takes every `/rosapi/*` service down with it.
+
+### Known issues
+
+- `ROS2 API → Node → Get Definition` always reports an empty `actions` list. Actions are detected from an `<action>/_action/send_goal` entry in the node's service list, but rosapi builds that from `get_service_names_and_types_by_node()`, which omits hidden names — and all `_action/*` names are hidden. `ROS2 API → Action → List` is unaffected. The system tests assert the current behaviour so it fails loudly if rosapi ever changes.
+- `Send Goal` / `Get Result` / `Cancel Goal` only work within the n8n process that sent the goal. rosbridge never reports a goal's ROS UUID back to the client — a goal is identified only by the correlation id chosen for the `send_action_goal` op on that websocket — so there is nothing durable to key a lookup on. `Send Goal and Wait` is unaffected.
+- These operations also need rosbridge's `send_action_goals_in_new_thread` (the stock `rosbridge_websocket_launch.xml` defaults it to true). With it disabled, a goal blocks its connection's whole message queue, so cancels are never dispatched and every other node sharing the pooled connection stalls until the goal finishes.
+
 ## 0.6.0
+
+### Fixed
+
+- The "Action Type" picker (Action Start/Result/Feedback/Cancel) no longer comes back empty in "Detected" mode, and the ROS2 API node's action definitions resolve their type again. The type was derived from the `<action>/_action/send_goal` service via rosapi's `service_type`, but that lookup only searches *non-hidden* services and `_action/*` services are hidden, so it always answered with an empty type — silently, which is why nothing showed up in the n8n or rosbridge logs. The type now comes from `/rosapi/action_type`, with the old derivation kept as a fallback for rosbridge builds that lack that service.
 
 ### Added
 
