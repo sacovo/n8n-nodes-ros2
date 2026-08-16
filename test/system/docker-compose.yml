@@ -1,0 +1,17 @@
+services:
+  ros-fixture:
+    build:
+      context: ./fixture
+      args:
+        ROS_DISTRO: ${ROS_DISTRO:-jazzy}
+    container_name: n8n-nodes-ros2-system-test
+    ports:
+      - "${ROSBRIDGE_PORT:-9090}:9090"
+    healthcheck:
+      # rosbridge only opens the port once it is actually serving, so a plain
+      # TCP connect is enough to gate the test suite on readiness.
+      test: ["CMD", "python3", "-c", "import socket;socket.create_connection(('127.0.0.1',9090),2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
