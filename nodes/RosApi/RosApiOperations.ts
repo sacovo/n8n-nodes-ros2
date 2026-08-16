@@ -9,6 +9,18 @@ export type RosResource = 'action' | 'node' | 'parameter' | 'service' | 'topic';
 export type RosOperation = 'list' | 'getDetails' | 'get' | 'set' | 'getType' | 'listForType' | 'getDefinition';
 
 /**
+ * Resource/operation combinations that change the state of the ROS graph.
+ * Everything else only reads it (listing, resolving types and definitions),
+ * which a read-only credential is allowed to do.
+ */
+const WRITE_OPERATIONS = new Set<`${RosOperation}:${RosResource}`>(['set:parameter']);
+
+/** Whether the combination writes to the ROS graph. */
+export function isWriteOperation(resource: RosResource, operation: RosOperation): boolean {
+    return WRITE_OPERATIONS.has(`${operation}:${resource}`);
+}
+
+/**
  * Filters text against a user-supplied pattern, treating it as a
  * case-insensitive regular expression and falling back to a plain substring
  * match if the pattern is not a valid regex.

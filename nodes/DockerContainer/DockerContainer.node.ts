@@ -8,11 +8,12 @@ import type {
     ILoadOptionsFunctions,
     INodeListSearchResult,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import Docker from 'dockerode';
 
 import { dockerApiTest } from '../shared/utils/CredentialTests';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 function getDockerInstance(credentials: IDataObject): Docker {
     const options: Docker.DockerOptions = {};
@@ -241,6 +242,17 @@ export class DockerContainer implements INodeType {
                     const containerIdLocator = this.getNodeParameter('containerId', i) as { mode: string; value: string } | string;
                     const containerId = typeof containerIdLocator === 'string' ? containerIdLocator : containerIdLocator.value;
 
+                    // Only listing containers and reading logs leave the
+                    // containers untouched; the rest changes their state.
+                    if (operation !== 'logs') {
+                        assertWriteAllowed(
+                            this,
+                            credentials,
+                            `Operation "${operation}" on container "${containerId}"`,
+                            i,
+                        );
+                    }
+
                     const container = docker.getContainer(containerId);
 
                     if (operation === 'start') {
@@ -303,6 +315,10 @@ export class DockerContainer implements INodeType {
                         json: { error: error.message },
                         pairedItem: { item: i },
                     });
+                } else if (error instanceof NodeOperationError) {
+                    // Already a node-level error (e.g. the read-only guard):
+                    // wrapping it in NodeApiError would only hide its message.
+                    throw error;
                 } else {
                     throw new NodeApiError(this.getNode(), error as JsonObject);
                 }

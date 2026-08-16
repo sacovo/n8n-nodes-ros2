@@ -206,5 +206,25 @@ describe('RosTopicTrigger', () => {
                 jest.useRealTimers();
             }
         });
+
+        it('should still subscribe with a read-only credential', async () => {
+            const mockTriggerFunctions = buildTriggerFunctions({
+                topicName: '/chatter',
+                messageType: 'std_msgs/msg/String',
+            });
+            (mockTriggerFunctions.getCredentials as jest.Mock).mockResolvedValue({ readOnly: true });
+
+            mockRosBridgeService.connect.mockResolvedValue(buildMockRos());
+            mockRosBridgeService.subscribeToTopic.mockResolvedValue(() => { });
+
+            await node.trigger.call(mockTriggerFunctions);
+
+            expect(mockRosBridgeService.subscribeToTopic).toHaveBeenCalledWith(
+                expect.anything(),
+                '/chatter',
+                'std_msgs/msg/String',
+                expect.any(Function),
+            );
+        });
     });
 });

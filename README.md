@@ -97,6 +97,7 @@ Optional values:
 - Auth Token: token appended as a query parameter for authentication
 - Auth Query Parameter: parameter name used for the auth token
 - Connect Timeout: connection timeout in milliseconds
+- Read-Only: restricts every node using this credential to observing the system (see below)
 
 ### Docker API
 
@@ -106,6 +107,25 @@ Used by the `Docker Container` node.
 - Socket Path (socket mode): path to the Docker socket, e.g. `/var/run/docker.sock`
 - Protocol, Host, Port (HTTP mode)
 - Authentication (HTTP mode): `None` or `Basic Auth` (username/password)
+- Read-Only: allows `list` and `logs` only; `start`, `stop`, `restart` and `exec` fail with an error
+
+### Read-only credentials
+
+Turning on **Read-Only** on a credential blocks every operation that changes state, in all nodes that use that credential. The check runs before the node connects, so a blocked operation never reaches the robot.
+
+Still allowed (reading):
+- `ROS2 Topic Trigger`, `ROS2 Topic Next Message`, `ROS2 Topic Capture Image` — subscribing to topics
+- `ROS2 API` — `List`, `Get Type`, `Get Definition`, `Get Details` and `Get` on parameters
+- `ROS2 Action Status`, `ROS2 Action Result`, `ROS2 Action Feedback` — observing a goal that already exists
+
+Blocked (writing):
+- `ROS2 Topic Publish` — both `Publish` and `Advertise Only`
+- `ROS2 Service Call`
+- `ROS2 Action Start`, `ROS2 Action Cancel`, `ROS2 Action Send Feedback`
+- `ROS2 Service Trigger` and `ROS2 Action Trigger` — advertising a service or action server adds an endpoint to the graph and answers callers, so an activated workflow using a read-only credential fails
+- `ROS2 API` → `Parameter` → `Set`
+
+The switch sits on the credential rather than on the node so a workflow author cannot lift it from inside a workflow, and neither can an AI agent driving a node as a tool — agents fill parameters, they never choose credentials. Blocked calls return the usual tool error (`{ "error": "... is blocked: the credential used by this node is set to read-only" }`), which the agent can read and react to. Combine it with the **Allowed Namespaces** option on `ROS2 Topic Publish` when an agent should write to a few namespaces but read everywhere: use two credentials, a read-only one for the discovery/observation tools and a writable one for the publishing tool.
 
 ## Operational notes
 

@@ -14,8 +14,9 @@ import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 import { rosActionProperties } from './RosActionDescription';
-import { runOperation, type RosActionOperation } from './RosActionOperations';
+import { isWriteOperation, runOperation, type RosActionOperation } from './RosActionOperations';
 
 export class RosAction implements INodeType {
     description: INodeTypeDescription = {
@@ -166,6 +167,10 @@ export class RosAction implements INodeType {
                     'rosBridgeApi',
                 )) as unknown as RosBridgeCredentials;
                 const operation = this.getNodeParameter('operation', i) as RosActionOperation;
+
+                if (isWriteOperation(operation)) {
+                    assertWriteAllowed(this, credentials, `Operation "${operation}"`, i);
+                }
 
                 ros = await RosBridgeService.connect(credentials);
                 const json = await runOperation(operation, ros, this, i);

@@ -15,6 +15,7 @@ import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 // Trigger nodes cannot be invoked as AI tools, so usableAsTool is omitted
 // eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
@@ -160,6 +161,11 @@ export class RosServiceTrigger implements INodeType {
 
             const serviceName = this.getNodeParameter('serviceName') as string;
             const serviceType = this.getNodeParameter('serviceType') as string;
+
+            // Advertising a service adds an endpoint to the ROS graph and
+            // answers callers, so it counts as a write.
+            assertWriteAllowed(this, credentials, `Advertising service "${serviceName}"`);
+
             const responseInputMode = this.getNodeParameter('responseInputMode') as 'fixed' | 'raw';
 
             let responsePayload: JsonRecord = {};

@@ -12,6 +12,7 @@ import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '..
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 // Trigger nodes cannot be invoked as AI tools, so usableAsTool is omitted
 // eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
@@ -81,6 +82,10 @@ export class RosActionTrigger implements INodeType {
             const serverName = this.getNodeParameter('serverName') as string;
             const actionType = this.getNodeParameter('actionType') as string;
             const emitCancelRequests = this.getNodeParameter('emitCancelRequests') as boolean;
+
+            // Registering an action server adds an endpoint to the ROS graph
+            // and answers callers, so it counts as a write.
+            assertWriteAllowed(this, credentials, `Advertising action server "${serverName}"`);
 
             const onGoal = (goal: JsonRecord, goalId: string) => {
                 this.emit([

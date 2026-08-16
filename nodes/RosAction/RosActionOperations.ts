@@ -16,6 +16,19 @@ export type RosActionOperation =
     | 'watchFeedback'
     | 'watchStatus';
 
+/**
+ * Operations that change the state of the robot. Sending a goal drives the
+ * action server, and cancelling one interrupts whatever it is doing, so both
+ * need a writable credential. Collecting a result and watching the feedback or
+ * status topics only observe a goal that is already running.
+ */
+const WRITE_OPERATIONS = new Set<RosActionOperation>(['sendGoal', 'sendGoalAndWait', 'cancelGoal']);
+
+/** Whether the operation changes the state of the robot. */
+export function isWriteOperation(operation: RosActionOperation): boolean {
+    return WRITE_OPERATIONS.has(operation);
+}
+
 /** Reads a resourceLocator parameter that may also be a plain string. */
 function extractLocator(node: IExecuteFunctions, itemIndex: number, name: string): string {
     const locator = node.getNodeParameter(name, itemIndex) as

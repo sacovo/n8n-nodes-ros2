@@ -7,8 +7,10 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosActionServerService } from '../shared/services/RosActionServerService';
+import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
+import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 type RespondOperation = 'sendFeedback' | 'setSucceeded' | 'setCanceled' | 'setFailed';
 
@@ -33,6 +35,17 @@ export class RosActionRespond implements INodeType {
         },
         inputs: [NodeConnectionTypes.Main],
         outputs: [NodeConnectionTypes.Main],
+        // The node answers a client through a server registered by the ROS2
+        // Action Trigger, so it never opens a connection itself. It still
+        // requires the credential: sending feedback or a final result is a
+        // write, and the credential is what decides whether writes are allowed.
+        credentials: [
+            {
+                name: 'rosBridgeApi',
+                required: true,
+                testedBy: 'rosBridgeApi',
+            },
+        ],
         properties: [
             {
                 displayName: 'Goal ID',
@@ -94,14 +107,23 @@ export class RosActionRespond implements INodeType {
         ],
     };
 
+    methods = {
+        credentialTest: {
+            rosBridgeApi: rosBridgeApiTest,
+        },
+    };
+
     async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
         const items = this.getInputData();
         const returnData: INodeExecutionData[] = [];
 
         for (let i = 0; i < items.length; i++) {
             try {
+                const credentials = await this.getCredentials('rosBridgeApi');
                 const goalId = ParameterExtractor.extractRequiredString(this, i, 'goalId');
                 const operation = this.getNodeParameter('operation', i) as RespondOperation;
+
+                assertWriteAllowed(this, credentials, `Operation "${operation}" on goal "${goalId}"`, i);
 
                 let payload: Record<string, unknown> = {};
                 if (operation !== 'setFailed') {

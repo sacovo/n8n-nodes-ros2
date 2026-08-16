@@ -23,14 +23,22 @@ const mockActionService = RosActionService as jest.Mocked<typeof RosActionServic
 const mockRosBridgeService = RosBridgeService as jest.Mocked<typeof RosBridgeService>;
 
 /** Builds an IExecuteFunctions whose getNodeParameter reads from `params`. */
-function makeExecuteFunctions(params: Record<string, unknown>): IExecuteFunctions {
+function makeExecuteFunctions(
+    params: Record<string, unknown>,
+    credentials: Record<string, unknown> = {},
+): IExecuteFunctions {
     return {
         getInputData: jest.fn().mockReturnValue([{}]),
-        getCredentials: jest.fn().mockResolvedValue({}),
+        getCredentials: jest.fn().mockResolvedValue(credentials),
         continueOnFail: jest.fn().mockReturnValue(false),
         getNodeParameter: jest.fn((name: string) => params[name]),
         getNode: jest.fn().mockReturnValue({ name: 'ROS2 Action', type: 'rosAction' }),
     } as unknown as IExecuteFunctions;
+}
+
+/** Same, but with a credential whose read-only switch is on. */
+function createReadOnlyContext(params: Record<string, unknown>): IExecuteFunctions {
+    return makeExecuteFunctions(params, { readOnly: true });
 }
 
 describe('RosAction', () => {
@@ -185,6 +193,55 @@ describe('RosAction', () => {
             undefined,
         );
         expect(result[0][0].json.goals).toHaveLength(1);
+    });
+
+    describe('read-only credential', () => {
+        beforeEach(() => {
+            jest.spyOn(NodeErrorHandler, 'shouldReturnErrorOutput').mockReturnValue(true);
+            jest.spyOn(NodeErrorHandler, 'buildErrorOutput').mockImplementation((error) => ({
+                error: (error as Error).message,
+            }));
+        });
+
+        const goalParams = {
+            serverName: { mode: 'id', value: '/fibonacci' },
+            actionType: { mode: 'id', value: 'example_interfaces/action/Fibonacci' },
+            goalInputMode: 'raw',
+            goalJson: '{}',
+            includeFeedback: false,
+            timeoutMs: 1000,
+            goalHandle: 'n8n:/fibonacci:xyz',
+        };
+
+        it.each(['sendGoal', 'sendGoalAndWait', 'cancelGoal'] as const)(
+            'refuses %s, since it drives the robot',
+            async (operation) => {
+                const context = createReadOnlyContext({ ...goalParams, operation });
+
+                const result = await node.execute.call(context);
+
+                expect(result[0][0].json.error).toContain('read-only');
+                expect(mockActionService.sendGoal).not.toHaveBeenCalled();
+                expect(mockActionService.sendGoalAndWait).not.toHaveBeenCalled();
+                expect(mockActionService.cancelGoal).not.toHaveBeenCalled();
+                // The guard runs before the node touches the connection.
+                expect(mockRosBridgeService.connect).not.toHaveBeenCalled();
+            },
+        );
+
+        it('still allows watching status, which only observes', async () => {
+            mockActionService.waitForStatus.mockResolvedValue({ goals: [], raw: {} });
+            const context = createReadOnlyContext({
+                operation: 'watchStatus',
+                serverName: { mode: 'id', value: '/fibonacci' },
+                goalId: '',
+                watchTimeoutMs: 5000,
+            });
+
+            await node.execute.call(context);
+
+            expect(mockActionService.waitForStatus).toHaveBeenCalled();
+        });
     });
 
     it('returns the error as output when running as an AI tool', async () => {

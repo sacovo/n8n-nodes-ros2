@@ -81,4 +81,27 @@ describe('RosServiceTrigger', () => {
             expect(RosBridgeService.close).toHaveBeenCalled();
         }
     });
+
+    it('should refuse to advertise a service with a read-only credential', async () => {
+        // This suite shares mocks across tests, so only the calls are reset here
+        jest.clearAllMocks();
+        triggerFunctions.getCredentials.mockResolvedValue({
+            protocol: 'ws',
+            host: 'localhost',
+            port: 9090,
+            readOnly: true,
+        });
+        triggerFunctions.getNode = jest
+            .fn()
+            .mockReturnValue({ name: 'ROS2 Service Trigger', type: 'rosServiceTrigger' });
+        triggerFunctions.getNodeParameter.mockImplementation((param) => {
+            if (param === 'serviceName') return '/test_service';
+            if (param === 'serviceType') return 'std_srvs/srv/SetBool';
+            return undefined;
+        });
+
+        await expect(node.trigger.call(triggerFunctions)).rejects.toThrow(/read-only/);
+        expect(RosBridgeService.advertiseService).not.toHaveBeenCalled();
+        expect(RosBridgeService.connect).not.toHaveBeenCalled();
+    });
 });

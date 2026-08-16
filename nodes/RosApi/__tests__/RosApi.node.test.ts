@@ -875,4 +875,70 @@ describe('RosApi', () => {
             expect(mockNodeErrorHandler.handle).toHaveBeenCalled();
         });
     });
+
+    describe('read-only credential', () => {
+        const buildExecuteFunctions = () =>
+            ({
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({ readOnly: true }),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({ name: 'ROS2 API', type: 'rosApi' }),
+                getNodeParameter: jest.fn().mockReturnValue(false),
+            }) as unknown as IExecuteFunctions;
+
+        it('should refuse set:parameter without connecting', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions();
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'parameter';
+                if (name === 'operation') return 'set';
+                if (name === 'parameterName') return '/motor.speed';
+                if (name === 'parameterValue') return '5';
+                return '';
+            });
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockReturnValue(true);
+            mockNodeErrorHandler.buildErrorOutput.mockImplementation((error) => ({
+                error: (error as Error).message,
+            }));
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json.error).toContain('read-only');
+            expect(mockRosBridgeService.connect).not.toHaveBeenCalled();
+            expect(mockRosApiService.setParam).not.toHaveBeenCalled();
+        });
+
+        it('should still allow listing the graph', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions();
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'service';
+                if (name === 'operation') return 'list';
+                return '';
+            });
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getServices.mockResolvedValue(['/reset']);
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({ services: ['/reset'] });
+        });
+
+        it('should still allow reading a parameter', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions();
+
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'parameter';
+                if (name === 'operation') return 'get';
+                if (name === 'parameterName') return '/motor.speed';
+                return '';
+            });
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getParam.mockResolvedValue(5);
+
+            const result = await node.execute.call(mockExecuteFunctions);
+
+            expect(result[0][0].json).toMatchObject({ parameterName: '/motor.speed', parameterValue: 5 });
+        });
+    });
 });

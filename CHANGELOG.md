@@ -5,6 +5,7 @@
 ### Changed
 
 - **Breaking.** The seven action nodes are replaced by three. `ROS2 Action Start`, `Result`, `Status`, `Feedback` and `Cancel` are now one `ROS2 Action` node with a `Send Goal and Wait` / `Send Goal` / `Get Result` / `Cancel Goal` / `Watch Feedback` / `Watch Status` operation, and `ROS2 Action Send Feedback` becomes `ROS2 Action Respond` (gaining `Set Canceled`, and `Set Failed` in place of `Set Aborted`). `ROS2 Action Trigger` keeps its name. Existing workflows using the removed node types must be rebuilt; they could not have been working, see below.
+- `ROS2 Action Respond` requires the ROS2 Rosbridge API credential. It still answers the client through the in-process goal registry rather than opening its own connection, but sending feedback or a final result is a write, and the credential is what decides whether writes are allowed. **Existing workflows using the node it replaces need a credential selected on it.**
 
 ### Fixed
 
@@ -17,6 +18,8 @@
 - A goal that ends in any state other than SUCCEEDED is now reported as data, with its status code and label, rather than thrown. roslib's own `Action` class routes every non-SUCCEEDED result into its failure callback as a stringified error, which loses the distinction between a cancelled goal, an aborted one and a rejected one.
 
 ### Added
+
+- Both credentials now have a "Read-Only" switch that restricts every node using them to observing the system. On the ROS2 Rosbridge API credential, subscribing to topics (Topic Trigger, Topic Next Message, Topic Capture Image), listing topics/services/actions/nodes/parameters and resolving their types and definitions, and observing a goal that is already running (`ROS2 Action`'s `Get Result`, `Watch Feedback` and `Watch Status`) keep working; publishing or advertising a topic, calling a service, sending or cancelling a goal, responding to one, advertising a service or action server, and setting a parameter fail with an error naming the refused operation. On the Docker API credential, `list` and `logs` keep working while `start`, `stop`, `restart` and `exec` fail. The check runs before the node connects, so a blocked operation never reaches the robot. Existing credentials have no such flag stored and stay writable. Like "Allowed Namespaces", this targets AI agent tooling: the switch lives on the credential, which an agent cannot choose or change, and the resulting error is returned as a tool observation the agent can react to.
 
 - `ROS2 Action` gains `Send Goal and Wait`, which sends a goal and returns its result in one step — the common case for a robot task — optionally collecting every feedback message received while it ran.
 - `ROS2 Action Trigger` can now emit client cancel requests (`Emit Cancel Requests`), so a workflow acting as an action server can react to them; the ROS 1 `SimpleActionServer` it used before had no cancel callback at all.
