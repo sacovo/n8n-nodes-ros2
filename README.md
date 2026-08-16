@@ -24,13 +24,9 @@ This package provides n8n nodes for interacting with ROS2 through a rosbridge We
 
 ### Actions
 
-- **ROS2 Action Start** — sends an action goal and returns immediately with the `goalId` (and the initial status event, if any).
-- **ROS2 Action Status** — looks up the status of a goal (by `goalId`) from the action's status topic.
-- **ROS2 Action Result** — waits for and returns the final result of a goal.
-- **ROS2 Action Feedback** — waits for and returns the next feedback message of a goal.
-- **ROS2 Action Cancel** — sends a cancel request for an active goal.
-- **ROS2 Action Trigger** — advertises an action server; starts the workflow when a goal is received. Auto-reconnects if the connection drops.
-- **ROS2 Action Send Feedback** — from within a workflow started by ROS2 Action Trigger, sends feedback (`Send Feedback`) or completes the goal (`Set Succeeded` / `Set Aborted`) for a given `goalId`.
+- **ROS2 Action** — drives an action server. `Send Goal and Wait` sends a goal and returns its result (optionally with every feedback message received on the way), which is the usual choice. `Send Goal` returns immediately with a `goalHandle`, which `Get Result` and `Cancel Goal` take. `Watch Feedback` and `Watch Status` read the action's feedback/status topics and report the ROS goal UUIDs they carry.
+- **ROS2 Action Trigger** — advertises an action server; starts the workflow when a goal is received, and optionally when a client asks to cancel one. Auto-reconnects if the connection drops.
+- **ROS2 Action Respond** — from within a workflow started by ROS2 Action Trigger, sends feedback (`Send Feedback`) or completes the goal (`Set Succeeded` / `Set Canceled` / `Set Failed`) for a given `goalId`.
 
 ### Discovery
 
@@ -75,7 +71,7 @@ The intended loop for an agent operating on an unfamiliar ROS2 graph:
 
 1. **Discover** with `ROS2 API` → `List` on the relevant resource (`Topic`, `Service`, `Action`, `Node`) to find candidate names, optionally narrowed with **Grep Pattern**.
 2. **Learn the shape** with `ROS2 API` → `Get Definition` on the chosen topic/service/action (or `Node` → `Get Definition` to get everything a node exposes in one call). This returns the exact JSON structure expected, including any custom message types, fully expanded.
-3. **Act** using that structure as the payload for `ROS2 Topic Publish`, `ROS2 Service Call`, or `ROS2 Action Start` (and follow up with `ROS2 Action Result`/`ROS2 Action Feedback`/`ROS2 Action Status`/`ROS2 Action Cancel` as needed).
+3. **Act** using that structure as the payload for `ROS2 Topic Publish`, `ROS2 Service Call`, or `ROS2 Action` → `Send Goal and Wait` (or `Send Goal`, following up with `Get Result` / `Cancel Goal` / `Watch Feedback` / `Watch Status` as needed).
 
 This lets an agent operate against ROS2 graphs it has never seen before without hard-coded message definitions.
 
@@ -116,12 +112,12 @@ Turning on **Read-Only** on a credential blocks every operation that changes sta
 Still allowed (reading):
 - `ROS2 Topic Trigger`, `ROS2 Topic Next Message`, `ROS2 Topic Capture Image` — subscribing to topics
 - `ROS2 API` — `List`, `Get Type`, `Get Definition`, `Get Details` and `Get` on parameters
-- `ROS2 Action Status`, `ROS2 Action Result`, `ROS2 Action Feedback` — observing a goal that already exists
+- `ROS2 Action` — `Get Result`, `Watch Feedback` and `Watch Status`, which only observe a goal that is already running
 
 Blocked (writing):
 - `ROS2 Topic Publish` — both `Publish` and `Advertise Only`
 - `ROS2 Service Call`
-- `ROS2 Action Start`, `ROS2 Action Cancel`, `ROS2 Action Send Feedback`
+- `ROS2 Action` — `Send Goal`, `Send Goal and Wait` and `Cancel Goal`, and every `ROS2 Action Respond` operation
 - `ROS2 Service Trigger` and `ROS2 Action Trigger` — advertising a service or action server adds an endpoint to the graph and answers callers, so an activated workflow using a read-only credential fails
 - `ROS2 API` → `Parameter` → `Set`
 
@@ -131,7 +127,7 @@ The switch sits on the credential rather than on the node so a workflow author c
 
 - **Connection pooling**: connections to rosbridge are pooled per resolved URL and reused across node executions — they are not closed after each run. This avoids repeating ROS2 discovery/handshake overhead on every execution.
 - **Trigger reconnection**: `ROS2 Topic Trigger`, `ROS2 Service Trigger`, and `ROS2 Action Trigger` automatically attempt to reconnect every 5 seconds if the underlying rosbridge websocket drops, re-installing their subscription/advertisement once reconnected.
-- **Action goal state is in-process**: `ROS2 Action Trigger` and `ROS2 Action Send Feedback` share an in-memory goal registry keyed by `goalId`. This only works when both nodes run in the same n8n process — it will not work in queue mode where the trigger and a worker executing `ROS2 Action Send Feedback` are separate processes.
+- **Action goal state is in-process**: `ROS2 Action Trigger` and `ROS2 Action Respond` share an in-memory goal registry keyed by `goalId`. This only works when both nodes run in the same n8n process — it will not work in queue mode where the trigger and a worker executing `ROS2 Action Respond` are separate processes. The same applies on the client side: rosbridge never reports a goal's ROS UUID back, so a goal is identified only by the correlation id chosen on its websocket, and `Send Goal` / `Get Result` / `Cancel Goal` only work within the process that sent the goal. `Send Goal and Wait` is unaffected.
 - **Message filter conditions**: the "Conditions" filter on `ROS2 Topic Trigger` and `ROS2 Topic Next Message` reference message fields by plain field path (e.g. `pose.position.x`), not n8n expressions, since the filter is evaluated against the message payload as it arrives rather than at parameter-resolution time.
 
 ## Compatibility
