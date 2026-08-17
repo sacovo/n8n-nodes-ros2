@@ -27,6 +27,7 @@ import { RosBridgeService } from '../../nodes/shared/services/RosBridgeService';
 import {
     ROSBRIDGE_CREDENTIALS,
     createExecuteFunctions,
+    createLoadOptionsFunctions,
     createTriggerFunctions,
     id,
     type NodeParameters,
@@ -196,6 +197,123 @@ describe('ROS2 API node', () => {
         // though /fibonacci is plainly owned by this node and shows up fine in
         // the global action list above.
         expect(details.actions).toEqual([]);
+    });
+});
+
+describe('ROS2 API node: parameters', () => {
+    // rosapi addresses ROS 2 parameters as "<node>:<parameter>" and its
+    // handler leaves its node/parameter names unbound for anything else - it
+    // then never answers, and the call can only end in rosbridge's service
+    // timeout. Everything here goes through the two resource locators the node
+    // exposes, which is what keeps that name well-formed.
+    const MAX_VEL = 'max_vel_x';
+    const QUALIFIED_MAX_VEL = `${FIXTURE_NODE}:${MAX_VEL}`;
+
+    /** Restores the fixture's declared default so the tests stay order-independent. */
+    afterEach(async () => {
+        await run(new RosApi(), {
+            resource: 'parameter',
+            operation: 'set',
+            parameterNodeName: id(FIXTURE_NODE),
+            parameterName: id(MAX_VEL),
+            parameterValue: '0.5',
+        });
+    });
+
+    it('lists the fixture node parameters fully qualified', async () => {
+        const [parameters] = await run(new RosApi(), {
+            resource: 'parameter',
+            operation: 'list',
+            grep: '',
+        });
+        expect(parameters.parameters).toEqual(
+            expect.arrayContaining([QUALIFIED_MAX_VEL, `${FIXTURE_NODE}:robot_name`]),
+        );
+    });
+
+    it('reads a parameter selected as node + name', async () => {
+        const [parameter] = await run(new RosApi(), {
+            resource: 'parameter',
+            operation: 'get',
+            parameterNodeName: id(FIXTURE_NODE),
+            parameterName: id(MAX_VEL),
+        });
+        expect(parameter).toMatchObject({ parameterName: QUALIFIED_MAX_VEL, parameterValue: 0.5 });
+    });
+
+    it('reads a parameter given as a fully qualified name', async () => {
+        const [parameter] = await run(new RosApi(), {
+            resource: 'parameter',
+            operation: 'get',
+            parameterNodeName: id(''),
+            parameterName: id(QUALIFIED_MAX_VEL),
+        });
+        expect(parameter.parameterValue).toBe(0.5);
+    });
+
+    it('writes a parameter and reads the new value back', async () => {
+        await run(new RosApi(), {
+            resource: 'parameter',
+            operation: 'set',
+            parameterNodeName: id(FIXTURE_NODE),
+            parameterName: id(MAX_VEL),
+            parameterValue: '1.25',
+        });
+
+        const [parameter] = await run(new RosApi(), {
+            resource: 'parameter',
+            operation: 'get',
+            parameterNodeName: id(FIXTURE_NODE),
+            parameterName: id(MAX_VEL),
+        });
+        expect(parameter.parameterValue).toBe(1.25);
+    });
+
+    it('fails fast on a bare parameter name instead of hanging on rosapi', async () => {
+        await expect(
+            run(new RosApi(), {
+                resource: 'parameter',
+                operation: 'get',
+                parameterNodeName: id(''),
+                parameterName: id(MAX_VEL),
+            }),
+        ).rejects.toThrow('<node>:<parameter>');
+    });
+
+    // The name is well-formed, so rosapi answers - but with successful: false
+    // and a reason. roslib's Param wrapper routes that to its default failure
+    // callback (console.error), which is what used to leave the node waiting
+    // forever instead of reporting it.
+    it('reports an unknown parameter instead of waiting for a response', async () => {
+        await expect(
+            run(new RosApi(), {
+                resource: 'parameter',
+                operation: 'get',
+                parameterNodeName: id(FIXTURE_NODE),
+                parameterName: id('does_not_exist'),
+            }),
+        ).rejects.toThrow('does_not_exist not found');
+    });
+
+    it('offers the fixture node and its parameters in the dropdowns', async () => {
+        const listSearch = new RosApi().methods.listSearch;
+
+        const nodes = await listSearch.getNodesList.call(
+            createLoadOptionsFunctions(),
+            'fixture',
+        );
+        expect(nodes.results.map((result) => result.value)).toContain(FIXTURE_NODE);
+
+        const parameters = await listSearch.getParametersList.call(
+            createLoadOptionsFunctions({ parameterNodeName: id(FIXTURE_NODE) }),
+        );
+        // Scoped to the selected node, so the names come back bare.
+        expect(parameters.results.map((result) => result.value)).toEqual(
+            expect.arrayContaining([MAX_VEL, 'robot_name']),
+        );
+
+        const unscoped = await listSearch.getParametersList.call(createLoadOptionsFunctions());
+        expect(unscoped.results.map((result) => result.value)).toContain(QUALIFIED_MAX_VEL);
     });
 });
 

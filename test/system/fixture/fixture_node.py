@@ -5,6 +5,7 @@ Test fixture ROS 2 node for the n8n-nodes-ros2 system tests.
 Provides one of everything the nodes talk to, using only interfaces that ship
 with a stock ROS 2 install so there is no custom message package to build:
 
+  parameters  max_vel_x (double), robot_name (string)
   publisher   /chatter            std_msgs/String                 5 Hz
   publisher   /camera/image_raw   sensor_msgs/CompressedImage     2 Hz
   publisher   /chatter/desc       std_msgs/String                 latched docs topic
@@ -48,6 +49,11 @@ class FixtureNode(Node):
     def __init__(self) -> None:
         super().__init__("n8n_test_fixture")
         self.callback_group = ReentrantCallbackGroup()
+
+        # rosapi addresses parameters as "<node>:<name>", so the API node's
+        # parameter get/set has something real to read and write.
+        self.declare_parameter("max_vel_x", 0.5)
+        self.declare_parameter("robot_name", "fixture")
 
         self.chatter_pub = self.create_publisher(String, "/chatter", 10)
         self.image_pub = self.create_publisher(CompressedImage, "/camera/image_raw", 10)
