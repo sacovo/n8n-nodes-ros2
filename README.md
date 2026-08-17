@@ -50,6 +50,8 @@ It works over a **Resource** (`Topic`, `Service`, `Node`, `Action`, `Parameter`)
 
 All `List`/`List for Type` operations accept an optional **Grep Pattern** to filter results (regex, or a plain case-insensitive substring match if the pattern isn't valid regex).
 
+**Parameters belong to a node.** ROS 2 has no global parameter server, so rosapi addresses every parameter as `<node>:<parameter>` — which is what `List` returns. `Get`/`Set` therefore take two fields: pick the **Node** from the dropdown, then its **Parameter Name** from the dropdown that follows (a name entered manually may also be the fully qualified `<node>:<parameter>`, in which case the node field is ignored). An unqualified name is refused with an error instead of being sent: rosapi cannot answer one at all, and the call would only end in rosbridge's service timeout.
+
 **Get Definition** is the key operation for building payloads: instead of just returning a type name, it recursively expands the message/service/action definition into concrete fields (with their ROS types), including any custom/nested message types, so a caller knows exactly what JSON shape to send or expect. For services this returns `request` and `response`; for actions it returns `goal`, `result` and `feedback`.
 
 **Get Type** can additionally return documentation:

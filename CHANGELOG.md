@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `ROS2 API → Parameter → Get`/`Set` could wait forever. They went through roslib's `Param` wrapper, whose failure callback defaults to `console.error`, so a failed `/rosapi/get_param`/`set_param` call — including rosbridge's own "Timeout exceeded while waiting for service response" — was swallowed and the promise never settled. Both now call rosapi directly and report the failure, including a `successful: false` answer with rosapi's reason.
+- Every `/rosapi/*` call now has a client-side deadline (30s, `ROS_API_TIMEOUT_MS`). rosbridge only reports an error while it can answer at all, and `rosapi_node` spins bare: one failing request takes every `/rosapi/*` service off the graph, and an in-flight call then never gets a response.
+
+### Changed
+
+- `ROS2 API → Parameter → Get`/`Set` gained a **Node** dropdown and a dependent **Parameter Name** dropdown listing that node's parameters. ROS 2 parameters belong to a node and rosapi addresses them as `<node>:<parameter>`, which the single free-text field never made apparent — and handing rosapi anything else leaves its handler with unbound names, so it never answers and the call could only end in a timeout. An unqualified name is now refused with an error naming the expected form; a manually entered `<node>:<parameter>` still works as before.
+
 ## 0.7.0
 
 ### Changed
