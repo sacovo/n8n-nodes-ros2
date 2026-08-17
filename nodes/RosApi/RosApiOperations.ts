@@ -1,5 +1,5 @@
 import type { IExecuteFunctions } from 'n8n-workflow';
-import { NodeApiError } from 'n8n-workflow';
+import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 import type { Ros } from 'roslib';
 
 import { RosApiService } from '../shared/services/RosApiService';
@@ -32,6 +32,39 @@ function matchesPattern(text: string, pattern: string): boolean {
     } catch {
         return text.toLowerCase().includes(pattern.toLowerCase());
     }
+}
+
+/** Reads a resourceLocator parameter that may also be a plain string. */
+function extractLocator(node: IExecuteFunctions, itemIndex: number, name: string): string {
+    const locator = node.getNodeParameter(name, itemIndex, '') as { mode?: string; value?: string } | string;
+    const value = typeof locator === 'string' ? locator : locator?.value ?? '';
+    return typeof value === 'string' ? value.trim() : '';
+}
+
+/**
+ * Builds the `<node>:<parameter>` name rosapi expects. ROS 2 parameters belong
+ * to a node, and rosapi splits the name on ":" - handing it anything else
+ * leaves its handler with unbound names, so it never answers at all and the
+ * call only ends in rosbridge's service timeout.
+ */
+function resolveParameterName(node: IExecuteFunctions, itemIndex: number): string {
+    const parameterName = extractLocator(node, itemIndex, 'parameterName');
+    if (!parameterName) {
+        throw new NodeOperationError(node.getNode(), 'Parameter Name is required', { itemIndex });
+    }
+
+    const nodeName = extractLocator(node, itemIndex, 'parameterNodeName');
+    const qualified = parameterName.includes(':') ? parameterName : `${nodeName}:${parameterName}`;
+
+    const [owner, ...rest] = qualified.split(':');
+    if (!owner || rest.length !== 1 || !rest[0]) {
+        throw new NodeOperationError(
+            node.getNode(),
+            `"${parameterName}" is not a usable ROS 2 parameter name. Select the owning node above, or enter the fully qualified name as "<node>:<parameter>" (e.g. "/talker:max_vel_x"). The "list" operation shows the available names.`,
+            { itemIndex },
+        );
+    }
+    return qualified;
 }
 
 /**
@@ -151,7 +184,7 @@ export async function runOperation(
             }
         case 'get:parameter':
             {
-                const parameterName = ParameterExtractor.extractRequiredString(node, itemIndex, 'parameterName');
+                const parameterName = resolveParameterName(node, itemIndex);
                 const parameterValue = await RosApiService.getParam(ros, parameterName);
                 return {
                     parameterName,
@@ -160,7 +193,7 @@ export async function runOperation(
             }
         case 'set:parameter':
             {
-                const parameterName = ParameterExtractor.extractRequiredString(node, itemIndex, 'parameterName');
+                const parameterName = resolveParameterName(node, itemIndex);
                 const parameterValueRaw = ParameterExtractor.extractRequiredString(node, itemIndex, 'parameterValue');
                 let parameterValue: unknown;
                 try {

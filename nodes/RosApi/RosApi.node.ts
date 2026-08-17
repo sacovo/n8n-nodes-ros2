@@ -1,14 +1,18 @@
 import type {
     IExecuteFunctions,
+    ILoadOptionsFunctions,
     INodeExecutionData,
+    INodeListSearchResult,
     INodeType,
     INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
+import { RosApiService } from '../shared/services/RosApiService';
 import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { rosApiProperties } from './RosApiDescription';
 import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
@@ -28,7 +32,7 @@ export class RosApi implements INodeType {
         },
         usableAsTool: {
             replacements: {
-                description: 'Discover the live ROS2 graph: list topics, services, nodes, action servers, and parameters, get their types, and look up node details. Crucially, the "getDefinition" operation returns the fully expanded JSON structure (including nested custom types) of any message, service, or action type. The "getType" operation can additionally return human-written documentation: a description of how the specific topic/service is used, and the raw message definition whose comments document units and allowed values. Always call this tool first to learn the exact payload shape before publishing to a topic, calling a service, or starting an action.',
+                description: 'Discover the live ROS2 graph: list topics, services, nodes, action servers, and parameters, get their types, and look up node details. Crucially, the "getDefinition" operation returns the fully expanded JSON structure (including nested custom types) of any message, service, or action type. The "getType" operation can additionally return human-written documentation: a description of how the specific topic/service is used, and the raw message definition whose comments document units and allowed values. Always call this tool first to learn the exact payload shape before publishing to a topic, calling a service, or starting an action. Parameters belong to a node and are addressed as "nodeName:parameterName" (e.g. "/talker:max_vel_x"), which is how the parameter "list" operation returns them; an unqualified parameter name is refused.',
             },
         },
         inputs: [NodeConnectionTypes.Main],
@@ -46,6 +50,54 @@ export class RosApi implements INodeType {
     methods = {
         credentialTest: {
             rosBridgeApi: rosBridgeApiTest,
+        },
+        listSearch: {
+            async getNodesList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+                try {
+                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
+                    try {
+                        const nodes = await RosApiService.getNodes(ros);
+                        return { results: RosN8nFormatter.formatNodeListForN8n(nodes, filter) };
+                    } finally {
+                        RosBridgeService.close(ros);
+                    }
+                } catch {
+                    return { results: [] };
+                }
+            },
+
+            /**
+             * Lists the parameters of the node picked above. rosapi reports
+             * them fully qualified as `<node>:<parameter>`; with a node
+             * selected only its own parameters are offered, by their bare
+             * name, and the node prefix is added back when the operation runs.
+             */
+            async getParametersList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
+                try {
+                    const nodeLocator = this.getNodeParameter('parameterNodeName', 0, {
+                        extractValue: true,
+                    }) as { value?: string } | string;
+                    const rawNodeName = typeof nodeLocator === 'string' ? nodeLocator : nodeLocator?.value;
+                    const nodeName = typeof rawNodeName === 'string' ? rawNodeName.trim() : '';
+
+                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
+                    const ros = await RosBridgeService.connect(credentials);
+                    try {
+                        const parameters = await RosApiService.getParams(ros);
+                        const owned = nodeName
+                            ? parameters
+                                  .filter((parameter) => parameter.startsWith(`${nodeName}:`))
+                                  .map((parameter) => parameter.slice(nodeName.length + 1))
+                            : parameters;
+                        return { results: RosN8nFormatter.formatParameterListForN8n(owned, filter) };
+                    } finally {
+                        RosBridgeService.close(ros);
+                    }
+                } catch {
+                    return { results: [] };
+                }
+            },
         },
     };
 

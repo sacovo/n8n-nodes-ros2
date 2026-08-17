@@ -256,18 +256,68 @@ export const rosApiProperties: INodeProperties[] = [
         },
     },
     {
-        displayName: 'Parameter Name',
-        name: 'parameterName',
-        type: 'string',
-        default: '',
-        required: true,
-        placeholder: '/max_vel_x',
+        displayName: 'Node',
+        name: 'parameterNodeName',
+        type: 'resourceLocator',
+        default: { mode: 'list', value: '' },
+        description: 'The node that owns the parameter. ROS 2 parameters live on a node, so rosapi addresses them as "&lt;node&gt;:&lt;parameter&gt;". Leave empty only if you enter a fully qualified parameter name below.',
         displayOptions: {
             show: {
                 resource: ['parameter'],
                 operation: ['get', 'set'],
             },
         },
+        modes: [
+            {
+                displayName: 'From List',
+                name: 'list',
+                type: 'list',
+                typeOptions: {
+                    searchListMethod: 'getNodesList',
+                    searchable: true,
+                },
+            },
+            {
+                displayName: 'ID (Manual)',
+                name: 'id',
+                type: 'string',
+                placeholder: 'e.g. /talker',
+            },
+        ],
+    },
+    {
+        displayName: 'Parameter Name',
+        name: 'parameterName',
+        type: 'resourceLocator',
+        default: { mode: 'list', value: '' },
+        required: true,
+        description: 'Select one of the parameters of the node above, or enter a name manually. A manual name may be either the bare parameter (combined with the node above) or the fully qualified "&lt;node&gt;:&lt;parameter&gt;".',
+        typeOptions: {
+            loadOptionsDependsOn: ['parameterNodeName'],
+        },
+        displayOptions: {
+            show: {
+                resource: ['parameter'],
+                operation: ['get', 'set'],
+            },
+        },
+        modes: [
+            {
+                displayName: 'From List',
+                name: 'list',
+                type: 'list',
+                typeOptions: {
+                    searchListMethod: 'getParametersList',
+                    searchable: true,
+                },
+            },
+            {
+                displayName: 'ID (Manual)',
+                name: 'id',
+                type: 'string',
+                placeholder: 'e.g. max_vel_x or /talker:max_vel_x',
+            },
+        ],
     },
     {
         displayName: 'Parameter Value',

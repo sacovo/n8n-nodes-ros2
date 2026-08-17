@@ -877,22 +877,29 @@ describe('RosApi', () => {
     });
 
     describe('read-only credential', () => {
-        const buildExecuteFunctions = () =>
+        const buildExecuteFunctions = (parameters: Record<string, unknown> = {}) =>
             ({
                 getInputData: jest.fn().mockReturnValue([{}]),
                 getCredentials: jest.fn().mockResolvedValue({ readOnly: true }),
                 continueOnFail: jest.fn().mockReturnValue(false),
                 getNode: jest.fn().mockReturnValue({ name: 'ROS2 API', type: 'rosApi' }),
-                getNodeParameter: jest.fn().mockReturnValue(false),
+                getNodeParameter: jest.fn().mockImplementation((name: string) =>
+                    name in parameters ? parameters[name] : false,
+                ),
             }) as unknown as IExecuteFunctions;
 
+        /** The resourceLocator pair the parameter operations read. */
+        const parameterLocators = (nodeName: string, parameterName: string) => ({
+            parameterNodeName: { mode: 'list', value: nodeName },
+            parameterName: { mode: 'list', value: parameterName },
+        });
+
         it('should refuse set:parameter without connecting', async () => {
-            const mockExecuteFunctions = buildExecuteFunctions();
+            const mockExecuteFunctions = buildExecuteFunctions(parameterLocators('/motor', 'speed'));
 
             mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
                 if (name === 'resource') return 'parameter';
                 if (name === 'operation') return 'set';
-                if (name === 'parameterName') return '/motor.speed';
                 if (name === 'parameterValue') return '5';
                 return '';
             });
@@ -925,12 +932,11 @@ describe('RosApi', () => {
         });
 
         it('should still allow reading a parameter', async () => {
-            const mockExecuteFunctions = buildExecuteFunctions();
+            const mockExecuteFunctions = buildExecuteFunctions(parameterLocators('/motor', 'speed'));
 
             mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
                 if (name === 'resource') return 'parameter';
                 if (name === 'operation') return 'get';
-                if (name === 'parameterName') return '/motor.speed';
                 return '';
             });
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
@@ -938,7 +944,68 @@ describe('RosApi', () => {
 
             const result = await node.execute.call(mockExecuteFunctions);
 
-            expect(result[0][0].json).toMatchObject({ parameterName: '/motor.speed', parameterValue: 5 });
+            expect(result[0][0].json).toMatchObject({ parameterName: '/motor:speed', parameterValue: 5 });
+        });
+    });
+
+    // rosapi splits a parameter name on ":" and leaves its handler with unbound
+    // names otherwise, so it never answers and the call can only end in
+    // rosbridge's service timeout. The node has to catch that first.
+    describe('parameter names', () => {
+        const buildExecuteFunctions = (parameters: Record<string, unknown>) =>
+            ({
+                getInputData: jest.fn().mockReturnValue([{}]),
+                getCredentials: jest.fn().mockResolvedValue({}),
+                continueOnFail: jest.fn().mockReturnValue(false),
+                getNode: jest.fn().mockReturnValue({ name: 'ROS2 API', type: 'rosApi' }),
+                getNodeParameter: jest.fn().mockImplementation((name: string) =>
+                    name in parameters ? parameters[name] : false,
+                ),
+            }) as unknown as IExecuteFunctions;
+
+        beforeEach(() => {
+            mockParameterExtractor.extractRequiredString.mockImplementation((node, index, name) => {
+                if (name === 'resource') return 'parameter';
+                if (name === 'operation') return 'get';
+                return '';
+            });
+            mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
+            mockRosApiService.getParam.mockResolvedValue(1);
+            mockNodeErrorHandler.handle.mockImplementation((context, error: unknown) => {
+                throw error;
+            });
+        });
+
+        it('qualifies a bare parameter name with the selected node', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions({
+                parameterNodeName: { mode: 'list', value: '/talker' },
+                parameterName: { mode: 'list', value: 'max_vel_x' },
+            });
+
+            await node.execute.call(mockExecuteFunctions);
+
+            expect(mockRosApiService.getParam).toHaveBeenCalledWith(expect.anything(), '/talker:max_vel_x');
+        });
+
+        it('accepts an already qualified name and ignores the node field', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions({
+                parameterNodeName: { mode: 'list', value: '/other' },
+                parameterName: { mode: 'id', value: '/talker:max_vel_x' },
+            });
+
+            await node.execute.call(mockExecuteFunctions);
+
+            expect(mockRosApiService.getParam).toHaveBeenCalledWith(expect.anything(), '/talker:max_vel_x');
+        });
+
+        it('rejects a bare parameter name when no node is selected', async () => {
+            const mockExecuteFunctions = buildExecuteFunctions({
+                parameterNodeName: { mode: 'list', value: '' },
+                parameterName: { mode: 'id', value: 'max_vel_x' },
+            });
+
+            await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow('<node>:<parameter>');
+            expect(mockRosApiService.getParam).not.toHaveBeenCalled();
         });
     });
 });

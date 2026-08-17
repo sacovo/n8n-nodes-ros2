@@ -108,6 +108,20 @@ export class RosN8nFormatter {
     }
 
     /**
+     * Formats node list from getNodes into n8n dropdown options
+     */
+    static formatNodeListForN8n(nodes: string[], filter?: string): INodePropertyOptions[] {
+        return this.formatListForN8n(nodes, filter);
+    }
+
+    /**
+     * Formats parameter list from getParams into n8n dropdown options
+     */
+    static formatParameterListForN8n(parameters: string[], filter?: string): INodePropertyOptions[] {
+        return this.formatListForN8n(parameters, filter);
+    }
+
+    /**
      * Converts ROS message TypeDef array to n8n ResourceMapperFields.
      * Nested message types are fully expanded into the field description,
      * so the user can see which JSON structure a complex field expects.
