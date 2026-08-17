@@ -5,7 +5,7 @@
 
 import type { Ros, rosapi } from 'roslib';
 
-import { RosBridgeService } from './RosBridgeService';
+import { RosBridgeService, RosBridgeTimeoutError } from './RosBridgeService';
 
 export type ExpandedTypeDef = string | { [key: string]: ExpandedTypeDef | ExpandedTypeDef[] };
 
@@ -33,6 +33,16 @@ export interface NodeActionDefinition {
     error?: string;
 }
 
+/**
+ * Response of `/rosapi/get_param` and `/rosapi/set_param`. `successful` and
+ * `reason` only exist on newer rosapi builds.
+ */
+interface RosapiParamResponse {
+    value?: string;
+    successful?: boolean;
+    reason?: string;
+}
+
 export interface NodeDefinition {
     publishing: NodeTopicDefinition[];
     subscribing: NodeTopicDefinition[];
@@ -47,6 +57,58 @@ export class RosApiService {
      * that specific topic/service is used.
      */
     static readonly DESCRIPTION_TOPIC_SUFFIX = '/desc';
+
+    /**
+     * Client-side deadline for every `/rosapi/*` request. rosbridge normally
+     * reports a service call it cannot complete as an error, but only while
+     * it is able to answer at all: `rosapi_node` spins bare, so a single
+     * failing request takes every `/rosapi/*` service off the graph and the
+     * response to an in-flight call never arrives. Without a deadline the
+     * node would then wait forever.
+     */
+    static readonly REQUEST_TIMEOUT_MS = process.env.ROS_API_TIMEOUT_MS
+        ? parseInt(process.env.ROS_API_TIMEOUT_MS, 10)
+        : 30000;
+
+    /**
+     * Turns a roslib success/error callback pair into a promise that is
+     * guaranteed to settle: whichever of the two callbacks or the deadline
+     * comes first wins, later ones are ignored.
+     */
+    private static request<T>(
+        description: string,
+        call: (onSuccess: (result: T) => void, onError: (error: Error) => void) => void,
+        timeoutMs = this.REQUEST_TIMEOUT_MS,
+    ): Promise<T> {
+        return new Promise<T>((resolve, reject) => {
+            let settled = false;
+            const timer = setTimeout(() => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                reject(new RosBridgeTimeoutError(`${description} did not answer within ${timeoutMs}ms. Is rosapi still running?`));
+            }, timeoutMs);
+
+            const settle = (finish: () => void) => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                clearTimeout(timer);
+                finish();
+            };
+
+            try {
+                call(
+                    (result) => settle(() => resolve(result)),
+                    (error) => settle(() => reject(error)),
+                );
+            } catch (error) {
+                settle(() => reject(error as Error));
+            }
+        });
+    }
 
     private static loadRoslib() {
         // We use eval('import(...)') to prevent tsc from transpiling this to require(),
@@ -94,88 +156,56 @@ export class RosApiService {
     }
 
     static async getTopics(ros: Ros): Promise<rosapi.TopicsResponse> {
-        return new Promise<rosapi.TopicsResponse>((resolve, reject) => {
-            ros.getTopics(
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/topics', (onSuccess, onError) => {
+            ros.getTopics(onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getNodes(ros: Ros): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
-            ros.getNodes(
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/nodes', (onSuccess, onError) => {
+            ros.getNodes(onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getNodeDetails(ros: Ros, node: string): Promise<rosapi.NodeDetailsResponse> {
-        return new Promise<rosapi.NodeDetailsResponse>((resolve, reject) => {
-            ros.getNodeDetails(
-                node,
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/node_details', (onSuccess, onError) => {
+            ros.getNodeDetails(node, onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getServices(ros: Ros): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
-            ros.getServices(
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/services', (onSuccess, onError) => {
+            ros.getServices(onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getActionServers(ros: Ros): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
-            ros.getActionServers(
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/action_servers', (onSuccess, onError) => {
+            ros.getActionServers(onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getTopicsForType(ros: Ros, topicType: string): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
-            ros.getTopicsForType(
-                topicType,
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/topics_for_type', (onSuccess, onError) => {
+            ros.getTopicsForType(topicType, onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getServicesForType(ros: Ros, serviceType: string): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
-            ros.getServicesForType(
-                serviceType,
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/services_for_type', (onSuccess, onError) => {
+            ros.getServicesForType(serviceType, onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getTopicType(ros: Ros, topic: string): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            ros.getTopicType(
-                topic,
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/topic_type', (onSuccess, onError) => {
+            ros.getTopicType(topic, onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getServiceType(ros: Ros, service: string): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            ros.getServiceType(
-                service,
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/service_type', (onSuccess, onError) => {
+            ros.getServiceType(service, onSuccess, (error) => onError(new Error(error)));
         });
     }
 
@@ -218,32 +248,20 @@ export class RosApiService {
     }
 
     static async getMessageDetails(ros: Ros, message: string): Promise<rosapi.TypeDef[]> {
-        return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
-            ros.getMessageDetails(
-                message,
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/message_details', (onSuccess, onError) => {
+            ros.getMessageDetails(message, onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getServiceRequestDetails(ros: Ros, type: string): Promise<rosapi.TypeDef[]> {
-        return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
-            ros.getServiceRequestDetails(
-                type,
-                (result) => resolve(result.typedefs),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/service_request_details', (onSuccess, onError) => {
+            ros.getServiceRequestDetails(type, (result) => onSuccess(result.typedefs), (error) => onError(new Error(error)));
         });
     }
 
     static async getServiceResponseDetails(ros: Ros, type: string): Promise<rosapi.TypeDef[]> {
-        return new Promise<rosapi.TypeDef[]>((resolve, reject) => {
-            ros.getServiceResponseDetails(
-                type,
-                (result) => resolve(result.typedefs),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/service_response_details', (onSuccess, onError) => {
+            ros.getServiceResponseDetails(type, (result) => onSuccess(result.typedefs), (error) => onError(new Error(error)));
         });
     }
 
@@ -272,7 +290,7 @@ export class RosApiService {
     ): Promise<Response> {
         const { Service } = await this.loadRoslib();
 
-        return new Promise<Response>((resolve, reject) => {
+        return this.request<Response>(`/rosapi/${serviceName}`, (onSuccess, onError) => {
             // roslib v2 services take a plain request object directly (there is
             // no `ServiceRequest` wrapper class, unlike roslib v1).
             const client = new Service<Request, Response>({
@@ -282,8 +300,8 @@ export class RosApiService {
             });
             client.callService(
                 request,
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
+                onSuccess,
+                (error) => onError(new Error(`/rosapi/${serviceName} failed: ${error}`)),
             );
         });
     }
@@ -446,36 +464,63 @@ export class RosApiService {
     }
 
     static async getTopicsAndRawTypes(ros: Ros): Promise<rosapi.TopicsAndRawTypesResponse> {
-        return new Promise<rosapi.TopicsAndRawTypesResponse>((resolve, reject) => {
-            ros.getTopicsAndRawTypes(
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/topics_and_raw_types', (onSuccess, onError) => {
+            ros.getTopicsAndRawTypes(onSuccess, (error) => onError(new Error(error)));
         });
     }
 
     static async getParams(ros: Ros): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
-            ros.getParams(
-                (result) => resolve(result),
-                (error) => reject(new Error(error)),
-            );
+        return this.request('/rosapi/get_param_names', (onSuccess, onError) => {
+            ros.getParams(onSuccess, (error) => onError(new Error(error)));
         });
     }
 
+    /**
+     * Reads a parameter through `/rosapi/get_param`. roslib's `Param` wrapper
+     * is deliberately not used: its failure callback defaults to
+     * `console.error`, so a failed service call (rosbridge answering with
+     * "Timeout exceeded while waiting for service response", typically after
+     * rosapi died) would be swallowed and the caller left waiting forever.
+     */
     static async getParam(ros: Ros, name: string): Promise<unknown> {
-        const { Param } = await this.loadRoslib();
-        const param = new Param({ ros, name });
-        return new Promise((resolve) => {
-            param.get((value) => resolve(value));
-        });
+        const response = await this.callRosapi<{ name: string }, RosapiParamResponse>(
+            ros,
+            'get_param',
+            'GetParam',
+            { name },
+        );
+        this.assertParamSucceeded(response, `read ROS parameter "${name}"`);
+
+        const value = response?.value;
+        if (value === undefined || value === null || value === '') {
+            // rosapi answers with an empty value for parameters it cannot find.
+            return null;
+        }
+        try {
+            return JSON.parse(value) as unknown;
+        } catch {
+            // Not every parameter server round-trips valid JSON; keep the raw text.
+            return value;
+        }
     }
 
     static async setParam(ros: Ros, name: string, value: unknown): Promise<void> {
-        const { Param } = await this.loadRoslib();
-        const param = new Param({ ros, name });
-        return new Promise((resolve) => {
-            param.set(value, () => resolve());
-        });
+        const response = await this.callRosapi<{ name: string; value: string }, RosapiParamResponse>(
+            ros,
+            'set_param',
+            'SetParam',
+            { name, value: JSON.stringify(value) },
+        );
+        this.assertParamSucceeded(response, `set ROS parameter "${name}"`);
+    }
+
+    /**
+     * Newer rosapi builds report parameter failures in the response instead of
+     * failing the service call, which roslib's `Param` treats as an error too.
+     */
+    private static assertParamSucceeded(response: RosapiParamResponse | undefined, action: string): void {
+        if (response && response.successful === false) {
+            throw new Error(`Could not ${action}: ${response.reason || 'rosapi reported failure'}`);
+        }
     }
 }
