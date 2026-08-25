@@ -144,3 +144,22 @@ This package targets n8n nodes API v1 and uses rosbridge WebSocket endpoints. It
 ## Version history
 
 See [CHANGELOG.md](./CHANGELOG.md).
+
+## Container images
+
+The same `docker/n8n/Dockerfile` is built on two CI systems, for two
+architectures, because the robot and the public demo do not share a CPU:
+
+| Where | Arch | Registry | Used by |
+|---|---|---|---|
+| GitLab (`.gitlab-ci.yml`) | arm64 | FHNW registry, `:n8n-<ref>` | the Jetson on the rover |
+| GitHub (`.github/workflows/docker-amd64.yml`) | amd64 | `ghcr.io/sacovo/n8n-nodes-ros2:n8n-amd64` | the public demo on an x86 server |
+
+The image is the complete runtime — n8n plus this package installed — so a
+host pulls it and never builds. That matters for the demo box: compiling n8n
+from source takes about half an hour on a two-core CI runner, and the demo
+server has less to work with.
+
+Stage 1 of the Dockerfile clones a **pinned commit** of `sacovo/n8n`, so the
+build is deterministic and the layer cache hits on every run after the first.
+Bump `N8N_BRANCH` to move to a newer n8n.
