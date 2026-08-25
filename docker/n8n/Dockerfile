@@ -62,22 +62,32 @@ RUN ln -s /usr/local/lib/node_modules/n8n/bin/n8n /usr/local/bin/n8n
 
 WORKDIR /work
 
-# 4. Layered copying
-COPY package.json package-lock.json ./
+RUN mkdir -p /data && useradd -ms /bin/bash debian && chown debian:debian /data
 
-# Use npm cache mount for local dependencies
-RUN --mount=type=cache,target=/root/.npm \
-  npm install
-
-# 5. Copy the rest of the source code AFTER dependencies are installed
 COPY . .
 
-# Run build steps
-RUN npm run install-global 
-RUN npm run build
-
-RUN mkdir -p /data && useradd -ms /bin/bash debian && chown debian:debian /data
-RUN chown -R debian:debian /work
+# Install, build, prune and chown in ONE layer. Splitting these costs about
+# 5 GB in the published image, for two separate reasons:
+#
+#  * `chown -R debian:debian /work` in its own layer rewrites every file it
+#    touches, and a layer stores the rewritten files in full — so it was a
+#    2.93 GB duplicate of the 2.99 GB npm layer beneath it. Folded in here it
+#    is free, because a layer only records its own final state.
+#  * `npm prune` only shrinks the image if it runs in the layer that installed
+#    the dev dependencies. A layer below cannot delete bytes from a layer above
+#    it; the originals stay in the image either way.
+#
+# Pruning is safe: /work/node_modules is build-time only. At runtime the
+# entrypoint runs `npm install /work` into /data/.n8n/nodes, and `files` in
+# package.json is just `dist`, so what gets packed is the build output — never
+# this tree.
+RUN --mount=type=cache,target=/root/.npm \
+  npm install \
+  && npm run install-global \
+  && npm run build \
+  && npm prune --omit=dev \
+  && npm cache clean --force \
+  && chown -R debian:debian /work
 
 # Copy the entrypoint script and make it executable
 COPY docker/n8n/entrypoint.sh /entrypoint.sh
