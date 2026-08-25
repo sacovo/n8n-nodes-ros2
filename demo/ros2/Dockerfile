@@ -67,7 +67,7 @@ RUN git clone --branch ${ROSBRIDGE_BRANCH} ${ROSBRIDGE_REPO} src/rosbridge_suite
 
 COPY --chown=ubuntu:ubuntu rover_node.py camera_node.py /app/
 COPY --chown=ubuntu:ubuntu --chmod=755 entrypoint.sh /app/entrypoint.sh
-COPY web/index.html /usr/share/novnc/index.html
+COPY web/index.html web/embed.html /usr/share/novnc/
 
 ENV DISPLAY=:99
 # turtlesim's window is a fixed 500x500 and there is no window manager to move

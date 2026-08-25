@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rover view</title>
+    <!--
+      A canvas and nothing else, for embedding in another page.
+
+      noVNC's own pages are not suitable for that: vnc.html carries a control
+      toolbar and a status banner, and vnc_lite.html carries a status bar and a
+      Ctrl-Alt-Del button. Both also print the X display's hostname, which is
+      the container id, and both render in the browser's locale — so an English
+      page ends up with a German status line over the robot. Framing this page
+      instead leaves the surrounding site in charge of its own design.
+
+      view-only is set here as well, but it is not what makes this safe: x11vnc
+      runs with -viewonly, so the server discards pointer and keyboard events
+      whatever a client sends. This flag only stops the browser bothering to
+      send them.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #17120e;
+      }
+      #screen {
+        width: 100%;
+        height: 100%;
+      }
+      #note {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #a99d8c;
+        font: 14px/1.5 ui-sans-serif, system-ui, sans-serif;
+        text-align: center;
+        padding: 1rem;
+      }
+      #note[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="screen"></div>
+    <p id="note">Connecting to the rover&hellip;</p>
+
+    <script type="module">
+      import RFB from './core/rfb.js';
+
+      const note = document.getElementById('note');
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+
+      // websockify runs with --web, so it upgrades on any path; `websockify`
+      // is the path noVNC's own pages use and keeps this consistent with them.
+      const rfb = new RFB(document.getElementById('screen'), `${proto}://${location.host}/websockify`);
+
+      rfb.viewOnly = true;
+      rfb.scaleViewport = true;
+      rfb.resizeSession = false;
+      rfb.background = '#17120e';
+
+      rfb.addEventListener('connect', () => {
+        note.hidden = true;
+      });
+
+      // The hourly reset restarts nothing the viewer depends on, but the demo
+      // container itself can be rebuilt underneath a visitor. Reconnect rather
+      // than leaving a dead canvas.
+      rfb.addEventListener('disconnect', () => {
+        note.hidden = false;
+        note.textContent = 'Reconnecting to the rover…';
+        setTimeout(() => location.reload(), 3000);
+      });
+    </script>
+  </body>
+</html>
