@@ -90,8 +90,8 @@ jobs:
           # Stage 1 clones a pinned commit of sacovo/n8n, so it is
           # deterministic and the layer cache hits on every later run — the
           # difference between ~an hour and a few minutes.
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=n8n
+          cache-to: type=gha,mode=max,scope=n8n
 
       - name: Summary
         run: |

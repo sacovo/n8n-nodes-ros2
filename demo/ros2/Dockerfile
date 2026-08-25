@@ -37,9 +37,6 @@ WORKDIR /ros2_ws
 ARG ROSBRIDGE_REPO=https://github.com/sacovo/rosbridge_suite.git
 ARG ROSBRIDGE_BRANCH=fhnw/rosapi-fixes
 ARG ROSBRIDGE_COMMIT=0d0ef97
-RUN git clone --branch ${ROSBRIDGE_BRANCH} ${ROSBRIDGE_REPO} src/rosbridge_suite \
- && git -C src/rosbridge_suite checkout ${ROSBRIDGE_COMMIT}
-
 # Custom msg/srv/action types are what makes the ROS2 API node's recursive
 # "Get Definition" worth demonstrating.
 COPY rover_interfaces/ src/rover_interfaces/
@@ -52,14 +49,25 @@ COPY rover_interfaces/ src/rover_interfaces/
 # rosapi crash fixes.
 # BUILD_TESTING=OFF: the test targets pull in ament_cmake_mypy, which the
 # ros-base image does not have and which is not needed to run anything.
-RUN . /opt/ros/jazzy/setup.sh \
+#
+# Clone, build and chown in one layer. A `chown -R` in a layer of its own
+# rewrites every file it touches and the layer stores those files in full, so
+# splitting this off would ship the whole workspace — the fork's sources plus
+# the colcon build tree — a second time.
+RUN git clone --branch ${ROSBRIDGE_BRANCH} ${ROSBRIDGE_REPO} src/rosbridge_suite \
+ && git -C src/rosbridge_suite checkout ${ROSBRIDGE_COMMIT} \
+ && . /opt/ros/jazzy/setup.sh \
  && colcon build --symlink-install --packages-select rover_interfaces rosapi rosbridge_test_msgs \
-      --cmake-args -DBUILD_TESTING=OFF
+      --cmake-args -DBUILD_TESTING=OFF \
+ && rm -rf log \
+ && chown -R ubuntu:ubuntu /ros2_ws
+# `build/` deliberately stays: --symlink-install can point install/ at files
+# inside it, so deleting it would leave dangling symlinks for the generated
+# rover_interfaces types.
 
-COPY rover_node.py camera_node.py /app/
-COPY entrypoint.sh /app/entrypoint.sh
+COPY --chown=ubuntu:ubuntu rover_node.py camera_node.py /app/
+COPY --chown=ubuntu:ubuntu --chmod=755 entrypoint.sh /app/entrypoint.sh
 COPY web/index.html /usr/share/novnc/index.html
-RUN chmod +x /app/entrypoint.sh
 
 ENV DISPLAY=:99
 # turtlesim's window is a fixed 500x500 and there is no window manager to move
@@ -70,9 +78,10 @@ ENV SCREEN_GEOMETRY=500x500x24
 EXPOSE 9090 6080 8081
 
 # websockify is the one process here reachable from the internet, and nothing in
-# this container needs root or a privileged port.
-RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix \
-    && chown -R ubuntu:ubuntu /ros2_ws /app
+# this container needs root or a privileged port. Ownership is already set
+# above — on /ros2_ws in the build layer, on /app by the COPYs — so this only
+# has to create the X11 socket directory.
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 USER ubuntu
 
 ENTRYPOINT ["/app/entrypoint.sh"]

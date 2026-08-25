@@ -1,0 +1,93 @@
+name: Build ros2 demo image
+
+# The demo's ROS 2 container — rosbridge and the rosapi fork, turtlesim on
+# Xvfb, x11vnc and noVNC, and the rover node that wraps them into a robot.
+#
+# The demo compose builds this from source, which is fine on a workstation and
+# wrong on the demo server: that box has 2 vCPU, 3 GB of RAM and a small disk,
+# and a colcon build there costs both the time and the space to hold the build
+# tree next to the image. Building it here means the server only ever pulls.
+#
+# Everything about the build is pinned — the ROS base image tag and the
+# rosbridge fork's commit — so what a tag names is reproducible rather than
+# whatever apt and git happened to serve that day.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'demo/ros2/**'
+      - '.github/workflows/docker-ros2.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: docker-ros2-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          df -h / | tail -1
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android \
+                      /opt/ghc /usr/local/share/boost
+          sudo apt-get clean
+          df -h / | tail -1
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          # `ros2-` prefixed, the way the n8n image is `n8n-` prefixed: one
+          # package, two tag families, so the pair stays legible in the
+          # registry listing.
+          tags: |
+            type=raw,value=ros2-amd64
+            type=raw,value=ros2-${{ github.ref_name }}
+            type=sha,prefix=ros2-
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./demo/ros2
+          file: ./demo/ros2/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+          cache-from: type=gha,scope=ros2
+          cache-to: type=gha,mode=max,scope=ros2
+
+      - name: Summary
+        run: |
+          {
+            echo '### ros2 demo image pushed'
+            echo
+            echo '```'
+            echo '${{ steps.meta.outputs.tags }}'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
