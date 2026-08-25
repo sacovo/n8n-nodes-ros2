@@ -1,0 +1,11 @@
+[Unit]
+Description=Reset the n8n rover demo to its shipped state
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Adjust both paths to wherever you cloned the repository.
+WorkingDirectory=/opt/n8n-nodes-ros2/demo
+ExecStart=/opt/n8n-nodes-ros2/demo/reset.sh
+TimeoutStartSec=600

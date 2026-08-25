@@ -1,0 +1,18 @@
+# An inspection job. This action is NOT provided by the rover: it is advertised
+# by an n8n workflow through the "ROS2 Action Trigger" node, so a ROS client can
+# call into n8n the same way it would call any other action server.
+# Goal
+# What to inspect, e.g. "solar panel" or "cargo bay".
+string target
+
+# How many samples the workflow should take.
+int32 samples
+---
+# Result
+bool success
+string report
+int32 samples_taken
+---
+# Feedback
+string stage
+int32 samples_done

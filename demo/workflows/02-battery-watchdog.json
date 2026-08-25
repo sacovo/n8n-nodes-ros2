@@ -1,0 +1,151 @@
+{
+  "id": "demo-02-battery",
+  "name": "02 - Battery Watchdog (Topic Trigger -> Service)",
+  "nodes": [
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/events"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "std_msgs/msg/String"
+        },
+        "includeMetadata": true,
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "battery-low-condition",
+              "leftValue": "data",
+              "rightValue": "battery_low",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "battery-trigger",
+      "name": "On Battery Low Event",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicTrigger",
+      "typeVersion": 1,
+      "position": [-120, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/set_led"
+        },
+        "serviceType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rover_interfaces/srv/SetLed"
+        },
+        "requestInputMode": "raw",
+        "requestJson": "{\n  \"color\": \"red\",\n  \"blink\": true\n}"
+      },
+      "id": "battery-led",
+      "name": "LED Red (Low Battery)",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [120, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/dock"
+        },
+        "serviceType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "std_srvs/srv/Trigger"
+        },
+        "requestInputMode": "raw",
+        "requestJson": "{}",
+        "timeoutMs": 120000
+      },
+      "id": "battery-dock",
+      "name": "Send Rover to Dock",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [360, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/notifications"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "std_msgs/msg/String"
+        },
+        "messageInputMode": "raw",
+        "messageJson": "={{ JSON.stringify({ data: 'Battery low, rover docked: ' + $json.response.message }) }}",
+        "options": {}
+      },
+      "id": "battery-notify",
+      "name": "Announce on /rover/notifications",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicPublish",
+      "typeVersion": 1,
+      "position": [600, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On Battery Low Event": {
+      "main": [[{ "node": "LED Red (Low Battery)", "type": "main", "index": 0 }]]
+    },
+    "LED Red (Low Battery)": {
+      "main": [[{ "node": "Send Rover to Dock", "type": "main", "index": 0 }]]
+    },
+    "Send Rover to Dock": {
+      "main": [[{ "node": "Announce on /rover/notifications", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

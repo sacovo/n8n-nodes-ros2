@@ -1,0 +1,195 @@
+{
+  "id": "demo-09-planner",
+  "name": "09 - Mission Planner (LLM Plans, n8n Executes)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "plan-mission",
+        "formTitle": "Give the Rover a Mission",
+        "formDescription": "Describe what you want in plain language, for example: visit the lake and the tree, flashing blue, then park on the dock. The model turns it into a plan and n8n executes the plan step by step.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Mission",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "plan-form",
+      "name": "Mission Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [-560, 0],
+      "webhookId": "plan-mission"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Turn this mission into a plan for a rover.\n\nMission: {{ $json.Mission }}\n\nThe rover can drive to these named places only: lake, tree, house, mountain, dock, center.\nIts LED can be: red, green, blue, yellow, magenta, cyan, white, off.\n\nAnswer with JSON ONLY, no prose and no code fences, in exactly this shape:\n{\"summary\": \"one sentence\", \"steps\": [{\"place\": \"lake\", \"led\": \"blue\", \"why\": \"short reason\"}]}\n\nUse at most 6 steps. Every place must be one of the allowed names.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a mission planner for a small rover. You only ever answer with valid JSON matching the requested shape."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "plan-llm",
+      "name": "Plan the Mission",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [-340, 0]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-6",
+          "cachedResultName": "Claude Sonnet 4.6"
+        },
+        "options": {}
+      },
+      "id": "plan-model",
+      "name": "Claude Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [-340, 200],
+      "credentials": {
+        "anthropicApi": {
+          "id": "aqmsJqAEgdDK29Qk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// The plan arrives as text. Parse it and hand one item per step to the\n// loop below, so the rover is driven by deterministic n8n execution rather\n// than by the model calling tools itself.\nconst PLACES = ['lake', 'tree', 'house', 'mountain', 'dock', 'center'];\nconst LEDS = ['red', 'green', 'blue', 'yellow', 'magenta', 'cyan', 'white', 'off'];\n\nconst raw = $input.first().json.text ?? $input.first().json.output ?? '';\nconst match = String(raw).match(/\\{[\\s\\S]*\\}/);\nif (!match) {\n  throw new Error('The model did not return JSON: ' + String(raw).slice(0, 200));\n}\n\nconst plan = JSON.parse(match[0]);\nconst steps = (plan.steps || [])\n  .filter((s) => PLACES.includes(s.place))\n  .slice(0, 6)\n  .map((s, i) => ({\n    json: {\n      index: i + 1,\n      place: s.place,\n      led: LEDS.includes(s.led) ? s.led : 'blue',\n      why: s.why || '',\n      summary: plan.summary || '',\n      total: 0,\n    },\n  }));\n\nif (!steps.length) {\n  throw new Error('The plan contained no usable steps.');\n}\nsteps.forEach((s) => (s.json.total = steps.length));\nreturn steps;"
+      },
+      "id": "plan-parse",
+      "name": "Parse the Plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-120, 0]
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "plan-loop",
+      "name": "One Step at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [100, 0]
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/set_led"
+        },
+        "serviceType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rover_interfaces/srv/SetLed"
+        },
+        "requestInputMode": "raw",
+        "requestJson": "={{ JSON.stringify({ color: $json.led, blink: false }) }}"
+      },
+      "id": "plan-led",
+      "name": "Set the Step LED",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [340, 120],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendGoalAndWait",
+        "serverName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/patrol"
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rover_interfaces/action/Patrol"
+        },
+        "goalInputMode": "raw",
+        "goalJson": "={{ JSON.stringify({ waypoint_names: [$('One Step at a Time').item.json.place], loops: 1, dock_when_done: false }) }}",
+        "includeFeedback": false,
+        "timeoutMs": 180000
+      },
+      "id": "plan-drive",
+      "name": "Drive to the Step",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [560, 120],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Mission finished",
+        "completionMessage": "={{ $('Parse the Plan').first().json.summary }}\n\nSteps executed: {{ $('Parse the Plan').all().map(i => i.json.index + '. ' + i.json.place + ' (' + i.json.led + ') — ' + i.json.why).join('\\n') }}",
+        "options": {}
+      },
+      "id": "plan-done",
+      "name": "Report Back",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [340, -120],
+      "webhookId": "plan-mission-done"
+    }
+  ],
+  "connections": {
+    "Mission Form": {
+      "main": [[{ "node": "Plan the Mission", "type": "main", "index": 0 }]]
+    },
+    "Claude Chat Model": {
+      "ai_languageModel": [[{ "node": "Plan the Mission", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Plan the Mission": {
+      "main": [[{ "node": "Parse the Plan", "type": "main", "index": 0 }]]
+    },
+    "Parse the Plan": {
+      "main": [[{ "node": "One Step at a Time", "type": "main", "index": 0 }]]
+    },
+    "One Step at a Time": {
+      "main": [
+        [{ "node": "Report Back", "type": "main", "index": 0 }],
+        [{ "node": "Set the Step LED", "type": "main", "index": 0 }]
+      ]
+    },
+    "Set the Step LED": {
+      "main": [[{ "node": "Drive to the Step", "type": "main", "index": 0 }]]
+    },
+    "Drive to the Step": {
+      "main": [[{ "node": "One Step at a Time", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

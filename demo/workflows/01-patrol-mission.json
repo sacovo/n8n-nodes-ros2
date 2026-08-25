@@ -1,0 +1,228 @@
+{
+  "id": "demo-01-patrol",
+  "name": "01 - Landmark Tour (Schedule -> Action)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 3
+            }
+          ]
+        }
+      },
+      "id": "patrol-schedule",
+      "name": "Every 3 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-360, 0]
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/status"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rover_interfaces/msg/RoverStatus"
+        },
+        "timeoutMs": 10000,
+        "conditions": {},
+        "options": {}
+      },
+      "id": "patrol-status",
+      "name": "Read Rover Status",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [-160, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge-readonly",
+          "name": "ROS2 Rosbridge (Demo Rover, Read-Only)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rover-idle",
+              "leftValue": "={{ $json.message.state }}",
+              "rightValue": "IDLE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "patrol-if-idle",
+      "name": "Only If Rover Is Idle",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [40, 0],
+      "notes": "Skips the scheduled tour when someone is already driving the rover through the form, so ambience never interrupts a visitor."
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/set_led"
+        },
+        "serviceType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rover_interfaces/srv/SetLed"
+        },
+        "requestInputMode": "raw",
+        "requestJson": "{\n  \"color\": \"blue\",\n  \"blink\": false\n}"
+      },
+      "id": "patrol-led",
+      "name": "LED Blue (On Tour)",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [260, -80],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendGoalAndWait",
+        "serverName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/patrol"
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rover_interfaces/action/Patrol"
+        },
+        "goalInputMode": "raw",
+        "goalJson": "{\n  \"waypoint_names\": [\"lake\", \"tree\", \"house\", \"mountain\"],\n  \"loops\": 1,\n  \"dock_when_done\": false\n}",
+        "includeFeedback": true,
+        "timeoutMs": 300000
+      },
+      "id": "patrol-action",
+      "name": "Tour the Landmarks",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [460, -80],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "tour-succeeded",
+              "leftValue": "={{ $json.succeeded }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "patrol-if-done",
+      "name": "Only If Tour Finished",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [660, -80],
+      "notes": "If the tour was preempted (the battery watchdog docking the rover, or a visitor taking over), leave the LED alone instead of overwriting their colour with green."
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/set_led"
+        },
+        "serviceType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rover_interfaces/srv/SetLed"
+        },
+        "requestInputMode": "raw",
+        "requestJson": "{\n  \"color\": \"green\",\n  \"blink\": false\n}"
+      },
+      "id": "patrol-led-done",
+      "name": "LED Green (Done)",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [860, -80],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every 3 Minutes": {
+      "main": [[{ "node": "Read Rover Status", "type": "main", "index": 0 }]]
+    },
+    "Read Rover Status": {
+      "main": [[{ "node": "Only If Rover Is Idle", "type": "main", "index": 0 }]]
+    },
+    "Only If Rover Is Idle": {
+      "main": [
+        [{ "node": "LED Blue (On Tour)", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "LED Blue (On Tour)": {
+      "main": [[{ "node": "Tour the Landmarks", "type": "main", "index": 0 }]]
+    },
+    "Tour the Landmarks": {
+      "main": [[{ "node": "Only If Tour Finished", "type": "main", "index": 0 }]]
+    },
+    "Only If Tour Finished": {
+      "main": [
+        [{ "node": "LED Green (Done)", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

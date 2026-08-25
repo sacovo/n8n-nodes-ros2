@@ -1,0 +1,13 @@
+[Unit]
+Description=Reset the n8n rover demo every hour
+
+[Timer]
+# Every hour on the hour, plus a short delay so a reset never lands exactly on
+# the hourly reset workflow's own run.
+OnCalendar=hourly
+AccuracySec=1min
+RandomizedDelaySec=30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

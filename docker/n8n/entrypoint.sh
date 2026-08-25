@@ -19,11 +19,17 @@ if [ -d /data ]; then
     echo '{"dependencies":{}}' > package.json
   fi
   
-  # Force clean reinstall of the package to clear the persistent volume cache
-  rm -rf node_modules/@fhnw-rover/n8n-nodes-ros2
-  
-  # Install/update local package from /work
-  npm install --legacy-peer-deps /work
+  if [ "${SKIP_NODE_REINSTALL:-}" = "1" ] && [ -d node_modules/@fhnw-rover/n8n-nodes-ros2 ]; then
+    # Long-running deployments restart often; reinstalling every time makes
+    # startup depend on the npm registry being reachable.
+    echo "Custom node already installed, skipping reinstall (SKIP_NODE_REINSTALL=1)."
+  else
+    # Force clean reinstall of the package to clear the persistent volume cache
+    rm -rf node_modules/@fhnw-rover/n8n-nodes-ros2
+
+    # Install/update local package from /work
+    npm install --legacy-peer-deps /work
+  fi
 fi
 
 # Go back to /work

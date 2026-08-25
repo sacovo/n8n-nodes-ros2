@@ -1,0 +1,94 @@
+services:
+  ros2:
+    build:
+      context: ./ros2
+    restart: unless-stopped
+    # Bound to loopback: on the server the public entry point is Caddy, and
+    # locally you can still reach the viewer at http://localhost:6080.
+    ports:
+      - "127.0.0.1:6080:6080"   # noVNC / websockify
+      - "127.0.0.1:8081:8081"   # read-only status JSON for the viewer page
+      - "127.0.0.1:9090:9090"   # rosbridge websocket
+    networks:
+      - demo
+    volumes:
+      - ./scripts:/demo-scripts:ro
+    shm_size: "256mb"
+
+  n8n:
+    build:
+      context: ..
+      dockerfile: docker/n8n/Dockerfile
+      args:
+        # Point this at a prebuilt image (e.g. ghcr.io/sacovo/n8n:master) to skip
+        # the lengthy build-n8n-from-source step.
+        N8N_IMAGE: ${N8N_IMAGE:-n8n-src-builder}
+    restart: unless-stopped
+    depends_on:
+      - ros2
+    ports:
+      - "127.0.0.1:5678:5678"
+    networks:
+      - demo
+    volumes:
+      - n8n_data:/data
+      - ./workflows:/demo/workflows:ro
+      - ./credentials:/demo/credentials:ro
+    environment:
+      - N8N_USER_FOLDER=/data
+      - N8N_PORT=5678
+      - N8N_LISTEN_ADDRESS=0.0.0.0
+      - N8N_HOST=${N8N_DOMAIN:-localhost}
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - N8N_EDITOR_BASE_URL=${N8N_PUBLIC_URL:-http://localhost:5678}
+      - N8N_WEBHOOK_URL=${N8N_PUBLIC_URL:-http://localhost:5678}/
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-demo-encryption-key-change-me}
+      - N8N_PROXY_HOPS=1
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+      - N8N_TEMPLATES_ENABLED=false
+      - N8N_HIRING_BANNER_ENABLED=false
+      # A public demo accumulates executions fast; keep only the last hours.
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=${EXECUTIONS_MAX_AGE_HOURS:-2}
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=2000
+      # Skip reinstalling the node package on every restart; the hourly reset
+      # restarts n8n, and a failed npm reach would otherwise loop the container.
+      - SKIP_NODE_REINSTALL=${SKIP_NODE_REINSTALL:-1}
+      - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE:-false}
+      - GENERIC_TIMEZONE=${TIMEZONE:-Europe/Zurich}
+      - TZ=${TIMEZONE:-Europe/Zurich}
+
+  # Public TLS entry point. Only started with `--profile public`, so local runs
+  # do not need domains or certificates.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["public"]
+    restart: unless-stopped
+    depends_on:
+      - n8n
+      - ros2
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - demo
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    # Passed through only when actually set: an empty ACME_EMAIL would override
+    # the Caddyfile's own default and stop Caddy from starting at all.
+    environment:
+      - N8N_DOMAIN
+      - VIEWER_DOMAIN
+      - ACME_EMAIL
+
+networks:
+  demo:
+
+volumes:
+  n8n_data:
+  caddy_data:
+  caddy_config:

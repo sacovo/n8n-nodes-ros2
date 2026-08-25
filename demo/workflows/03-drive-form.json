@@ -1,0 +1,97 @@
+{
+  "id": "demo-03-drive",
+  "name": "03 - Send the Rover Somewhere (Form -> Action)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "drive-rover",
+        "formTitle": "Send the Rover Somewhere",
+        "formDescription": "Pick a place on the map and the rover will drive there. Watch it move on the live view.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Destination",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "lake" },
+                  { "option": "tree" },
+                  { "option": "house" },
+                  { "option": "mountain" },
+                  { "option": "dock" },
+                  { "option": "center" }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "drive-form",
+      "name": "Destination Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [-140, 0],
+      "webhookId": "drive-rover"
+    },
+    {
+      "parameters": {
+        "operation": "sendGoalAndWait",
+        "serverName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/patrol"
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rover_interfaces/action/Patrol"
+        },
+        "goalInputMode": "raw",
+        "goalJson": "={{ JSON.stringify({ waypoint_names: [$json.Destination], loops: 1, dock_when_done: false }) }}",
+        "includeFeedback": true,
+        "timeoutMs": 180000
+      },
+      "id": "drive-action",
+      "name": "Drive There",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [100, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "={{ $json.result?.success ? 'The rover made it' : 'The rover did not get there' }}",
+        "completionMessage": "={{ $json.result?.message || $json.error || 'The rover did not accept the goal.' }}\n\nDistance driven: {{ ($json.result?.distance_traveled ?? 0).toFixed(2) }} m\nTook: {{ ($json.result?.duration_seconds ?? 0).toFixed(1) }} s\nFeedback messages received: {{ ($json.feedback || []).length }}",
+        "options": {}
+      },
+      "id": "drive-result",
+      "name": "Show Result",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [340, 0],
+      "webhookId": "demo-drive-rover-result"
+    }
+  ],
+  "connections": {
+    "Destination Form": {
+      "main": [[{ "node": "Drive There", "type": "main", "index": 0 }]]
+    },
+    "Drive There": {
+      "main": [[{ "node": "Show Result", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

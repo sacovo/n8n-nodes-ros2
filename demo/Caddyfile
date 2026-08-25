@@ -1,0 +1,45 @@
+{
+	email {$ACME_EMAIL:admin@localhost}
+}
+
+# n8n editor. n8n's own owner account is the authentication boundary here.
+{$N8N_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy n8n:5678 {
+		flush_interval -1
+	}
+}
+
+# Public read-only view of the robot. No authentication on purpose: the VNC
+# export itself runs with -viewonly, so visitors can watch but not drive.
+{$VIEWER_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		X-Frame-Options SAMEORIGIN
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+	}
+
+	# Live battery and state readout for the viewer page. Read-only JSON served
+	# by the rover itself, so it keeps working while n8n restarts.
+	handle /api/* {
+		reverse_proxy ros2:8081
+	}
+
+	handle {
+		reverse_proxy ros2:6080
+	}
+}
+
+# Optional: expose rosbridge itself so external ROS clients (Foxglove, roslibjs,
+# a student's script) can connect over wss://. Leave this commented out unless
+# you want that — an open rosbridge lets anyone publish, call services and set
+# parameters on the robot. If you enable it, set an Auth Token in the n8n
+# credential and check it here, or put basic auth in front.
+#
+# ros.example.org {
+# 	@no-token not query token=CHANGE-ME-LONG-RANDOM-STRING
+# 	respond @no-token "forbidden" 403
+# 	reverse_proxy ros2:9090
+# }

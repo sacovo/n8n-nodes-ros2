@@ -1,0 +1,294 @@
+{
+  "id": "demo-11-responder",
+  "name": "11 - Incident Responder (Agent Decides)",
+  "nodes": [
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/events"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "std_msgs/msg/String"
+        },
+        "includeMetadata": false,
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "incident-event",
+              "leftValue": "data",
+              "rightValue": "battery_low",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "incident-trigger",
+      "name": "On an Incident",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicTrigger",
+      "typeVersion": 1,
+      "position": [-540, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge-readonly",
+          "name": "ROS2 Rosbridge (Demo Rover, Read-Only)"
+        }
+      },
+      "notes": "Same trigger as workflow 02. There, fixed logic always docks. Here the agent decides."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=An incident was reported on the rover.\n\nEvent: {{ $json.message.data }}\n\nDecide what to do and carry it out, then report in two sentences what you did and why.",
+        "options": {
+          "systemMessage": "You are the on-call operator for a simulated rover, woken by an incident.\n\nFirst gather facts: read /rover/status (rover_interfaces/msg/RoverStatus) for the pose, state and battery, and /rover/landmarks (std_msgs/msg/String, JSON) for the places on the map. You may also look through the camera.\n\nThen judge. You are NOT required to dock. Weigh how much charge is left against what the rover is doing and how far it is from the dock at (5.55, 1.25). Reasonable outcomes include:\n- Dock now, if the charge is low enough that finishing is risky.\n- Let it finish and dock afterwards, if it is nearly done and has margin.\n- Engage the emergency stop, if something looks genuinely unsafe.\nAlways set the LED so a human watching the map can read your decision: red for urgent, yellow for caution, green for nominal.\n\nInterfaces you can rely on:\n- /rover/set_led (rover_interfaces/srv/SetLed): {\"color\": \"red|green|blue|yellow|magenta|cyan|white|off\", \"blink\": false}\n- /rover/dock (std_srvs/srv/Trigger): {} — drives home and charges, preempting any mission\n- /rover/emergency_stop (std_srvs/srv/SetBool): {\"data\": true}\n- /rover/patrol (rover_interfaces/action/Patrol): {\"waypoint_names\": [\"dock\"], \"loops\": 1, \"dock_when_done\": false}\n- /rover/notifications (std_msgs/msg/String): {\"data\": \"...\"} — announce your decision here so it lands in the robot's log\n\nUse Describe Service or Describe Action if you need a shape you were not given. Always publish a one-line explanation to /rover/notifications before you finish."
+        },
+        "needsFallback": false
+      },
+      "id": "incident-agent",
+      "name": "On-Call Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-300, 0]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-6",
+          "cachedResultName": "Claude Sonnet 4.6"
+        },
+        "options": {}
+      },
+      "id": "incident-model",
+      "name": "Claude Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [-460, 200],
+      "credentials": {
+        "anthropicApi": {
+          "id": "aqmsJqAEgdDK29Qk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Read the next message published on any ROS 2 topic, for example /rover/status or /rover/landmarks.",
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('topic_name', 'The full ROS topic name, e.g. /rover/status', 'string') }}"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('message_type', 'The ROS message type, e.g. rover_interfaces/msg/RoverStatus', 'string') }}"
+        },
+        "timeoutMs": 10000,
+        "conditions": {},
+        "options": {}
+      },
+      "id": "incident-read",
+      "name": "Read Topic",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessageTool",
+      "typeVersion": 1,
+      "position": [-320, 200],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge-readonly",
+          "name": "ROS2 Rosbridge (Demo Rover, Read-Only)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Expand ONE ROS 2 service into its exact request and response fields.",
+        "resource": "service",
+        "operation": "getDefinition",
+        "serviceName": "={{ $fromAI('service_name', 'The full ROS service name, e.g. /rover/dock', 'string') }}"
+      },
+      "id": "incident-describe",
+      "name": "Describe Service",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApiTool",
+      "typeVersion": 1,
+      "position": [-180, 200],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge-readonly",
+          "name": "ROS2 Rosbridge (Demo Rover, Read-Only)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Call any ROS 2 service on the rover, for example /rover/set_led, /rover/dock or /rover/emergency_stop.",
+        "serviceName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('service_name', 'The full ROS service name, e.g. /rover/dock', 'string') }}"
+        },
+        "serviceType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('service_type', 'The ROS service type, e.g. std_srvs/srv/Trigger', 'string') }}"
+        },
+        "requestInputMode": "raw",
+        "requestJson": "={{ $fromAI('request_json', 'The request payload as a JSON object. Use {} for an empty request.', 'string') }}",
+        "timeoutMs": 120000
+      },
+      "id": "incident-service",
+      "name": "Call Service",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCallTool",
+      "typeVersion": 1,
+      "position": [-40, 200],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Publish a message to any ROS 2 topic, for example a std_msgs/msg/String to /rover/notifications.",
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('topic_name', 'The full ROS topic name, e.g. /rover/notifications', 'string') }}"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('message_type', 'The ROS message type, e.g. std_msgs/msg/String', 'string') }}"
+        },
+        "messageInputMode": "raw",
+        "messageJson": "={{ $fromAI('message_json', 'The message payload as a JSON object', 'string') }}",
+        "options": {}
+      },
+      "id": "incident-publish",
+      "name": "Publish Topic",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicPublishTool",
+      "typeVersion": 1,
+      "position": [100, 200],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Send a goal to a ROS 2 action server, for example /rover/patrol to drive to a named place.",
+        "operation": "sendGoalAndWait",
+        "serverName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('action_name', 'The full ROS action server name, e.g. /rover/patrol', 'string') }}"
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('action_type', 'The ROS action type, e.g. rover_interfaces/action/Patrol', 'string') }}"
+        },
+        "goalInputMode": "raw",
+        "goalJson": "={{ $fromAI('goal_json', 'The goal payload as a JSON object', 'string') }}",
+        "includeFeedback": false,
+        "timeoutMs": 300000
+      },
+      "id": "incident-action",
+      "name": "Send Action Goal",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosActionTool",
+      "typeVersion": 1,
+      "position": [240, 200],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Look through the rover's camera and return the current view of the map as an image. The map is line art: a blue lake, a green fir, an orange house, a grey mountain and a yellow charging pad, with the rover drawn as a turtle.",
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/camera/compressed"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "sensor_msgs/msg/CompressedImage"
+        },
+        "timeoutMs": 10000,
+        "dataPropertyName": "data",
+        "resize": true,
+        "maxWidth": 512
+      },
+      "id": "incident-camera",
+      "name": "Look Through Camera",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicCaptureImageTool",
+      "typeVersion": 1,
+      "position": [380, 200],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge-readonly",
+          "name": "ROS2 Rosbridge (Demo Rover, Read-Only)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On an Incident": {
+      "main": [[{ "node": "On-Call Agent", "type": "main", "index": 0 }]]
+    },
+    "Claude Chat Model": {
+      "ai_languageModel": [[{ "node": "On-Call Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Read Topic": {
+      "ai_tool": [[{ "node": "On-Call Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Describe Service": {
+      "ai_tool": [[{ "node": "On-Call Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Call Service": {
+      "ai_tool": [[{ "node": "On-Call Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Publish Topic": {
+      "ai_tool": [[{ "node": "On-Call Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Send Action Goal": {
+      "ai_tool": [[{ "node": "On-Call Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Look Through Camera": {
+      "ai_tool": [[{ "node": "On-Call Agent", "type": "ai_tool", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

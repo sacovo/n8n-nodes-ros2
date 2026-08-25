@@ -1,0 +1,26 @@
+# Drive the rover to a point on the map.
+# Goal
+# Target position. x and y are world coordinates (0.0 - 11.08 on both axes),
+# theta is ignored by this rover.
+geometry_msgs/Pose2D target
+
+# How close counts as arrived, in metres. 0.0 falls back to 0.3.
+float32 tolerance
+
+# Maximum drive speed in m/s. 0.0 falls back to 1.5.
+float32 max_speed
+---
+# Result
+bool success
+string message
+
+# Path length actually driven, in metres.
+float32 distance_traveled
+
+# Seconds the goal took from acceptance to completion.
+float32 duration_seconds
+---
+# Feedback, published at 5 Hz while driving.
+float32 distance_remaining
+geometry_msgs/Pose2D current_pose
+float32 battery_percentage

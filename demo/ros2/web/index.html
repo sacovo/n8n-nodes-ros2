@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rover Live View</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --panel: #171a21;
+    --line: #262b36;
+    --text: #e6e9ef;
+    --muted: #9aa4b8;
+    --accent: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+  h1 { font-size: 1.15rem; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+  .badge {
+    font-size: 0.75rem;
+    color: var(--accent);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    background: rgba(74, 222, 128, 0.08);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+  }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    display: grid;
+    gap: 1.5rem;
+  }
+  .screen {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 320px;
+  }
+  .screen iframe { width: 100%; height: 100%; border: 0; display: block; }
+  h2 { font-size: 0.95rem; margin: 0 0 0.6rem; color: var(--muted); font-weight: 600; }
+  .cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+  }
+  ul { margin: 0; padding-left: 1.1rem; }
+  li { margin-bottom: 0.35rem; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85em;
+    background: rgba(255,255,255,0.06);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+  footer { color: var(--muted); font-size: 0.85rem; padding: 0 1.5rem 2rem; text-align: center; }
+
+  /* Live readout */
+  .hud {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .tile {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.7rem 0.85rem;
+  }
+  .tile .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .tile .value {
+    font-size: 1.15rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .bar {
+    margin-top: 0.45rem;
+    height: 7px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.09);
+    overflow: hidden;
+  }
+  .bar span {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 4px;
+    background: var(--accent);
+    transition: width 0.6s ease, background-color 0.4s ease;
+  }
+  .dot {
+    display: inline-block;
+    width: 0.7em;
+    height: 0.7em;
+    border-radius: 50%;
+    margin-right: 0.4em;
+    background: currentColor;
+    vertical-align: baseline;
+  }
+  .stale { opacity: 0.45; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  .blinking { animation: pulse 1s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Rover Live View</h1>
+  <span class="badge">read-only</span>
+</header>
+
+<main>
+  <div class="screen">
+    <iframe
+      src="vnc.html?autoconnect=1&amp;resize=scale&amp;view_only=1&amp;reconnect=1&amp;reconnect_delay=2000"
+      title="Live view of the simulated rover"
+      allowfullscreen></iframe>
+  </div>
+
+  <div class="hud" id="hud">
+    <div class="tile">
+      <div class="label">Battery</div>
+      <div class="value" id="battery">&mdash;</div>
+      <div class="bar"><span id="battery-bar"></span></div>
+    </div>
+    <div class="tile">
+      <div class="label">State</div>
+      <div class="value" id="state">&mdash;</div>
+    </div>
+    <div class="tile">
+      <div class="label">Heading for</div>
+      <div class="value" id="target">&mdash;</div>
+    </div>
+    <div class="tile">
+      <div class="label">Status LED</div>
+      <div class="value" id="led"><span class="dot"></span><span>&mdash;</span></div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h2>What you are watching</h2>
+      <p style="margin:0 0 0.6rem">
+        A simulated rover driving between the places on its map — the
+        <span style="color:#4a82ff">lake</span>, the
+        <span style="color:#46c85f">tree</span>, the
+        <span style="color:#eb9646">house</span>, the
+        <span style="color:#9ba0af">mountain</span> and its
+        <span style="color:#f0cd3c">charging dock</span>.
+      </p>
+      <p style="margin:0">
+        Every movement is commanded by an <strong>n8n workflow</strong> talking
+        to ROS&nbsp;2 over rosbridge. The trail colour is the rover's status LED.
+      </p>
+    </div>
+    <div class="card">
+      <h2>What the rover offers</h2>
+      <ul>
+        <li>Actions: <code>/rover/navigate_to</code>, <code>/rover/patrol</code></li>
+        <li>Services: <code>/rover/set_led</code>, <code>/rover/dock</code>, <code>/rover/emergency_stop</code></li>
+        <li>Topics: <code>/rover/status</code>, <code>/rover/battery</code>, <code>/rover/events</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Why it moves on its own</h2>
+      <ul>
+        <li>A scheduled workflow sends it on patrol.</li>
+        <li>A battery watchdog turns the LED red and docks it below 25&nbsp;%.</li>
+        <li>Visitors can send it to a place through the destination form.</li>
+      </ul>
+    </div>
+  </div>
+</main>
+
+<footer>This view is read-only — clicks and keystrokes are not forwarded to the robot.</footer>
+
+<script>
+(function () {
+  // Behind Caddy the status endpoint is same-origin. A local run serves this
+  // page straight from the noVNC port, where it is not, so fall back to the
+  // rover's own port.
+  var CANDIDATES = ['/api/status', location.protocol + '//' + location.hostname + ':8081/api/status'];
+  var endpoint = null;
+
+  var LED_COLORS = {
+    red: '#ff5555', green: '#4ade80', blue: '#5a86ff', yellow: '#f0cd3c',
+    magenta: '#ef6bd8', cyan: '#4fd4d4', white: '#e6e9ef', off: '#5a6072'
+  };
+
+  var el = function (id) { return document.getElementById(id); };
+  var pretty = function (s) {
+    if (!s) return '—';
+    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  };
+
+  function batteryColor(pct, threshold) {
+    if (pct <= threshold) return '#ff5555';
+    if (pct <= threshold * 2) return '#f0cd3c';
+    return '#4ade80';
+  }
+
+  function render(data) {
+    el('hud').classList.remove('stale');
+
+    var pct = typeof data.battery === 'number' ? data.battery : 0;
+    var threshold = data.low_battery_threshold || 25;
+    el('battery').textContent = pct.toFixed(0) + '%' + (data.charging ? ' ⚡' : '');
+    var bar = el('battery-bar');
+    bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    bar.style.backgroundColor = data.charging ? '#4fd4d4' : batteryColor(pct, threshold);
+
+    el('state').textContent = data.estopped ? 'Emergency stop' : pretty(data.state);
+    el('target').textContent = data.target ? pretty(data.target) : 'Nowhere';
+
+    var ledBox = el('led');
+    var dot = ledBox.querySelector('.dot');
+    dot.style.color = LED_COLORS[data.led] || '#5a6072';
+    dot.classList.toggle('blinking', !!data.led_blink);
+    ledBox.querySelector('span:last-child').textContent = pretty(data.led);
+  }
+
+  function poll() {
+    var urls = endpoint ? [endpoint] : CANDIDATES;
+    var attempt = function (i) {
+      if (i >= urls.length) {
+        endpoint = null;
+        el('hud').classList.add('stale');
+        return;
+      }
+      fetch(urls[i], { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (data) { endpoint = urls[i]; render(data); })
+        .catch(function () { attempt(i + 1); });
+    };
+    attempt(0);
+  }
+
+  poll();
+  setInterval(poll, 2000);
+})();
+</script>
+</body>
+</html>

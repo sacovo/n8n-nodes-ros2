@@ -1,0 +1,91 @@
+{
+  "id": "demo-08-reset",
+  "name": "08 - Hourly Demo Reset",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "reset-schedule",
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-140, 0]
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/reset_demo"
+        },
+        "serviceType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "std_srvs/srv/Trigger"
+        },
+        "requestInputMode": "raw",
+        "requestJson": "{}",
+        "timeoutMs": 30000
+      },
+      "id": "reset-call",
+      "name": "Reset the Rover",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [100, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/notifications"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "std_msgs/msg/String"
+        },
+        "messageInputMode": "raw",
+        "messageJson": "={{ JSON.stringify({ data: 'Hourly reset: ' + $json.response.message }) }}",
+        "options": {}
+      },
+      "id": "reset-notify",
+      "name": "Announce the Reset",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicPublish",
+      "typeVersion": 1,
+      "position": [340, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Hour": {
+      "main": [[{ "node": "Reset the Rover", "type": "main", "index": 0 }]]
+    },
+    "Reset the Rover": {
+      "main": [[{ "node": "Announce the Reset", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -6,3 +6,5 @@ node_modules/
 .gitignore
 .agents/
 .github/
+demo/.env
+demo/ros2/__pycache__/

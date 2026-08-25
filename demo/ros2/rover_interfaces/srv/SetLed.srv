@@ -1,0 +1,11 @@
+# Set the rover's status LED. On the simulated rover this also changes the
+# colour of the trail the turtle draws, so the effect is visible on screen.
+
+# One of: red, green, blue, yellow, magenta, cyan, white, off
+string color
+
+# Blink instead of holding a steady colour.
+bool blink
+---
+bool success
+string message

@@ -1,0 +1,74 @@
+{
+  "id": "demo-06-snapshot",
+  "name": "06 - Camera Snapshot (Webhook -> Capture Image)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "rover-snapshot",
+        "httpMethod": "GET",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "snapshot-webhook",
+      "name": "GET /rover-snapshot",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-140, 0],
+      "webhookId": "demo-rover-snapshot"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/camera/compressed"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "sensor_msgs/msg/CompressedImage"
+        },
+        "timeoutMs": 10000,
+        "dataPropertyName": "data",
+        "resize": true,
+        "maxWidth": 640
+      },
+      "id": "snapshot-capture",
+      "name": "Capture From Rover Camera",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicCaptureImage",
+      "typeVersion": 1,
+      "position": [100, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge-readonly",
+          "name": "ROS2 Rosbridge (Demo Rover, Read-Only)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "responseDataSource": "set",
+        "inputFieldName": "data",
+        "options": {}
+      },
+      "id": "snapshot-respond",
+      "name": "Return the Image",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [340, 0]
+    }
+  ],
+  "connections": {
+    "GET /rover-snapshot": {
+      "main": [[{ "node": "Capture From Rover Camera", "type": "main", "index": 0 }]]
+    },
+    "Capture From Rover Camera": {
+      "main": [[{ "node": "Return the Image", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

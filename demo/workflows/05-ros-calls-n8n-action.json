@@ -1,0 +1,156 @@
+{
+  "id": "demo-05-action-trigger",
+  "name": "05 - ROS Calls n8n (Action Trigger + Respond)",
+  "nodes": [
+    {
+      "parameters": {
+        "serverName": "/n8n/inspect",
+        "actionType": "rover_interfaces/action/Inspect",
+        "emitCancelRequests": false
+      },
+      "id": "inspect-trigger",
+      "name": "Advertise /n8n/inspect",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosActionTrigger",
+      "typeVersion": 1,
+      "position": [-280, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "goalId": "={{ $json.goalId }}",
+        "operation": "sendFeedback",
+        "payloadJson": "={{ JSON.stringify({ stage: 'Positioning for ' + ($json.goal?.target || 'the target'), samples_done: 0 }) }}"
+      },
+      "id": "inspect-feedback-1",
+      "name": "Feedback: Positioning",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosActionRespond",
+      "typeVersion": 1,
+      "position": [-60, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendGoalAndWait",
+        "serverName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/navigate_to"
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rover_interfaces/action/NavigateTo"
+        },
+        "goalInputMode": "raw",
+        "goalJson": "{\n  \"target\": { \"x\": 5.544, \"y\": 5.544, \"theta\": 0 },\n  \"tolerance\": 0.4,\n  \"max_speed\": 1.8\n}",
+        "includeFeedback": false,
+        "timeoutMs": 120000
+      },
+      "id": "inspect-drive",
+      "name": "Drive to Inspection Point",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [160, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "goalId": "={{ $('Advertise /n8n/inspect').item.json.goalId }}",
+        "operation": "sendFeedback",
+        "payloadJson": "={{ JSON.stringify({ stage: 'Taking samples', samples_done: $('Advertise /n8n/inspect').item.json.goal?.samples || 0 }) }}"
+      },
+      "id": "inspect-feedback-2",
+      "name": "Feedback: Sampling",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosActionRespond",
+      "typeVersion": 1,
+      "position": [380, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "/rover/camera/compressed"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "sensor_msgs/msg/CompressedImage"
+        },
+        "timeoutMs": 10000,
+        "dataPropertyName": "data"
+      },
+      "id": "inspect-photo",
+      "name": "Take a Photo",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicCaptureImage",
+      "typeVersion": 1,
+      "position": [600, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "goalId": "={{ $('Advertise /n8n/inspect').item.json.goalId }}",
+        "operation": "setSucceeded",
+        "payloadJson": "={{ JSON.stringify({ success: true, report: 'Inspected ' + ($('Advertise /n8n/inspect').item.json.goal?.target || 'the target') + '. Drove to the inspection point and captured one image.', samples_taken: $('Advertise /n8n/inspect').item.json.goal?.samples || 0 }) }}"
+      },
+      "id": "inspect-succeed",
+      "name": "Set Succeeded",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosActionRespond",
+      "typeVersion": 1,
+      "position": [820, 0],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge",
+          "name": "ROS2 Rosbridge (Demo Rover)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Advertise /n8n/inspect": {
+      "main": [[{ "node": "Feedback: Positioning", "type": "main", "index": 0 }]]
+    },
+    "Feedback: Positioning": {
+      "main": [[{ "node": "Drive to Inspection Point", "type": "main", "index": 0 }]]
+    },
+    "Drive to Inspection Point": {
+      "main": [[{ "node": "Feedback: Sampling", "type": "main", "index": 0 }]]
+    },
+    "Feedback: Sampling": {
+      "main": [[{ "node": "Take a Photo", "type": "main", "index": 0 }]]
+    },
+    "Take a Photo": {
+      "main": [[{ "node": "Set Succeeded", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

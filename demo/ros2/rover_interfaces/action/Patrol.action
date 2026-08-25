@@ -1,0 +1,24 @@
+# Visit a list of named waypoints in order, optionally more than once.
+# Goal
+# Waypoint names to visit in order. Known names: nw, ne, sw, se, center, dock.
+# An empty list patrols the four corners.
+string[] waypoint_names
+
+# How many times to walk the list. 0 falls back to 1.
+int32 loops
+
+# Return to the dock when the patrol finishes.
+bool dock_when_done
+---
+# Result
+bool success
+string message
+int32 waypoints_visited
+float32 distance_traveled
+float32 duration_seconds
+---
+# Feedback, published on every waypoint arrival and every 2 s while driving.
+string current_waypoint
+int32 waypoints_completed
+int32 current_loop
+float32 battery_percentage

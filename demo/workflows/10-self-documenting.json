@@ -1,0 +1,282 @@
+{
+  "id": "demo-10-manual",
+  "name": "10 - Self-Documenting Robot (Discovery -> Manual)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "rover-manual",
+        "httpMethod": "GET",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "manual-webhook",
+      "name": "GET /rover-manual",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        0
+      ],
+      "webhookId": "rover-manual"
+    },
+    {
+      "parameters": {
+        "resource": "node",
+        "operation": "getDefinition",
+        "nodeName": "={{ $json.query.node || '/rover' }}"
+      },
+      "id": "manual-discover",
+      "name": "Expand the Whole Node",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        0
+      ],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge-readonly",
+          "name": "ROS2 Rosbridge (Demo Rover, Read-Only)"
+        }
+      },
+      "notes": "Returns every topic, service and action with all custom types expanded. Nothing about this robot is hardcoded in the workflow."
+    },
+    {
+      "parameters": {
+        "resource": "action",
+        "operation": "list",
+        "grep": "={{ ($json.nodeName || '/rover').replace(/^\\//, '') }}"
+      },
+      "id": "manual-actions",
+      "name": "List Its Actions",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        0
+      ],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge-readonly",
+          "name": "ROS2 Rosbridge (Demo Rover, Read-Only)"
+        }
+      },
+      "notes": "rosapi's node details omit the hidden /_action/ services on some builds, so actions are listed separately and merged in."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write an operator manual for a robot, in Markdown.\n\nYou are given the robot's complete ROS 2 interface, discovered at runtime. Nothing is hardcoded \u2014 everything below came from the live graph.\n\nNode: {{ $('Expand the Whole Node').first().json.nodeName }}\n\nInterface:\n```json\n{{ JSON.stringify($('Expand the Whole Node').first().json).slice(0, 12000) }}\n```\n\nAction servers, fully expanded (goal / result / feedback):\n```json\n{{ JSON.stringify($json.data).slice(0, 6000) }}\n```\n\nWrite the manual with these sections:\n1. What this robot is, inferred from its interfaces.\n2. How to observe it \u2014 the topics worth watching and what each one tells you. Quote the description text where the interface provides one.\n3. How to command it \u2014 for every service and action, give a ready-to-paste JSON payload built from the real field names and types.\n4. Safety notes \u2014 anything that stops or preempts the robot.\n\nBe concrete and use the real names and types. Do not invent interfaces that are not in the data.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You write precise technical documentation for robotics operators. You never invent an interface that is not present in the supplied data."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "manual-llm",
+      "name": "Write the Manual",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-6",
+          "cachedResultName": "Claude Sonnet 4.6"
+        },
+        "options": {
+          "maxTokensToSample": 4000
+        }
+      },
+      "id": "manual-model",
+      "name": "Claude Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [
+        520,
+        200
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "aqmsJqAEgdDK29Qk",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.text }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "content-type",
+                "value": "text/markdown; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "manual-respond",
+      "name": "Return the Manual",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        740,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item per action server, so the next node expands each of them.\nconst names = $input.first().json.actionServers || [];\nif (!names.length) {\n  return [{ json: { actionName: '', empty: true } }];\n}\nreturn names.map((name) => ({ json: { actionName: name } }));"
+      },
+      "id": "manual-split",
+      "name": "One Action Each",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "action",
+        "operation": "getDefinition",
+        "actionName": "={{ $json.actionName }}"
+      },
+      "id": "manual-expand-action",
+      "name": "Expand Each Action",
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        200,
+        0
+      ],
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "demo-rosbridge-readonly",
+          "name": "ROS2 Rosbridge (Demo Rover, Read-Only)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "manual-agg",
+      "name": "Collect Actions",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        360,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "GET /rover-manual": {
+      "main": [
+        [
+          {
+            "node": "Expand the Whole Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand the Whole Node": {
+      "main": [
+        [
+          {
+            "node": "List Its Actions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Its Actions": {
+      "main": [
+        [
+          {
+            "node": "One Action Each",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write the Manual",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write the Manual": {
+      "main": [
+        [
+          {
+            "node": "Return the Manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One Action Each": {
+      "main": [
+        [
+          {
+            "node": "Expand Each Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Each Action": {
+      "main": [
+        [
+          {
+            "node": "Collect Actions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Actions": {
+      "main": [
+        [
+          {
+            "node": "Write the Manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
