@@ -23,6 +23,8 @@
 		"n8n": "n8n",
 		"lint": "n8n-node lint",
 		"lint:fix": "n8n-node lint --fix",
+		"format": "prettier --check \"nodes/**/*.ts\" \"credentials/**/*.ts\"",
+		"format:fix": "prettier --write \"nodes/**/*.ts\" \"credentials/**/*.ts\"",
 		"test": "jest",
 		"test:watch": "jest --watch",
 		"test:coverage": "jest --coverage",
