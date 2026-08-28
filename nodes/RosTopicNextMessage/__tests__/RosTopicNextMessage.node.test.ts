@@ -43,7 +43,7 @@ describe('RosTopicNextMessage', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.waitForTopicMessage.mockResolvedValue({
-                data: 'Hello ROS!'
+                data: 'Hello ROS!',
             });
 
             const result = await node.execute.call(mockExecuteFunctions);
@@ -106,7 +106,10 @@ describe('RosTopicNextMessage', () => {
 
             // The stored n8n expression must not be evaluated by the engine…
             expect(mockExecuteFunctions.getNodeParameter).toHaveBeenCalledWith(
-                'conditions', 0, {}, { rawExpressions: true },
+                'conditions',
+                0,
+                {},
+                { rawExpressions: true },
             );
             // …but converted to a plain path that filters arriving messages
             expect(filterCallback!({ data: 3 })).toBe(true);

@@ -10,12 +10,7 @@ import type { NodeContext } from './NodeContext';
 export type JsonRecord = Record<string, unknown>;
 
 export class ParameterExtractor {
-    static parseJsonParameter(
-        input: string,
-        parameterName: string,
-        context: NodeContext,
-        itemIndex = 0,
-    ): JsonRecord {
+    static parseJsonParameter(input: string, parameterName: string, context: NodeContext, itemIndex = 0): JsonRecord {
         if (!input.trim()) {
             return {};
         }
@@ -32,11 +27,9 @@ export class ParameterExtractor {
         }
 
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-            throw new NodeOperationError(
-                context.getNode(),
-                `Parameter "${parameterName}" must be a JSON object`,
-                { itemIndex },
-            );
+            throw new NodeOperationError(context.getNode(), `Parameter "${parameterName}" must be a JSON object`, {
+                itemIndex,
+            });
         }
 
         return parsed as JsonRecord;
@@ -90,11 +83,9 @@ export class ParameterExtractor {
         }
 
         if (typeof value !== 'string') {
-            throw new NodeOperationError(
-                executeFunctions.getNode(),
-                `Parameter "${parameterName}" must be a string`,
-                { itemIndex },
-            );
+            throw new NodeOperationError(executeFunctions.getNode(), `Parameter "${parameterName}" must be a string`, {
+                itemIndex,
+            });
         }
 
         return value as string;

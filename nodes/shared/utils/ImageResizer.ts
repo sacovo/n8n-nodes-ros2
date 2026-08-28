@@ -33,8 +33,7 @@ export class ImageResizer {
 
         const metadata = await sharp(input, { failOn: 'none' }).metadata();
         const inputFormat = metadata.format ?? 'jpeg';
-        const outputFormat: OutputFormat =
-            inputFormat === 'png' ? 'png' : inputFormat === 'webp' ? 'webp' : 'jpeg';
+        const outputFormat: OutputFormat = inputFormat === 'png' ? 'png' : inputFormat === 'webp' ? 'webp' : 'jpeg';
 
         let pipeline = sharp(input, { failOn: 'none' });
 

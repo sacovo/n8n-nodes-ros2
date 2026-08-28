@@ -36,7 +36,9 @@ class RosBridgeTimeoutError extends Error {
 export class RosBridgeService {
     private static connectionPool = new Map<string, Ros>();
     private static pendingConnections = new Map<string, Promise<Ros>>();
-    private static readonly PUBLISHER_TTL_MS = process.env.ROS_PUBLISHER_TTL_MS ? parseInt(process.env.ROS_PUBLISHER_TTL_MS, 10) : 300000;
+    private static readonly PUBLISHER_TTL_MS = process.env.ROS_PUBLISHER_TTL_MS
+        ? parseInt(process.env.ROS_PUBLISHER_TTL_MS, 10)
+        : 300000;
     private static publisherCache = new Map<string, { topic: Topic; timer?: ReturnType<typeof setTimeout> }>();
 
     private static async sleep(ms: number): Promise<void> {
@@ -78,9 +80,7 @@ export class RosBridgeService {
 
         const queryParam = credentials.authQueryParameter || 'token';
         const separator = baseUrl.includes('?') ? '&' : '?';
-        return `${baseUrl}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(
-            credentials.authToken,
-        )}`;
+        return `${baseUrl}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(credentials.authToken)}`;
     }
 
     static async connect(credentials: RosBridgeCredentials): Promise<Ros> {
@@ -108,10 +108,9 @@ export class RosBridgeService {
             return pending;
         }
 
-        const connectPromise = this.establishConnection(url, credentials.connectTimeoutMs ?? 5000)
-            .finally(() => {
-                this.pendingConnections.delete(url);
-            });
+        const connectPromise = this.establishConnection(url, credentials.connectTimeoutMs ?? 5000).finally(() => {
+            this.pendingConnections.delete(url);
+        });
         this.pendingConnections.set(url, connectPromise);
         return connectPromise;
     }
@@ -299,7 +298,6 @@ export class RosBridgeService {
         }, this.PUBLISHER_TTL_MS);
     }
 
-
     static async waitForTopicMessage(
         ros: Ros,
         topicName: string,
@@ -413,7 +411,6 @@ export class RosBridgeService {
             service.unadvertise();
         };
     }
-
 }
 
 export { RosBridgeConnectionError, RosBridgeTimeoutError };

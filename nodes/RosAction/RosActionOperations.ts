@@ -31,10 +31,8 @@ export function isWriteOperation(operation: RosActionOperation): boolean {
 
 /** Reads a resourceLocator parameter that may also be a plain string. */
 function extractLocator(node: IExecuteFunctions, itemIndex: number, name: string): string {
-    const locator = node.getNodeParameter(name, itemIndex) as
-        | { mode: string; value: string }
-        | string;
-    return typeof locator === 'string' ? locator : locator?.value ?? '';
+    const locator = node.getNodeParameter(name, itemIndex) as { mode: string; value: string } | string;
+    return typeof locator === 'string' ? locator : (locator?.value ?? '');
 }
 
 /**
@@ -52,11 +50,7 @@ async function buildGoal(
 
     let goal: JsonRecord;
     if (goalInputMode === 'fixed') {
-        goal = ResourceMapperCoercer.coerceMessage(
-            node.getNodeParameter('goalStructure', itemIndex),
-            node,
-            itemIndex,
-        );
+        goal = ResourceMapperCoercer.coerceMessage(node.getNodeParameter('goalStructure', itemIndex), node, itemIndex);
     } else {
         goal = ParameterExtractor.parseJsonParameter(
             node.getNodeParameter('goalJson', itemIndex) as string,
@@ -71,10 +65,7 @@ async function buildGoal(
     }
 
     return MessageTypeValidator.validateAgainstType(goal, node, itemIndex, async () =>
-        RosApiService.expandRootTypeDef(
-            actionType,
-            await RosApiService.getActionGoalDetails(ros, actionType),
-        ),
+        RosApiService.expandRootTypeDef(actionType, await RosApiService.getActionGoalDetails(ros, actionType)),
     );
 }
 
@@ -125,13 +116,7 @@ export async function runOperation(
             const includeFeedback = node.getNodeParameter('includeFeedback', itemIndex) as boolean;
             const goal = await buildGoal(ros, node, itemIndex, actionType);
 
-            const handle = RosActionService.sendGoal(
-                ros,
-                serverName,
-                actionType,
-                goal,
-                includeFeedback,
-            );
+            const handle = RosActionService.sendGoal(ros, serverName, actionType, goal, includeFeedback);
 
             return {
                 serverName: handle.serverName,
@@ -176,11 +161,7 @@ export async function runOperation(
             const serverName = extractLocator(node, itemIndex, 'serverName');
             const actionType = extractLocator(node, itemIndex, 'actionType');
             const goalId = ParameterExtractor.extractOptionalString(node, itemIndex, 'goalId');
-            const timeoutMs = ParameterExtractor.extractRequiredNumber(
-                node,
-                itemIndex,
-                'watchTimeoutMs',
-            );
+            const timeoutMs = ParameterExtractor.extractRequiredNumber(node, itemIndex, 'watchTimeoutMs');
 
             const { goalId: messageGoalId, feedback } = await RosActionService.waitForFeedback(
                 ros,
@@ -202,11 +183,7 @@ export async function runOperation(
         case 'watchStatus': {
             const serverName = extractLocator(node, itemIndex, 'serverName');
             const goalId = ParameterExtractor.extractOptionalString(node, itemIndex, 'goalId');
-            const timeoutMs = ParameterExtractor.extractRequiredNumber(
-                node,
-                itemIndex,
-                'watchTimeoutMs',
-            );
+            const timeoutMs = ParameterExtractor.extractRequiredNumber(node, itemIndex, 'watchTimeoutMs');
 
             const { goals, raw } = await RosActionService.waitForStatus(
                 ros,

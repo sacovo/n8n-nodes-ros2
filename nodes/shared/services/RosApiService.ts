@@ -87,7 +87,11 @@ export class RosApiService {
                     return;
                 }
                 settled = true;
-                reject(new RosBridgeTimeoutError(`${description} did not answer within ${timeoutMs}ms. Is rosapi still running?`));
+                reject(
+                    new RosBridgeTimeoutError(
+                        `${description} did not answer within ${timeoutMs}ms. Is rosapi still running?`,
+                    ),
+                );
             }, timeoutMs);
 
             const settle = (finish: () => void) => {
@@ -128,7 +132,12 @@ export class RosApiService {
             if (!topics.includes(descTopic)) {
                 return null;
             }
-            const message = await RosBridgeService.waitForTopicMessage(ros, descTopic, 'std_msgs/msg/String', timeoutMs);
+            const message = await RosBridgeService.waitForTopicMessage(
+                ros,
+                descTopic,
+                'std_msgs/msg/String',
+                timeoutMs,
+            );
             return typeof message.data === 'string' ? message.data : null;
         } catch {
             return null;
@@ -149,7 +158,7 @@ export class RosApiService {
             if (index === -1 && messageType) {
                 index = types.indexOf(messageType);
             }
-            return index === -1 ? null : rawDefinitions[index] ?? null;
+            return index === -1 ? null : (rawDefinitions[index] ?? null);
         } catch {
             return null;
         }
@@ -255,13 +264,21 @@ export class RosApiService {
 
     static async getServiceRequestDetails(ros: Ros, type: string): Promise<rosapi.TypeDef[]> {
         return this.request('/rosapi/service_request_details', (onSuccess, onError) => {
-            ros.getServiceRequestDetails(type, (result) => onSuccess(result.typedefs), (error) => onError(new Error(error)));
+            ros.getServiceRequestDetails(
+                type,
+                (result) => onSuccess(result.typedefs),
+                (error) => onError(new Error(error)),
+            );
         });
     }
 
     static async getServiceResponseDetails(ros: Ros, type: string): Promise<rosapi.TypeDef[]> {
         return this.request('/rosapi/service_response_details', (onSuccess, onError) => {
-            ros.getServiceResponseDetails(type, (result) => onSuccess(result.typedefs), (error) => onError(new Error(error)));
+            ros.getServiceResponseDetails(
+                type,
+                (result) => onSuccess(result.typedefs),
+                (error) => onError(new Error(error)),
+            );
         });
     }
 
@@ -298,15 +315,18 @@ export class RosApiService {
                 name: `/rosapi/${serviceName}`,
                 serviceType: `rosapi/${serviceType}`,
             });
-            client.callService(
-                request,
-                onSuccess,
-                (error) => onError(new Error(`/rosapi/${serviceName} failed: ${error}`)),
+            client.callService(request, onSuccess, (error) =>
+                onError(new Error(`/rosapi/${serviceName} failed: ${error}`)),
             );
         });
     }
 
-    private static async callRosapiService(ros: Ros, serviceName: string, serviceType: string, type: string): Promise<rosapi.TypeDef[]> {
+    private static async callRosapiService(
+        ros: Ros,
+        serviceName: string,
+        serviceType: string,
+        type: string,
+    ): Promise<rosapi.TypeDef[]> {
         const result = await this.callRosapi<{ type: string }, unknown>(ros, serviceName, serviceType, { type });
 
         if (result && typeof result === 'object' && Array.isArray((result as { typedefs?: unknown }).typedefs)) {
@@ -341,7 +361,7 @@ export class RosApiService {
      * @param typedefs Array of type definitions (from rosapi)
      */
     static expandTypeDef(typeName: string, typedefs: rosapi.TypeDef[]): ExpandedTypeDef {
-        const typedef = typedefs.find(t => t.type === typeName);
+        const typedef = typedefs.find((t) => t.type === typeName);
         if (!typedef) {
             return typeName;
         }
@@ -401,7 +421,9 @@ export class RosApiService {
                 const type = await this.getTopicType(ros, name);
                 let definition = messageDefinitions.get(type);
                 if (!definition) {
-                    definition = this.getMessageDetails(ros, type).then((typedefs) => this.expandRootTypeDef(type, typedefs));
+                    definition = this.getMessageDetails(ros, type).then((typedefs) =>
+                        this.expandRootTypeDef(type, typedefs),
+                    );
                     messageDefinitions.set(type, definition);
                 }
                 return { name, type, definition: await definition };
@@ -483,12 +505,9 @@ export class RosApiService {
      * rosapi died) would be swallowed and the caller left waiting forever.
      */
     static async getParam(ros: Ros, name: string): Promise<unknown> {
-        const response = await this.callRosapi<{ name: string }, RosapiParamResponse>(
-            ros,
-            'get_param',
-            'GetParam',
-            { name },
-        );
+        const response = await this.callRosapi<{ name: string }, RosapiParamResponse>(ros, 'get_param', 'GetParam', {
+            name,
+        });
         this.assertParamSucceeded(response, `read ROS parameter "${name}"`);
 
         const value = response?.value;

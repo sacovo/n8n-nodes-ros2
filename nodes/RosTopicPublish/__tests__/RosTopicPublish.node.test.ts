@@ -8,7 +8,7 @@ import { RosApiService } from '../../shared/services/RosApiService';
 import { RosN8nFormatter } from '../../shared/utils/RosN8nFormatter';
 import { ParameterExtractor } from '../../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../../shared/utils/NodeErrorHandler';
-import type { IExecuteFunctions, ILoadOptionsFunctions  } from 'n8n-workflow';
+import type { IExecuteFunctions, ILoadOptionsFunctions } from 'n8n-workflow';
 import type { Ros } from 'roslib';
 
 // Mock the services
@@ -23,7 +23,6 @@ const mockRosApiService = RosApiService as jest.Mocked<typeof RosApiService>;
 const mockRosN8nFormatter = RosN8nFormatter as jest.Mocked<typeof RosN8nFormatter>;
 const mockParameterExtractor = ParameterExtractor as jest.Mocked<typeof ParameterExtractor>;
 const mockNodeErrorHandler = NodeErrorHandler as jest.Mocked<typeof NodeErrorHandler>;
-
 
 describe('RosTopicPublish', () => {
     let node: RosTopicPublish;
@@ -77,9 +76,7 @@ describe('RosTopicPublish', () => {
                 const result = await node.methods.listSearch.getDetectedType.call(mockLoadOptionsFunctions, 'std');
 
                 expect(result).toEqual({
-                    results: [
-                        { name: 'Detected: std_msgs/String', value: 'std_msgs/String' },
-                    ],
+                    results: [{ name: 'Detected: std_msgs/String', value: 'std_msgs/String' }],
                 });
                 expect(mockRosApiService.getTopicType).toHaveBeenCalledWith(expect.anything(), '/topic1');
             });
@@ -173,11 +170,7 @@ describe('RosTopicPublish', () => {
             });
 
             expect(mockRosBridgeService.connect).toHaveBeenCalled();
-            expect(mockRosBridgeService.advertiseTopic).toHaveBeenCalledWith(
-                {},
-                '/chatter',
-                'std_msgs/msg/String',
-            );
+            expect(mockRosBridgeService.advertiseTopic).toHaveBeenCalledWith({}, '/chatter', 'std_msgs/msg/String');
             expect(mockRosBridgeService.publishTopic).not.toHaveBeenCalled();
         });
 
@@ -192,7 +185,8 @@ describe('RosTopicPublish', () => {
                     if (name === 'messageType') return 'std_msgs/msg/String';
                     if (name === 'messageInputMode') return 'raw';
                     if (name === 'messageJson') return '{"data":"Hello ROS!"}';
-                    if (name === 'options') return { discoveryDelay: 1000, burstOption: true, burstNumber: 3, burstWait: 200 };
+                    if (name === 'options')
+                        return { discoveryDelay: 1000, burstOption: true, burstNumber: 3, burstWait: 200 };
                     return undefined;
                 }),
             } as unknown as IExecuteFunctions;
@@ -394,10 +388,7 @@ describe('RosTopicPublish', () => {
             // @ts-ignore
             await node.methods.listSearch.getTopicsList.call(mockLoadOptionsFunctions);
 
-            expect(mockRosN8nFormatter.formatTopicListForN8n).toHaveBeenCalledWith(
-                ['/mani/cmd_vel'],
-                undefined,
-            );
+            expect(mockRosN8nFormatter.formatTopicListForN8n).toHaveBeenCalledWith(['/mani/cmd_vel'], undefined);
         });
     });
 

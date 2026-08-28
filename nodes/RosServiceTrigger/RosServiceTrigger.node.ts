@@ -1,9 +1,4 @@
-import type {
-    INodeType,
-    INodeTypeDescription,
-    ITriggerFunctions,
-    ITriggerResponse,
-} from 'n8n-workflow';
+import type { INodeType, INodeTypeDescription, ITriggerFunctions, ITriggerResponse } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';

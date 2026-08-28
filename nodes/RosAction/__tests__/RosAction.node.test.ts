@@ -185,12 +185,7 @@ describe('RosAction', () => {
             }),
         );
 
-        expect(mockActionService.waitForStatus).toHaveBeenCalledWith(
-            expect.anything(),
-            '/fibonacci',
-            5000,
-            undefined,
-        );
+        expect(mockActionService.waitForStatus).toHaveBeenCalledWith(expect.anything(), '/fibonacci', 5000, undefined);
         expect(result[0][0].json.goals).toHaveLength(1);
     });
 

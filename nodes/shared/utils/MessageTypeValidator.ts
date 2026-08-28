@@ -32,12 +32,7 @@ export class MessageTypeValidator {
      * Validates and coerces `payload` against the expanded ROS type `def`.
      * Returns a new, coerced payload. Throws on any type mismatch.
      */
-    static validate(
-        payload: unknown,
-        def: ExpandedTypeDef,
-        ctx: IExecuteFunctions,
-        itemIndex: number,
-    ): JsonRecord {
+    static validate(payload: unknown, def: ExpandedTypeDef, ctx: IExecuteFunctions, itemIndex: number): JsonRecord {
         // The root path is empty; top-level fields render as "data" rather than
         // "message.data", and root-level errors fall back to "message".
         const result = this.validateNode(payload, def, '', ctx, itemIndex);
@@ -107,9 +102,7 @@ export class MessageTypeValidator {
         if (innerDef === undefined) {
             return arr;
         }
-        return arr.map((element, index) =>
-            this.validateNode(element, innerDef, `${path}[${index}]`, ctx, itemIndex),
-        );
+        return arr.map((element, index) => this.validateNode(element, innerDef, `${path}[${index}]`, ctx, itemIndex));
     }
 
     private static validateStruct(
@@ -151,7 +144,13 @@ export class MessageTypeValidator {
                     const parsed = Number(value.trim());
                     if (!Number.isNaN(parsed)) return parsed;
                 }
-                throw this.error(path, `expects a number (ROS type "${rosType}"), but received ${this.describe(value)}`, rosType, ctx, itemIndex);
+                throw this.error(
+                    path,
+                    `expects a number (ROS type "${rosType}"), but received ${this.describe(value)}`,
+                    rosType,
+                    ctx,
+                    itemIndex,
+                );
             }
             case 'boolean': {
                 if (typeof value === 'boolean') return value;
@@ -160,11 +159,23 @@ export class MessageTypeValidator {
                     if (normalized === 'true') return true;
                     if (normalized === 'false') return false;
                 }
-                throw this.error(path, `expects a boolean (ROS type "${rosType}"), but received ${this.describe(value)}`, rosType, ctx, itemIndex);
+                throw this.error(
+                    path,
+                    `expects a boolean (ROS type "${rosType}"), but received ${this.describe(value)}`,
+                    rosType,
+                    ctx,
+                    itemIndex,
+                );
             }
             case 'string': {
                 if (typeof value === 'string') return value;
-                throw this.error(path, `expects a string (ROS type "${rosType}"), but received ${this.describe(value)}`, rosType, ctx, itemIndex);
+                throw this.error(
+                    path,
+                    `expects a string (ROS type "${rosType}"), but received ${this.describe(value)}`,
+                    rosType,
+                    ctx,
+                    itemIndex,
+                );
             }
             default:
                 // Unresolved/opaque type (e.g. time/duration or a type rosapi

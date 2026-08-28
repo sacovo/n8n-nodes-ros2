@@ -71,16 +71,9 @@ const mockRos = {} as unknown as Ros;
 
 const advertise = (
     serverName: string,
-    onGoal: (goal: JsonRecord, goalId: string) => void = () => { },
-    onCancel: (goalId: string) => void = () => { },
-) =>
-    RosActionServerService.advertise(
-        mockRos,
-        serverName,
-        'example_interfaces/action/Fibonacci',
-        onGoal,
-        onCancel,
-    );
+    onGoal: (goal: JsonRecord, goalId: string) => void = () => {},
+    onCancel: (goalId: string) => void = () => {},
+) => RosActionServerService.advertise(mockRos, serverName, 'example_interfaces/action/Fibonacci', onGoal, onCancel);
 
 describe('RosActionServerService', () => {
     beforeEach(() => {
@@ -120,9 +113,7 @@ describe('RosActionServerService', () => {
 
         server.receiveGoal('goal_fb', {});
         RosActionServerService.sendFeedback('goal_fb', { partial_sequence: [0, 1] });
-        expect(server.feedback).toEqual([
-            { goalId: 'goal_fb', feedback: { partial_sequence: [0, 1] } },
-        ]);
+        expect(server.feedback).toEqual([{ goalId: 'goal_fb', feedback: { partial_sequence: [0, 1] } }]);
 
         server.receiveGoal('goal_ok', {});
         RosActionServerService.setSucceeded('goal_ok', { sequence: [0, 1, 1] });
@@ -157,9 +148,7 @@ describe('RosActionServerService', () => {
         const server = FakeAction.instances[0];
         server.receiveGoal('goal_1', { order: 5 });
 
-        expect(() =>
-            RosActionServerService.sendFeedback('goal_1', { partial_sequence: [1] }),
-        ).not.toThrow();
+        expect(() => RosActionServerService.sendFeedback('goal_1', { partial_sequence: [1] })).not.toThrow();
 
         teardown();
 

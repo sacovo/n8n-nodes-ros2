@@ -277,5 +277,4 @@ describe('RosBridgeService', () => {
             expect(FakeRos.instances[0].closeCalls).toBe(1);
         });
     });
-
 });

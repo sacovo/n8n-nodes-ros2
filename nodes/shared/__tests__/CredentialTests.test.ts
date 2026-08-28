@@ -4,10 +4,7 @@
  * exercise only the OK / Error mapping logic.
  */
 
-import type {
-    ICredentialsDecrypted,
-    ICredentialTestFunctions,
-} from 'n8n-workflow';
+import type { ICredentialsDecrypted, ICredentialTestFunctions } from 'n8n-workflow';
 
 import { rosBridgeApiTest, dockerApiTest } from '../utils/CredentialTests';
 import { RosBridgeService } from '../services/RosBridgeService';
@@ -108,9 +105,7 @@ describe('dockerApiTest', () => {
 
         expect(result.status).toBe('OK');
         expect(ping).toHaveBeenCalled();
-        expect(MockedDocker).toHaveBeenCalledWith(
-            expect.objectContaining({ socketPath: '/var/run/docker.sock' }),
-        );
+        expect(MockedDocker).toHaveBeenCalledWith(expect.objectContaining({ socketPath: '/var/run/docker.sock' }));
     });
 
     it('returns Error when ping fails', async () => {

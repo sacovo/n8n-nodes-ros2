@@ -24,9 +24,7 @@ export class NodeErrorHandler {
         // the regular workflow engine, whose ExecuteContext hardcodes it to
         // false. The generated *Tool node variant is still recognizable
         // there by its single ai_tool output.
-        return executeFunctions
-            .getNodeOutputs()
-            .some((output) => output.type === NodeConnectionTypes.AiTool);
+        return executeFunctions.getNodeOutputs().some((output) => output.type === NodeConnectionTypes.AiTool);
     }
 
     /**

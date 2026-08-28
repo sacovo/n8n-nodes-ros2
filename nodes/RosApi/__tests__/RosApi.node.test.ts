@@ -382,9 +382,12 @@ describe('RosApi', () => {
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getTopics.mockRejectedValue(new Error('rosbridge unreachable'));
             // Use the real decision logic so tool executions actually take the soft-fail path
-            const { NodeErrorHandler: realNodeErrorHandler } =
-                jest.requireActual<typeof import('../../shared/utils/NodeErrorHandler')>('../../shared/utils/NodeErrorHandler');
-            mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation(realNodeErrorHandler.shouldReturnErrorOutput);
+            const { NodeErrorHandler: realNodeErrorHandler } = jest.requireActual<
+                typeof import('../../shared/utils/NodeErrorHandler')
+            >('../../shared/utils/NodeErrorHandler');
+            mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation(
+                realNodeErrorHandler.shouldReturnErrorOutput,
+            );
             mockNodeErrorHandler.buildErrorOutput.mockImplementation(realNodeErrorHandler.buildErrorOutput);
 
             const result = await node.execute.call(mockExecuteFunctions);
@@ -432,24 +435,28 @@ describe('RosApi', () => {
                 throw new Error((error as { message: string }).message);
             });
 
-            await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow('Unsupported operation: unsupported_operation:topic!');
+            await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow(
+                'Unsupported operation: unsupported_operation:topic!',
+            );
             expect(mockNodeErrorHandler.handle).toHaveBeenCalled();
         });
 
         it('should support all operations defined in the node properties', async () => {
-            const resourceProperty = node.description.properties.find(p => p.name === 'resource');
+            const resourceProperty = node.description.properties.find((p) => p.name === 'resource');
             /* eslint-disable  @typescript-eslint/no-explicit-any */
-            const resourceOptions = resourceProperty?.options?.map(o => (o as any).value as string) || [];
+            const resourceOptions = resourceProperty?.options?.map((o) => (o as any).value as string) || [];
 
-            const combinations: { resource: string, operation: string }[] = [];
+            const combinations: { resource: string; operation: string }[] = [];
 
             for (const resource of resourceOptions) {
                 const operationProperties = node.description.properties.filter(
-                    p => p.name === 'operation' && (p.displayOptions?.show?.resource as string[] | undefined)?.includes(resource)
+                    (p) =>
+                        p.name === 'operation' &&
+                        (p.displayOptions?.show?.resource as string[] | undefined)?.includes(resource),
                 );
                 for (const opProp of operationProperties) {
                     /* eslint-disable  @typescript-eslint/no-explicit-any */
-                    const opOptions = opProp.options?.map(o => (o as any).value as string) || [];
+                    const opOptions = opProp.options?.map((o) => (o as any).value as string) || [];
                     for (const operation of opOptions) {
                         combinations.push({ resource, operation });
                     }
@@ -497,7 +504,9 @@ describe('RosApi', () => {
                     await node.execute.call(mockExecuteFunctions);
                 } catch (e: any) {
                     if (e.message && e.message.includes('Unsupported operation')) {
-                        throw new Error(`Combination missing in runOperation switch statement: ${operation}:${resource}`);
+                        throw new Error(
+                            `Combination missing in runOperation switch statement: ${operation}:${resource}`,
+                        );
                     }
                     // Ignore parameter validation errors
                 }
@@ -538,7 +547,11 @@ describe('RosApi', () => {
                 rawDefinition: 'Vector3 linear # m/s',
             });
             expect(mockRosApiService.getInterfaceDescription).toHaveBeenCalledWith(expect.anything(), '/cmd_vel');
-            expect(mockRosApiService.getTopicRawDefinition).toHaveBeenCalledWith(expect.anything(), '/cmd_vel', 'geometry_msgs/msg/Twist');
+            expect(mockRosApiService.getTopicRawDefinition).toHaveBeenCalledWith(
+                expect.anything(),
+                '/cmd_vel',
+                'geometry_msgs/msg/Twist',
+            );
         });
 
         it('should not fetch documentation on getType:topic when the options are off', async () => {
@@ -629,7 +642,7 @@ describe('RosApi', () => {
                     fieldtypes: ['string'],
                     fieldarraylen: [-1],
                     examples: [],
-                }
+                },
             ]);
             mockRosApiService.expandRootTypeDef.mockReturnValue({ data: 'string' });
 
@@ -660,9 +673,7 @@ describe('RosApi', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getNodeDefinition.mockResolvedValue({
-                publishing: [
-                    { name: '/chatter', type: 'std_msgs/msg/String', definition: { data: 'string' } },
-                ],
+                publishing: [{ name: '/chatter', type: 'std_msgs/msg/String', definition: { data: 'string' } }],
                 subscribing: [],
                 services: [
                     {
@@ -689,9 +700,7 @@ describe('RosApi', () => {
                 operation: 'getDefinition',
                 resource: 'node',
                 nodeName: '/talker',
-                publishing: [
-                    { name: '/chatter', type: 'std_msgs/msg/String', definition: { data: 'string' } },
-                ],
+                publishing: [{ name: '/chatter', type: 'std_msgs/msg/String', definition: { data: 'string' } }],
                 subscribing: [],
                 services: [
                     {
@@ -737,11 +746,13 @@ describe('RosApi', () => {
                 if (name === 'messageType') return 'std_srvs/Trigger';
                 return undefined;
             });
-            
+
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getServiceRequestDetails.mockResolvedValue([]);
             mockRosApiService.getServiceResponseDetails.mockResolvedValue([]);
-            mockRosApiService.expandRootTypeDef.mockReturnValueOnce({}).mockReturnValueOnce({ success: 'bool', message: 'string' });
+            mockRosApiService.expandRootTypeDef
+                .mockReturnValueOnce({})
+                .mockReturnValueOnce({ success: 'bool', message: 'string' });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -814,7 +825,9 @@ describe('RosApi', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getActionType.mockResolvedValue('test_msgs/action/Fibonacci');
-            mockRosApiService.getInterfaceDescription.mockResolvedValue('Computes the Fibonacci sequence up to the given order');
+            mockRosApiService.getInterfaceDescription.mockResolvedValue(
+                'Computes the Fibonacci sequence up to the given order',
+            );
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -860,9 +873,9 @@ describe('RosApi', () => {
                 getCredentials: jest.fn().mockResolvedValue({ readOnly: true }),
                 continueOnFail: jest.fn().mockReturnValue(false),
                 getNode: jest.fn().mockReturnValue({ name: 'ROS2 API', type: 'rosApi' }),
-                getNodeParameter: jest.fn().mockImplementation((name: string) =>
-                    name in parameters ? parameters[name] : false,
-                ),
+                getNodeParameter: jest
+                    .fn()
+                    .mockImplementation((name: string) => (name in parameters ? parameters[name] : false)),
             }) as unknown as IExecuteFunctions;
 
         /** The resourceLocator pair the parameter operations read. */
@@ -935,9 +948,9 @@ describe('RosApi', () => {
                 getCredentials: jest.fn().mockResolvedValue({}),
                 continueOnFail: jest.fn().mockReturnValue(false),
                 getNode: jest.fn().mockReturnValue({ name: 'ROS2 API', type: 'rosApi' }),
-                getNodeParameter: jest.fn().mockImplementation((name: string) =>
-                    name in parameters ? parameters[name] : false,
-                ),
+                getNodeParameter: jest
+                    .fn()
+                    .mockImplementation((name: string) => (name in parameters ? parameters[name] : false)),
             }) as unknown as IExecuteFunctions;
 
         beforeEach(() => {

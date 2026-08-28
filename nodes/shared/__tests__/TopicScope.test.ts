@@ -3,13 +3,7 @@
  */
 
 import type { IExecuteFunctions } from 'n8n-workflow';
-import {
-    assertInScope,
-    filterByScope,
-    isInScope,
-    normalizeRosName,
-    parseTopicScope,
-} from '../utils/TopicScope';
+import { assertInScope, filterByScope, isInScope, normalizeRosName, parseTopicScope } from '../utils/TopicScope';
 
 describe('TopicScope', () => {
     describe('normalizeRosName', () => {
@@ -113,9 +107,9 @@ describe('TopicScope', () => {
         });
 
         it('should throw naming the topic and the allowed namespaces', () => {
-            expect(() =>
-                assertInScope(executeFunctions, '/cmd_vel', ['/mani', '/any-safe-system'], 0),
-            ).toThrow(/\/cmd_vel.*\/mani, \/any-safe-system/);
+            expect(() => assertInScope(executeFunctions, '/cmd_vel', ['/mani', '/any-safe-system'], 0)).toThrow(
+                /\/cmd_vel.*\/mani, \/any-safe-system/,
+            );
         });
     });
 });

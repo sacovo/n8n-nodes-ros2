@@ -16,16 +16,12 @@ describe('RosN8nFormatter', () => {
 
         it('should filter topic list', () => {
             const result = RosN8nFormatter.formatTopicListForN8n(topics, 'sensor');
-            expect(result).toEqual([
-                { name: '/sensor_data', value: '/sensor_data' },
-            ]);
+            expect(result).toEqual([{ name: '/sensor_data', value: '/sensor_data' }]);
         });
 
         it('should perform case-insensitive filtering', () => {
             const result = RosN8nFormatter.formatTopicListForN8n(topics, 'ODOM');
-            expect(result).toEqual([
-                { name: '/odom', value: '/odom' },
-            ]);
+            expect(result).toEqual([{ name: '/odom', value: '/odom' }]);
         });
 
         it('should return empty array if no match', () => {
@@ -36,9 +32,7 @@ describe('RosN8nFormatter', () => {
         it('should handle undefined or null topics', () => {
             /* eslint-disable  @typescript-eslint/no-explicit-any */
             const result = RosN8nFormatter.formatTopicListForN8n(['/topic', null as any, undefined as any, '']);
-            expect(result).toEqual([
-                { name: '/topic', value: '/topic' },
-            ]);
+            expect(result).toEqual([{ name: '/topic', value: '/topic' }]);
         });
     });
 
@@ -147,9 +141,7 @@ describe('RosN8nFormatter', () => {
 
         it('should perform case-insensitive filtering', () => {
             const result = RosN8nFormatter.formatServiceListForN8n(services, 'MAP');
-            expect(result).toEqual([
-                { name: '/get_map', value: '/get_map' },
-            ]);
+            expect(result).toEqual([{ name: '/get_map', value: '/get_map' }]);
         });
 
         it('should return empty array if no match', () => {

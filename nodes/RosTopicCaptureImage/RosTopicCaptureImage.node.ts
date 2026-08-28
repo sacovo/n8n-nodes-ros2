@@ -1,9 +1,4 @@
-import type {
-    IExecuteFunctions,
-    INodeExecutionData,
-    INodeType,
-    INodeTypeDescription,
-} from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
@@ -28,7 +23,8 @@ export class RosTopicCaptureImage implements INodeType {
         },
         usableAsTool: {
             replacements: {
-                description: 'Capture a single compressed image (JPEG/PNG) from a ROS2 image topic and return it as a binary file. Use this when the agent needs to see what a camera currently sees, e.g. for visual inspection or scene description.',
+                description:
+                    'Capture a single compressed image (JPEG/PNG) from a ROS2 image topic and return it as a binary file. Use this when the agent needs to see what a camera currently sees, e.g. for visual inspection or scene description.',
             },
         },
         inputs: [NodeConnectionTypes.Main],
@@ -72,7 +68,8 @@ export class RosTopicCaptureImage implements INodeType {
                 type: 'resourceLocator',
                 default: { mode: 'id', value: 'sensor_msgs/msg/CompressedImage' },
                 required: true,
-                description: 'The ROS 2 message type (e.g. sensor_msgs/msg/CompressedImage). "Detected" mode will automatically fetch the type from the selected topic.',
+                description:
+                    'The ROS 2 message type (e.g. sensor_msgs/msg/CompressedImage). "Detected" mode will automatically fetch the type from the selected topic.',
                 typeOptions: {
                     loadOptionsDependsOn: ['topicName'],
                 },
@@ -154,9 +151,7 @@ export class RosTopicCaptureImage implements INodeType {
         },
         listSearch: {
             getTopicsList: topicListSearch(),
-            getDetectedType: detectedTypeSearch('topicName', (ros, topic) =>
-                RosApiService.getTopicType(ros, topic),
-            ),
+            getDetectedType: detectedTypeSearch('topicName', (ros, topic) => RosApiService.getTopicType(ros, topic)),
         },
     };
 
@@ -167,13 +162,12 @@ export class RosTopicCaptureImage implements INodeType {
         for (let i = 0; i < items.length; i++) {
             let ros;
             try {
-                const credentials = await this.getCredentials('rosBridgeApi') as unknown as RosBridgeCredentials;
+                const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
 
                 const topicNameLocator = this.getNodeParameter('topicName', i, {
                     extractValue: true,
                 }) as { value: string } | string;
-                const topicName =
-                    typeof topicNameLocator === 'string' ? topicNameLocator : topicNameLocator?.value;
+                const topicName = typeof topicNameLocator === 'string' ? topicNameLocator : topicNameLocator?.value;
 
                 const messageTypeLocator = this.getNodeParameter('messageType', i, {
                     extractValue: true,
@@ -187,19 +181,16 @@ export class RosTopicCaptureImage implements INodeType {
                 ros = await RosBridgeService.connect(credentials);
 
                 // Wait for next message
-                const result = await RosBridgeService.waitForTopicMessage(
-                    ros,
-                    topicName,
-                    messageType,
-                    timeoutMs,
-                );
+                const result = await RosBridgeService.waitForTopicMessage(ros, topicName, messageType, timeoutMs);
 
                 const dataStr = result.data as string;
                 if (!dataStr) {
-                    throw new NodeOperationError(this.getNode(), 'Image message data is empty or missing.', { itemIndex: i });
+                    throw new NodeOperationError(this.getNode(), 'Image message data is empty or missing.', {
+                        itemIndex: i,
+                    });
                 }
 
-                const rawFormat = (result.format as string || 'jpeg').toLowerCase();
+                const rawFormat = ((result.format as string) || 'jpeg').toLowerCase();
 
                 let buffer: Buffer = Buffer.from(dataStr, 'base64');
                 // Format that drives the mime type / file extension. Starts from
@@ -242,11 +233,7 @@ export class RosTopicCaptureImage implements INodeType {
                 }
                 const fileName = `image_${Date.now()}.${fileExtension}`;
 
-                const binaryData = await this.helpers.prepareBinaryData(
-                    buffer,
-                    fileName,
-                    mimeType,
-                );
+                const binaryData = await this.helpers.prepareBinaryData(buffer, fileName, mimeType);
 
                 returnData.push({
                     json: {

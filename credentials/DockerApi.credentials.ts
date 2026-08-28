@@ -133,7 +133,8 @@ export class DockerApi implements ICredentialType {
             name: 'readOnly',
             type: 'boolean',
             default: false,
-            description: 'Whether this credential may only inspect Docker. Listing containers and reading logs stay available; starting, stopping and restarting a container and executing commands inside one fail with an error.',
+            description:
+                'Whether this credential may only inspect Docker. Listing containers and reading logs stay available; starting, stopping and restarting a container and executing commands inside one fail with an error.',
         },
     ];
 }

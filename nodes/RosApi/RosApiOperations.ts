@@ -37,7 +37,7 @@ function matchesPattern(text: string, pattern: string): boolean {
 /** Reads a resourceLocator parameter that may also be a plain string. */
 function extractLocator(node: IExecuteFunctions, itemIndex: number, name: string): string {
     const locator = node.getNodeParameter(name, itemIndex, '') as { mode?: string; value?: string } | string;
-    const value = typeof locator === 'string' ? locator : locator?.value ?? '';
+    const value = typeof locator === 'string' ? locator : (locator?.value ?? '');
     return typeof value === 'string' ? value.trim() : '';
 }
 
@@ -80,268 +80,254 @@ export async function runOperation(
 ) {
     const actionKey: `${RosOperation}:${RosResource}` = `${operation}:${resource}`;
     switch (actionKey) {
-        case 'list:topic':
-            {
-                const topicsResult = await RosApiService.getTopics(ros);
-                let topics = topicsResult.topics;
-                let types = topicsResult.types;
-                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
-                if (grep) {
-                    const filteredTopics: string[] = [];
-                    const filteredTypes: string[] = [];
-                    for (let idx = 0; idx < topics.length; idx++) {
-                        const topic = topics[idx];
-                        const type = types[idx];
-                        if (matchesPattern(topic, grep) || (type && matchesPattern(type, grep))) {
-                            filteredTopics.push(topic);
-                            if (types.length > idx) {
-                                filteredTypes.push(type);
-                            }
+        case 'list:topic': {
+            const topicsResult = await RosApiService.getTopics(ros);
+            let topics = topicsResult.topics;
+            let types = topicsResult.types;
+            const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+            if (grep) {
+                const filteredTopics: string[] = [];
+                const filteredTypes: string[] = [];
+                for (let idx = 0; idx < topics.length; idx++) {
+                    const topic = topics[idx];
+                    const type = types[idx];
+                    if (matchesPattern(topic, grep) || (type && matchesPattern(type, grep))) {
+                        filteredTopics.push(topic);
+                        if (types.length > idx) {
+                            filteredTypes.push(type);
                         }
                     }
-                    topics = filteredTopics;
-                    types = filteredTypes;
                 }
-                const combineTopicsAndTypes = node.getNodeParameter('combineTopicsAndTypes', itemIndex, false) as boolean;
-                if (combineTopicsAndTypes) {
-                    return {
-                        topics: topics.map((topic, idx) => ({ name: topic, type: types[idx] })),
-                    };
-                }
+                topics = filteredTopics;
+                types = filteredTypes;
+            }
+            const combineTopicsAndTypes = node.getNodeParameter('combineTopicsAndTypes', itemIndex, false) as boolean;
+            if (combineTopicsAndTypes) {
                 return {
-                    topics,
-                    types,
+                    topics: topics.map((topic, idx) => ({ name: topic, type: types[idx] })),
                 };
             }
-        case 'list:service':
-            {
-                let services = await RosApiService.getServices(ros);
-                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
-                if (grep) {
-                    services = services.filter(service => matchesPattern(service, grep));
-                }
-                return {
-                    services,
-                };
+            return {
+                topics,
+                types,
+            };
+        }
+        case 'list:service': {
+            let services = await RosApiService.getServices(ros);
+            const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+            if (grep) {
+                services = services.filter((service) => matchesPattern(service, grep));
             }
-        case 'list:node':
-            {
-                let nodes = await RosApiService.getNodes(ros);
-                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
-                if (grep) {
-                    nodes = nodes.filter(n => matchesPattern(n, grep));
-                }
-                return {
-                    nodes,
-                };
+            return {
+                services,
+            };
+        }
+        case 'list:node': {
+            let nodes = await RosApiService.getNodes(ros);
+            const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+            if (grep) {
+                nodes = nodes.filter((n) => matchesPattern(n, grep));
             }
-        case 'list:action':
-            {
-                let actionServers = await RosApiService.getActionServers(ros);
-                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
-                if (grep) {
-                    actionServers = actionServers.filter(action => matchesPattern(action, grep));
-                }
-                return {
-                    actionServers,
-                };
+            return {
+                nodes,
+            };
+        }
+        case 'list:action': {
+            let actionServers = await RosApiService.getActionServers(ros);
+            const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+            if (grep) {
+                actionServers = actionServers.filter((action) => matchesPattern(action, grep));
             }
-        case 'list:parameter':
-            {
-                let parameters = await RosApiService.getParams(ros);
-                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
-                if (grep) {
-                    parameters = parameters.filter(param => matchesPattern(param, grep));
-                }
-                return {
-                    parameters,
-                };
+            return {
+                actionServers,
+            };
+        }
+        case 'list:parameter': {
+            let parameters = await RosApiService.getParams(ros);
+            const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+            if (grep) {
+                parameters = parameters.filter((param) => matchesPattern(param, grep));
             }
-        case 'getType:topic':
-            {
+            return {
+                parameters,
+            };
+        }
+        case 'getType:topic': {
+            const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
+            const topicType = await RosApiService.getTopicType(ros, topicName);
+            const result: Record<string, unknown> = {
+                topicName,
+                topicType,
+            };
+            if (node.getNodeParameter('includeDescription', itemIndex, false) as boolean) {
+                result.description = await RosApiService.getInterfaceDescription(ros, topicName);
+            }
+            if (node.getNodeParameter('includeRawDefinition', itemIndex, false) as boolean) {
+                result.rawDefinition = await RosApiService.getTopicRawDefinition(ros, topicName, topicType);
+            }
+            return result;
+        }
+        case 'getDetails:node': {
+            const nodeName = ParameterExtractor.extractRequiredString(node, itemIndex, 'nodeName');
+            const nodeDetails = await RosApiService.getNodeDetails(ros, nodeName);
+            return {
+                nodeName,
+                ...nodeDetails,
+            };
+        }
+        case 'get:parameter': {
+            const parameterName = resolveParameterName(node, itemIndex);
+            const parameterValue = await RosApiService.getParam(ros, parameterName);
+            return {
+                parameterName,
+                parameterValue,
+            };
+        }
+        case 'set:parameter': {
+            const parameterName = resolveParameterName(node, itemIndex);
+            const parameterValueRaw = ParameterExtractor.extractRequiredString(node, itemIndex, 'parameterValue');
+            let parameterValue: unknown;
+            try {
+                parameterValue = JSON.parse(parameterValueRaw);
+            } catch {
+                // If parsing fails, treat it as a string
+                parameterValue = parameterValueRaw;
+            }
+            await RosApiService.setParam(ros, parameterName, parameterValue);
+            return {
+                parameterName,
+                parameterValue,
+                status: 'success',
+            };
+        }
+        case 'getType:service': {
+            const serviceName = ParameterExtractor.extractRequiredString(node, itemIndex, 'serviceName');
+            const serviceType = await RosApiService.getServiceType(ros, serviceName);
+            const result: Record<string, unknown> = {
+                serviceName,
+                serviceType,
+            };
+            if (node.getNodeParameter('includeDescription', itemIndex, false) as boolean) {
+                result.description = await RosApiService.getInterfaceDescription(ros, serviceName);
+            }
+            return result;
+        }
+        case 'getType:action': {
+            const actionName = ParameterExtractor.extractRequiredString(node, itemIndex, 'actionName');
+            const actionType = await RosApiService.getActionType(ros, actionName);
+            if (!actionType) {
+                throw new NodeApiError(node.getNode(), {
+                    message: `Could not determine the action type of ${actionName}. Is the action server running?`,
+                });
+            }
+            const result: Record<string, unknown> = {
+                actionName,
+                actionType,
+            };
+            if (node.getNodeParameter('includeDescription', itemIndex, false) as boolean) {
+                result.description = await RosApiService.getInterfaceDescription(ros, actionName);
+            }
+            return result;
+        }
+        case 'getDefinition:topic': {
+            let messageType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
+            if (!messageType) {
                 const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
-                const topicType = await RosApiService.getTopicType(ros, topicName);
-                const result: Record<string, unknown> = {
-                    topicName,
-                    topicType,
-                };
-                if (node.getNodeParameter('includeDescription', itemIndex, false) as boolean) {
-                    result.description = await RosApiService.getInterfaceDescription(ros, topicName);
-                }
-                if (node.getNodeParameter('includeRawDefinition', itemIndex, false) as boolean) {
-                    result.rawDefinition = await RosApiService.getTopicRawDefinition(ros, topicName, topicType);
-                }
-                return result;
+                messageType = await RosApiService.getTopicType(ros, topicName);
             }
-        case 'getDetails:node':
-            {
-                const nodeName = ParameterExtractor.extractRequiredString(node, itemIndex, 'nodeName');
-                const nodeDetails = await RosApiService.getNodeDetails(ros, nodeName);
-                return {
-                    nodeName,
-                    ...nodeDetails,
-                };
-            }
-        case 'get:parameter':
-            {
-                const parameterName = resolveParameterName(node, itemIndex);
-                const parameterValue = await RosApiService.getParam(ros, parameterName);
-                return {
-                    parameterName,
-                    parameterValue,
-                };
-            }
-        case 'set:parameter':
-            {
-                const parameterName = resolveParameterName(node, itemIndex);
-                const parameterValueRaw = ParameterExtractor.extractRequiredString(node, itemIndex, 'parameterValue');
-                let parameterValue: unknown;
-                try {
-                    parameterValue = JSON.parse(parameterValueRaw);
-                } catch {
-                    // If parsing fails, treat it as a string
-                    parameterValue = parameterValueRaw;
-                }
-                await RosApiService.setParam(ros, parameterName, parameterValue);
-                return {
-                    parameterName,
-                    parameterValue,
-                    status: 'success',
-                };
-            }
-        case 'getType:service':
-            {
+            const typedefs = await RosApiService.getMessageDetails(ros, messageType as string);
+            const definition = RosApiService.expandRootTypeDef(messageType as string, typedefs);
+            return {
+                messageType,
+                definition,
+            };
+        }
+        case 'getDefinition:service': {
+            let serviceType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
+            if (!serviceType) {
                 const serviceName = ParameterExtractor.extractRequiredString(node, itemIndex, 'serviceName');
-                const serviceType = await RosApiService.getServiceType(ros, serviceName);
-                const result: Record<string, unknown> = {
-                    serviceName,
-                    serviceType,
-                };
-                if (node.getNodeParameter('includeDescription', itemIndex, false) as boolean) {
-                    result.description = await RosApiService.getInterfaceDescription(ros, serviceName);
-                }
-                return result;
+                serviceType = await RosApiService.getServiceType(ros, serviceName);
             }
-        case 'getType:action':
-            {
-                const actionName = ParameterExtractor.extractRequiredString(node, itemIndex, 'actionName');
-                const actionType = await RosApiService.getActionType(ros, actionName);
-                if (!actionType) {
-                    throw new NodeApiError(node.getNode(), { message: `Could not determine the action type of ${actionName}. Is the action server running?` });
+            const [requestDetails, responseDetails] = await Promise.all([
+                RosApiService.getServiceRequestDetails(ros, serviceType as string),
+                RosApiService.getServiceResponseDetails(ros, serviceType as string),
+            ]);
+            return {
+                serviceType,
+                request: RosApiService.expandRootTypeDef(serviceType as string, requestDetails),
+                response: RosApiService.expandRootTypeDef(serviceType as string, responseDetails),
+            };
+        }
+        case 'getDefinition:action': {
+            let actionType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
+            if (!actionType) {
+                const actionName = ParameterExtractor.extractOptionalString(node, itemIndex, 'actionName');
+                if (actionName) {
+                    actionType = await RosApiService.getActionType(ros, actionName);
                 }
-                const result: Record<string, unknown> = {
-                    actionName,
-                    actionType,
-                };
-                if (node.getNodeParameter('includeDescription', itemIndex, false) as boolean) {
-                    result.description = await RosApiService.getInterfaceDescription(ros, actionName);
-                }
-                return result;
             }
-        case 'getDefinition:topic':
-            {
-                let messageType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
-                if (!messageType) {
-                    const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
-                    messageType = await RosApiService.getTopicType(ros, topicName);
-                }
-                const typedefs = await RosApiService.getMessageDetails(ros, messageType as string);
-                const definition = RosApiService.expandRootTypeDef(messageType as string, typedefs);
-                return {
-                    messageType,
-                    definition,
-                };
+            if (!actionType) {
+                throw new NodeApiError(node.getNode(), {
+                    message: 'Provide either Action Name or Message Type for getDefinition:action',
+                });
             }
-        case 'getDefinition:service':
-            {
-                let serviceType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
-                if (!serviceType) {
-                    const serviceName = ParameterExtractor.extractRequiredString(node, itemIndex, 'serviceName');
-                    serviceType = await RosApiService.getServiceType(ros, serviceName);
-                }
-                const [requestDetails, responseDetails] = await Promise.all([
-                    RosApiService.getServiceRequestDetails(ros, serviceType as string),
-                    RosApiService.getServiceResponseDetails(ros, serviceType as string),
-                ]);
-                return {
-                    serviceType,
-                    request: RosApiService.expandRootTypeDef(serviceType as string, requestDetails),
-                    response: RosApiService.expandRootTypeDef(serviceType as string, responseDetails),
-                };
-            }
-        case 'getDefinition:action':
-            {
-                let actionType = ParameterExtractor.extractOptionalString(node, itemIndex, 'messageType');
-                if (!actionType) {
-                    const actionName = ParameterExtractor.extractOptionalString(node, itemIndex, 'actionName');
-                    if (actionName) {
-                        actionType = await RosApiService.getActionType(ros, actionName);
-                    }
-                }
-                if (!actionType) {
-                    throw new NodeApiError(node.getNode(), { message: 'Provide either Action Name or Message Type for getDefinition:action' });
-                }
-                const [goalDetails, resultDetails, feedbackDetails] = await Promise.all([
-                    RosApiService.getActionGoalDetails(ros, actionType as string),
-                    RosApiService.getActionResultDetails(ros, actionType as string),
-                    RosApiService.getActionFeedbackDetails(ros, actionType as string),
-                ]);
+            const [goalDetails, resultDetails, feedbackDetails] = await Promise.all([
+                RosApiService.getActionGoalDetails(ros, actionType as string),
+                RosApiService.getActionResultDetails(ros, actionType as string),
+                RosApiService.getActionFeedbackDetails(ros, actionType as string),
+            ]);
 
-                return {
-                    actionType,
-                    goal: RosApiService.expandRootTypeDef(actionType as string, goalDetails),
-                    result: RosApiService.expandRootTypeDef(actionType as string, resultDetails),
-                    feedback: RosApiService.expandRootTypeDef(actionType as string, feedbackDetails),
-                };
-            }
-        case 'getDefinition:node':
-            {
-                const nodeName = ParameterExtractor.extractRequiredString(node, itemIndex, 'nodeName');
-                const nodeDefinition = await RosApiService.getNodeDefinition(ros, nodeName);
-                return {
-                    nodeName,
-                    ...nodeDefinition,
-                };
-            }
-        case 'getDetails:topic':
-            {
-                const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
-                // message_details expects a type, so resolve the topic's type first
-                const topicType = await RosApiService.getTopicType(ros, topicName);
-                const typedefs = await RosApiService.getMessageDetails(ros, topicType);
-                return {
-                    topicName,
-                    topicType,
-                    typedefs,
-                };
-            }
+            return {
+                actionType,
+                goal: RosApiService.expandRootTypeDef(actionType as string, goalDetails),
+                result: RosApiService.expandRootTypeDef(actionType as string, resultDetails),
+                feedback: RosApiService.expandRootTypeDef(actionType as string, feedbackDetails),
+            };
+        }
+        case 'getDefinition:node': {
+            const nodeName = ParameterExtractor.extractRequiredString(node, itemIndex, 'nodeName');
+            const nodeDefinition = await RosApiService.getNodeDefinition(ros, nodeName);
+            return {
+                nodeName,
+                ...nodeDefinition,
+            };
+        }
+        case 'getDetails:topic': {
+            const topicName = ParameterExtractor.extractRequiredString(node, itemIndex, 'topicName');
+            // message_details expects a type, so resolve the topic's type first
+            const topicType = await RosApiService.getTopicType(ros, topicName);
+            const typedefs = await RosApiService.getMessageDetails(ros, topicType);
+            return {
+                topicName,
+                topicType,
+                typedefs,
+            };
+        }
 
-        case 'listForType:topic':
-            {
-                const messageType = ParameterExtractor.extractRequiredString(node, itemIndex, 'messageType');
-                let topics = await RosApiService.getTopicsForType(ros, messageType);
-                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
-                if (grep) {
-                    topics = topics.filter(topic => matchesPattern(topic, grep));
-                }
-                return {
-                    messageType,
-                    topics,
-                };
+        case 'listForType:topic': {
+            const messageType = ParameterExtractor.extractRequiredString(node, itemIndex, 'messageType');
+            let topics = await RosApiService.getTopicsForType(ros, messageType);
+            const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+            if (grep) {
+                topics = topics.filter((topic) => matchesPattern(topic, grep));
             }
-        case 'listForType:service':
-            {
-                const messageType = ParameterExtractor.extractRequiredString(node, itemIndex, 'messageType');
-                let services = await RosApiService.getServicesForType(ros, messageType);
-                const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
-                if (grep) {
-                    services = services.filter(service => matchesPattern(service, grep));
-                }
-                return {
-                    messageType,
-                    services,
-                };
+            return {
+                messageType,
+                topics,
+            };
+        }
+        case 'listForType:service': {
+            const messageType = ParameterExtractor.extractRequiredString(node, itemIndex, 'messageType');
+            let services = await RosApiService.getServicesForType(ros, messageType);
+            const grep = ParameterExtractor.extractOptionalString(node, itemIndex, 'grep');
+            if (grep) {
+                services = services.filter((service) => matchesPattern(service, grep));
             }
+            return {
+                messageType,
+                services,
+            };
+        }
 
         default:
             throw new NodeApiError(node.getNode(), { message: `Unsupported operation: ${operation}:${resource}!` });

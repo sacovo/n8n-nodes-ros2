@@ -1,9 +1,4 @@
-import type {
-    IExecuteFunctions,
-    INodeExecutionData,
-    INodeType,
-    INodeTypeDescription,
-} from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
@@ -17,7 +12,6 @@ import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
 import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
 import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
-
 
 export class RosServiceCall implements INodeType {
     description: INodeTypeDescription = {
@@ -33,7 +27,8 @@ export class RosServiceCall implements INodeType {
         },
         usableAsTool: {
             replacements: {
-                description: 'Call a ROS2 service and wait for its response. The request payload must exactly match the service type\'s request structure - use the ROS2 API tool\'s "getDefinition" operation first to discover the required fields. Returns the service response once the server replies.',
+                description:
+                    'Call a ROS2 service and wait for its response. The request payload must exactly match the service type\'s request structure - use the ROS2 API tool\'s "getDefinition" operation first to discover the required fields. Returns the service response once the server replies.',
             },
         },
         inputs: [NodeConnectionTypes.Main],
@@ -77,7 +72,8 @@ export class RosServiceCall implements INodeType {
                 type: 'resourceLocator',
                 default: { mode: 'list', value: '' },
                 required: true,
-                description: 'The ROS 2 service type (e.g. example_interfaces/AddTwoInts). "Detected" mode will automatically fetch the type from the selected service.',
+                description:
+                    'The ROS 2 service type (e.g. example_interfaces/AddTwoInts). "Detected" mode will automatically fetch the type from the selected service.',
                 typeOptions: {
                     loadOptionsDependsOn: ['serviceName'],
                 },
@@ -160,7 +156,8 @@ export class RosServiceCall implements INodeType {
                 },
                 default: '{}',
                 hint: 'Prefer a guided form? Switch "Request Input Mode" to "Fixed (Mapper)" to get every field of the selected service request pre-filled and editable.',
-                description: 'JSON object sent as service request payload. The structure must match the request part of the service type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields.',
+                description:
+                    'JSON object sent as service request payload. The structure must match the request part of the service type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields.',
             },
             {
                 displayName: 'Timeout (Ms)',
@@ -220,10 +217,11 @@ export class RosServiceCall implements INodeType {
                 assertWriteAllowed(this, credentials, `Calling service "${serviceName}"`, i);
 
                 // Extract service type from resource locator
-                const serviceTypeLocator = this.getNodeParameter('serviceType', i) as { mode: string; value: string } | string;
-                const serviceType = typeof serviceTypeLocator === 'string'
-                    ? serviceTypeLocator
-                    : serviceTypeLocator.value;
+                const serviceTypeLocator = this.getNodeParameter('serviceType', i) as
+                    | { mode: string; value: string }
+                    | string;
+                const serviceType =
+                    typeof serviceTypeLocator === 'string' ? serviceTypeLocator : serviceTypeLocator.value;
 
                 // Extract request based on input mode
                 const requestInputMode = this.getNodeParameter('requestInputMode', i) as 'fixed' | 'raw';
@@ -248,25 +246,15 @@ export class RosServiceCall implements INodeType {
                 // introspected; mismatches abort the call.
                 if (serviceType) {
                     const rosClient = ros;
-                    request = await MessageTypeValidator.validateAgainstType(
-                        request,
-                        this,
-                        i,
-                        async () =>
-                            RosApiService.expandRootTypeDef(
-                                serviceType,
-                                await RosApiService.getServiceRequestDetails(rosClient, serviceType),
-                            ),
+                    request = await MessageTypeValidator.validateAgainstType(request, this, i, async () =>
+                        RosApiService.expandRootTypeDef(
+                            serviceType,
+                            await RosApiService.getServiceRequestDetails(rosClient, serviceType),
+                        ),
                     );
                 }
 
-                const response = await RosBridgeService.callService(
-                    ros,
-                    serviceName,
-                    serviceType,
-                    request,
-                    timeoutMs,
-                );
+                const response = await RosBridgeService.callService(ros, serviceName, serviceType, request, timeoutMs);
 
                 returnData.push({
                     json: {

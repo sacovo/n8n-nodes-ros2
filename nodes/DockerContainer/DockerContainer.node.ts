@@ -51,7 +51,8 @@ export class DockerContainer implements INodeType {
         },
         usableAsTool: {
             replacements: {
-                description: 'Manage Docker containers via the Docker API: list containers, start/stop/restart them, fetch logs, and exec commands inside a running container. Use this to inspect or control containerized processes (e.g. restarting a stuck ROS2 node\'s container, or checking its logs for errors).',
+                description:
+                    "Manage Docker containers via the Docker API: list containers, start/stop/restart them, fetch logs, and exec commands inside a running container. Use this to inspect or control containerized processes (e.g. restarting a stuck ROS2 node's container, or checking its logs for errors).",
             },
         },
         inputs: [NodeConnectionTypes.Main],
@@ -197,16 +198,17 @@ export class DockerContainer implements INodeType {
                     const docker = getDockerInstance(credentials);
                     const containers = await docker.listContainers({ all: true });
 
-                    let results = containers.map(container => ({
+                    let results = containers.map((container) => ({
                         name: container.Names[0].replace(/^\//, '') || container.Id,
                         value: container.Id,
                         description: `${container.Status} | ${container.Image}`,
                     }));
 
                     if (filter) {
-                        results = results.filter(r =>
-                            r.name.toLowerCase().includes(filter.toLowerCase()) ||
-                            r.value.toLowerCase().includes(filter.toLowerCase())
+                        results = results.filter(
+                            (r) =>
+                                r.name.toLowerCase().includes(filter.toLowerCase()) ||
+                                r.value.toLowerCase().includes(filter.toLowerCase()),
                         );
                     }
 
@@ -231,16 +233,19 @@ export class DockerContainer implements INodeType {
 
                 if (operation === 'list') {
                     const containers = await docker.listContainers({ all: true });
-                    result.containers = containers.map(c => ({
+                    result.containers = containers.map((c) => ({
                         id: c.Id,
-                        names: c.Names.map(n => n.replace(/^\//, '')),
+                        names: c.Names.map((n) => n.replace(/^\//, '')),
                         image: c.Image,
                         state: c.State,
                         status: c.Status,
                     }));
                 } else {
-                    const containerIdLocator = this.getNodeParameter('containerId', i) as { mode: string; value: string } | string;
-                    const containerId = typeof containerIdLocator === 'string' ? containerIdLocator : containerIdLocator.value;
+                    const containerIdLocator = this.getNodeParameter('containerId', i) as
+                        | { mode: string; value: string }
+                        | string;
+                    const containerId =
+                        typeof containerIdLocator === 'string' ? containerIdLocator : containerIdLocator.value;
 
                     // Only listing containers and reading logs leave the
                     // containers untouched; the rest changes their state.
@@ -277,12 +282,16 @@ export class DockerContainer implements INodeType {
                     } else if (operation === 'exec') {
                         const commandStr = this.getNodeParameter('command', i) as string;
                         // very basic command splitting
-                        const cmdArray = commandStr.match(/(?:[^\s"']+|['"][^'"]*["'])+/g)?.map(arg => {
-                            if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
-                                return arg.slice(1, -1);
-                            }
-                            return arg;
-                        }) || [];
+                        const cmdArray =
+                            commandStr.match(/(?:[^\s"']+|['"][^'"]*["'])+/g)?.map((arg) => {
+                                if (
+                                    (arg.startsWith('"') && arg.endsWith('"')) ||
+                                    (arg.startsWith("'") && arg.endsWith("'"))
+                                ) {
+                                    return arg.slice(1, -1);
+                                }
+                                return arg;
+                            }) || [];
 
                         const execInstance = await container.exec({
                             Cmd: cmdArray,

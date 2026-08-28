@@ -210,7 +210,7 @@ export const rosActionProperties: INodeProperties[] = [
             },
         },
         description:
-            'Whether to subscribe to the goal\'s feedback. When enabled, Send Goal and Wait returns every feedback message received while the goal ran.',
+            "Whether to subscribe to the goal's feedback. When enabled, Send Goal and Wait returns every feedback message received while the goal ran.",
     },
     {
         displayName: 'Goal ID',

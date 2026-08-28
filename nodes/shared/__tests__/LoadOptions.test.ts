@@ -218,10 +218,7 @@ describe('LoadOptions', () => {
             });
             await method.call(buildLoadOptions({ serviceType: 'std_srvs/srv/SetBool' }));
 
-            expect(mockRosApiService.getMessageDetails).toHaveBeenCalledWith(
-                fakeRos,
-                'std_srvs/srv/SetBool_Request',
-            );
+            expect(mockRosApiService.getMessageDetails).toHaveBeenCalledWith(fakeRos, 'std_srvs/srv/SetBool_Request');
         });
 
         it('returns no fields when no type can be resolved', async () => {

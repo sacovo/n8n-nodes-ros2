@@ -1,9 +1,4 @@
-import type {
-    INodeType,
-    INodeTypeDescription,
-    ITriggerFunctions,
-    ITriggerResponse,
-} from 'n8n-workflow';
+import type { INodeType, INodeTypeDescription, ITriggerFunctions, ITriggerResponse } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosActionServerService } from '../shared/services/RosActionServerService';
@@ -74,9 +69,7 @@ export class RosActionTrigger implements INodeType {
 
     async trigger(this: ITriggerFunctions): Promise<ITriggerResponse> {
         try {
-            const credentials = (await this.getCredentials(
-                'rosBridgeApi',
-            )) as unknown as RosBridgeCredentials;
+            const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
 
             const serverName = this.getNodeParameter('serverName') as string;
             const actionType = this.getNodeParameter('actionType') as string;

@@ -1,11 +1,7 @@
 import sharp from 'sharp';
 import { ImageResizer } from '../utils/ImageResizer';
 
-async function makeImage(
-    width: number,
-    height: number,
-    format: 'jpeg' | 'png' | 'webp',
-): Promise<Buffer> {
+async function makeImage(width: number, height: number, format: 'jpeg' | 'png' | 'webp'): Promise<Buffer> {
     const base = sharp({
         create: { width, height, channels: 3, background: { r: 10, g: 120, b: 200 } },
     });

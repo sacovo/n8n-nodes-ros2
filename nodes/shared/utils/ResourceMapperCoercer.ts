@@ -33,11 +33,7 @@ export class ResourceMapperCoercer {
      *
      * @throws NodeOperationError if any value does not match its expected type
      */
-    static coerceMessage(
-        structure: unknown,
-        ctx: IExecuteFunctions,
-        itemIndex: number,
-    ): JsonRecord {
+    static coerceMessage(structure: unknown, ctx: IExecuteFunctions, itemIndex: number): JsonRecord {
         if (!structure || typeof structure !== 'object') {
             return {};
         }
@@ -183,11 +179,7 @@ export class ResourceMapperCoercer {
     ): NodeOperationError {
         const received = typeof raw === 'string' ? JSON.stringify(raw) : String(raw);
         const example =
-            expected === 'array'
-                ? ' e.g. [0.5, 0.5, 0.6]'
-                : expected === 'object'
-                    ? ' e.g. {"x": 1, "y": 2}'
-                    : '';
+            expected === 'array' ? ' e.g. [0.5, 0.5, 0.6]' : expected === 'object' ? ' e.g. {"x": 1, "y": 2}' : '';
         return new NodeOperationError(
             ctx.getNode(),
             `Field "${name}" expects a value of type "${expected}", but received ${received}, which cannot be parsed into ${expected}.${example} Provide a valid ${expected} value (or an expression that resolves to one). The message was not sent.`,

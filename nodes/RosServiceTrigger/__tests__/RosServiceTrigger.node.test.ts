@@ -37,30 +37,28 @@ describe('RosServiceTrigger', () => {
         });
 
         const mockUnsubscribe = jest.fn();
-        (RosBridgeService.advertiseService as jest.Mock).mockImplementation(
-            (ros, name, type, callback) => {
-                // Simulate a service call
-                const request = { data: true };
-                const response = {};
-                const result = callback(request, response);
-                
-                expect(result).toBe(true);
-                expect(response).toEqual({ success: true });
-                
-                return Promise.resolve(mockUnsubscribe);
-            }
-        );
+        (RosBridgeService.advertiseService as jest.Mock).mockImplementation((ros, name, type, callback) => {
+            // Simulate a service call
+            const request = { data: true };
+            const response = {};
+            const result = callback(request, response);
+
+            expect(result).toBe(true);
+            expect(response).toEqual({ success: true });
+
+            return Promise.resolve(mockUnsubscribe);
+        });
 
         const result = await node.trigger.call(triggerFunctions);
-        
+
         expect(RosBridgeService.connect).toHaveBeenCalled();
         expect(RosBridgeService.advertiseService).toHaveBeenCalledWith(
             expect.anything(),
             '/test_service',
             'std_srvs/srv/SetBool',
-            expect.any(Function)
+            expect.any(Function),
         );
-        
+
         expect(triggerFunctions.emit).toHaveBeenCalledWith([
             [
                 {
@@ -73,7 +71,7 @@ describe('RosServiceTrigger', () => {
                 },
             ],
         ]);
-        
+
         expect(result).toBeDefined();
         if (result && result.closeFunction) {
             await result.closeFunction();

@@ -42,12 +42,7 @@ export function isReadOnlyCredential(credentials: unknown): boolean {
  * `Publishing to "/cmd_vel"`; it is used verbatim in the error message so an
  * agent reading it as a tool observation knows what was refused.
  */
-export function assertWriteAllowed(
-    context: NodeContext,
-    credentials: unknown,
-    action: string,
-    itemIndex = 0,
-): void {
+export function assertWriteAllowed(context: NodeContext, credentials: unknown, action: string, itemIndex = 0): void {
     if (!isReadOnlyCredential(credentials)) {
         return;
     }

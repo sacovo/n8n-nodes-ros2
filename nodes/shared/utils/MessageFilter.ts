@@ -21,7 +21,7 @@ type Condition = {
 export type FilterData = {
     options: {
         caseSensitive: boolean;
-    },
+    };
     conditions: Condition[];
     combinator: string;
 };
@@ -84,10 +84,7 @@ function normalizeLeftValue(value: unknown): unknown {
     return path;
 }
 
-function normalizeRightValue(
-    value: unknown,
-    evaluateExpression?: (expression: string) => unknown,
-): unknown {
+function normalizeRightValue(value: unknown, evaluateExpression?: (expression: string) => unknown): unknown {
     const expression = extractExpressionBody(value);
     if (expression === undefined) {
         return value;
@@ -114,7 +111,7 @@ export function checkFilter(item: INodeExecutionData, filterData: FilterData): b
         }
         let leftValue = c.leftValue;
         if (typeof leftValue === 'string') {
-            leftValue = get(item.json["message"], leftValue);
+            leftValue = get(item.json['message'], leftValue);
         }
 
         const rightValue = c.rightValue;

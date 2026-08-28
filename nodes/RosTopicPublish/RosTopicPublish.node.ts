@@ -1,9 +1,4 @@
-import type {
-    IExecuteFunctions,
-    INodeExecutionData,
-    INodeType,
-    INodeTypeDescription,
-} from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
@@ -31,7 +26,8 @@ export class RosTopicPublish implements INodeType {
         },
         usableAsTool: {
             replacements: {
-                description: 'Publish a message to a ROS2 topic (operation "publish"; "advertise" only registers the topic without sending anything). The message payload must exactly match the topic\'s message type - use the ROS2 API tool\'s "getDefinition" operation first to discover the required field structure. Fire-and-forget: it does not wait for subscribers to process the message. Publishing may be restricted to certain topic namespaces; a topic outside them returns an error naming the allowed namespaces.',
+                description:
+                    'Publish a message to a ROS2 topic (operation "publish"; "advertise" only registers the topic without sending anything). The message payload must exactly match the topic\'s message type - use the ROS2 API tool\'s "getDefinition" operation first to discover the required field structure. Fire-and-forget: it does not wait for subscribers to process the message. Publishing may be restricted to certain topic namespaces; a topic outside them returns an error naming the allowed namespaces.',
             },
         },
         inputs: [NodeConnectionTypes.Main],
@@ -96,7 +92,8 @@ export class RosTopicPublish implements INodeType {
                 type: 'resourceLocator',
                 default: { mode: 'list', value: '' },
                 required: true,
-                description: 'The ROS 2 message type (e.g. std_msgs/String). "Detected" mode will automatically fetch the type from the selected topic.',
+                description:
+                    'The ROS 2 message type (e.g. std_msgs/String). "Detected" mode will automatically fetch the type from the selected topic.',
                 typeOptions: {
                     loadOptionsDependsOn: ['topicName'],
                 },
@@ -186,7 +183,8 @@ export class RosTopicPublish implements INodeType {
                 },
                 default: '{}',
                 hint: 'Prefer a guided form? Switch "Message Input Mode" to "Fixed (Mapper)" to get every field of the selected message type pre-filled and editable.',
-                description: 'JSON object sent as the topic message payload. The structure must match the message type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields, e.g. {"linear": {"x": 1.0, "y": 0, "z": 0}, "angular": {"x": 0, "y": 0, "z": 0.5}} for geometry_msgs/Twist.',
+                description:
+                    'JSON object sent as the topic message payload. The structure must match the message type — use the ROS2 API node\'s "Get Definition" operation to discover the expected fields, e.g. {"linear": {"x": 1.0, "y": 0, "z": 0}, "angular": {"x": 0, "y": 0, "z": 0.5}} for geometry_msgs/Twist.',
             },
             {
                 displayName: 'Options',
@@ -202,7 +200,8 @@ export class RosTopicPublish implements INodeType {
                         default: '',
                         placeholder: 'e.g. /mani, /any-safe-system',
                         hint: 'As a tool, the agent only learns of this restriction when a call fails. To state it upfront, set the tool node\'s Description to "Set Manually" and name the namespaces there — n8n sends that text verbatim and does not evaluate expressions in it.',
-                        description: 'Restrict this node to topics below the listed namespaces (comma- or newline-separated). Matching is on name segments, so "/mani" covers "/mani/cmd_vel" but not "/manipulator"; a "*" segment matches any single segment (e.g. "/robot/*/cmd_vel"). Publishing or advertising anything else fails with an error. Leave empty to allow every topic. Useful when the node is attached to an AI agent, which picks the topic name but cannot change this restriction.',
+                        description:
+                            'Restrict this node to topics below the listed namespaces (comma- or newline-separated). Matching is on name segments, so "/mani" covers "/mani/cmd_vel" but not "/manipulator"; a "*" segment matches any single segment (e.g. "/robot/*/cmd_vel"). Publishing or advertising anything else fails with an error. Leave empty to allow every topic. Useful when the node is attached to an AI agent, which picks the topic name but cannot change this restriction.',
                     },
                     {
                         displayName: 'Burst Number',
@@ -239,7 +238,8 @@ export class RosTopicPublish implements INodeType {
                                 '/operation': ['publish'],
                             },
                         },
-                        description: 'Time to wait (in milliseconds) after advertising the topic before publishing, to allow subscribers to discover the publisher',
+                        description:
+                            'Time to wait (in milliseconds) after advertising the topic before publishing, to allow subscribers to discover the publisher',
                     },
                     {
                         displayName: 'Wait Between Messages (Ms)',
@@ -265,9 +265,7 @@ export class RosTopicPublish implements INodeType {
         },
         listSearch: {
             getTopicsList: topicListSearch({ scopeOptionsParameter: 'options' }),
-            getDetectedType: detectedTypeSearch('topicName', (ros, topic) =>
-                RosApiService.getTopicType(ros, topic),
-            ),
+            getDetectedType: detectedTypeSearch('topicName', (ros, topic) => RosApiService.getTopicType(ros, topic)),
         },
         resourceMapping: {
             getMessageFieldsForType: typeFieldsMapper({
@@ -290,18 +288,21 @@ export class RosTopicPublish implements INodeType {
                 const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
 
                 // Extract topic name from resource locator
-                const topicNameLocator = this.getNodeParameter('topicName', i) as { mode: string; value: string } | string;
-                const topicName = typeof topicNameLocator === 'string'
-                    ? topicNameLocator
-                    : topicNameLocator.value;
+                const topicNameLocator = this.getNodeParameter('topicName', i) as
+                    | { mode: string; value: string }
+                    | string;
+                const topicName = typeof topicNameLocator === 'string' ? topicNameLocator : topicNameLocator.value;
 
                 // Extract message type from resource locator
-                const messageTypeLocator = this.getNodeParameter('messageType', i) as { mode: string; value: string } | string;
-                const messageType = typeof messageTypeLocator === 'string'
-                    ? messageTypeLocator
-                    : messageTypeLocator.value;
+                const messageTypeLocator = this.getNodeParameter('messageType', i) as
+                    | { mode: string; value: string }
+                    | string;
+                const messageType =
+                    typeof messageTypeLocator === 'string' ? messageTypeLocator : messageTypeLocator.value;
 
-                const operation = (this.getNodeParameter('operation', i, 'publish') || 'publish') as 'publish' | 'advertise';
+                const operation = (this.getNodeParameter('operation', i, 'publish') || 'publish') as
+                    | 'publish'
+                    | 'advertise';
 
                 const options = (this.getNodeParameter('options', i, {}) || {}) as {
                     allowedNamespaces?: string;
@@ -345,15 +346,11 @@ export class RosTopicPublish implements INodeType {
                     // type before sending. Skipped if the type can't be
                     // introspected; mismatches abort the publish.
                     if (messageType) {
-                        message = await MessageTypeValidator.validateAgainstType(
-                            message,
-                            this,
-                            i,
-                            async () =>
-                                RosApiService.expandRootTypeDef(
-                                    messageType,
-                                    await RosApiService.getMessageDetails(ros, messageType),
-                                ),
+                        message = await MessageTypeValidator.validateAgainstType(message, this, i, async () =>
+                            RosApiService.expandRootTypeDef(
+                                messageType,
+                                await RosApiService.getMessageDetails(ros, messageType),
+                            ),
                         );
                     }
 
@@ -365,7 +362,14 @@ export class RosTopicPublish implements INodeType {
                         };
                     }
 
-                    await RosBridgeService.publishTopic(ros, topicName, messageType, message, options.discoveryDelay, burst);
+                    await RosBridgeService.publishTopic(
+                        ros,
+                        topicName,
+                        messageType,
+                        message,
+                        options.discoveryDelay,
+                        burst,
+                    );
                 }
 
                 returnData.push({

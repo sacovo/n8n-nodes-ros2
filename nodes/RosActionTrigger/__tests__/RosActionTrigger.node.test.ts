@@ -48,12 +48,10 @@ describe('RosActionTrigger', () => {
 
     it('should advertise an action server and emit incoming goals', async () => {
         const unadvertise = jest.fn();
-        mockActionServerService.advertise.mockImplementation(
-            async (_ros, _serverName, _actionType, onGoal) => {
-                onGoal({ order: 5 }, 'goal-123');
-                return unadvertise;
-            },
-        );
+        mockActionServerService.advertise.mockImplementation(async (_ros, _serverName, _actionType, onGoal) => {
+            onGoal({ order: 5 }, 'goal-123');
+            return unadvertise;
+        });
 
         const triggerFunctions = buildTriggerFunctions();
         const result = await node.trigger.call(triggerFunctions);

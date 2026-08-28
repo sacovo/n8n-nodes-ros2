@@ -1,9 +1,4 @@
-import type {
-    IExecuteFunctions,
-    INodeExecutionData,
-    INodeType,
-    INodeTypeDescription,
-} from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 import type { Ros } from 'roslib';
 
@@ -79,9 +74,7 @@ export class RosAction implements INodeType {
         for (let i = 0; i < items.length; i++) {
             let ros: Ros | undefined;
             try {
-                const credentials = (await this.getCredentials(
-                    'rosBridgeApi',
-                )) as unknown as RosBridgeCredentials;
+                const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
                 const operation = this.getNodeParameter('operation', i) as RosActionOperation;
 
                 if (isWriteOperation(operation)) {

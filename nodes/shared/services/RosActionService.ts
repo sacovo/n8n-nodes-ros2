@@ -154,13 +154,7 @@ export class RosActionService {
         }
 
         const hex = bytes.toString('hex');
-        return [
-            hex.slice(0, 8),
-            hex.slice(8, 12),
-            hex.slice(12, 16),
-            hex.slice(16, 20),
-            hex.slice(20),
-        ].join('-');
+        return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join('-');
     }
 
     private static statusLabel(statusCode: number): string {
@@ -193,7 +187,7 @@ export class RosActionService {
             feedback: [],
             settled: false,
             waiters: [],
-            listener: () => { },
+            listener: () => {},
         };
 
         pending.listener = (message: unknown) => {
@@ -370,9 +364,7 @@ export class RosActionService {
             this.feedbackTopic(serverName),
             this.feedbackMessageType(actionType),
             timeoutMs,
-            goalId
-                ? (candidate) => this.decodeGoalUuid(candidate.goal_id) === goalId
-                : undefined,
+            goalId ? (candidate) => this.decodeGoalUuid(candidate.goal_id) === goalId : undefined,
         );
 
         return {

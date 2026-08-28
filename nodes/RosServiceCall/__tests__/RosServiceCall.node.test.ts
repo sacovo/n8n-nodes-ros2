@@ -6,7 +6,7 @@ import { RosServiceCall } from '../RosServiceCall.node';
 import { RosBridgeService } from '../../shared/services/RosBridgeService';
 import { ParameterExtractor } from '../../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../../shared/utils/NodeErrorHandler';
-import type { IExecuteFunctions, ILoadOptionsFunctions  } from 'n8n-workflow';
+import type { IExecuteFunctions, ILoadOptionsFunctions } from 'n8n-workflow';
 import type { Ros } from 'roslib';
 
 // Mock the services
@@ -60,7 +60,10 @@ describe('RosServiceCall', () => {
                     ],
                 });
                 expect(mockRosApiService.getServices).toHaveBeenCalled();
-                expect(mockRosN8nFormatter.formatServiceListForN8n).toHaveBeenCalledWith(['/service1', '/service2'], 'srv');
+                expect(mockRosN8nFormatter.formatServiceListForN8n).toHaveBeenCalledWith(
+                    ['/service1', '/service2'],
+                    'srv',
+                );
             });
 
             it('should return empty list on error', async () => {

@@ -8,9 +8,7 @@ import { rosapi } from 'roslib';
  * that returns nothing at all is expressed by never calling back - see
  * `mockUnansweredRosapiService`.
  */
-function mockRosapiService(
-    respond: (serviceName: string, request: unknown) => unknown,
-): jest.Mock {
+function mockRosapiService(respond: (serviceName: string, request: unknown) => unknown): jest.Mock {
     const callService = jest.fn(
         (
             request: unknown,
@@ -33,10 +31,9 @@ function mockRosapiService(
         }
     }
 
-    jest.spyOn(
-        RosApiService as unknown as { loadRoslib: () => Promise<unknown> },
-        'loadRoslib',
-    ).mockResolvedValue({ Service: ServiceStub });
+    jest.spyOn(RosApiService as unknown as { loadRoslib: () => Promise<unknown> }, 'loadRoslib').mockResolvedValue({
+        Service: ServiceStub,
+    });
 
     return callService;
 }
@@ -49,10 +46,9 @@ function mockUnansweredRosapiService(): void {
         }
     }
 
-    jest.spyOn(
-        RosApiService as unknown as { loadRoslib: () => Promise<unknown> },
-        'loadRoslib',
-    ).mockResolvedValue({ Service: SilentServiceStub });
+    jest.spyOn(RosApiService as unknown as { loadRoslib: () => Promise<unknown> }, 'loadRoslib').mockResolvedValue({
+        Service: SilentServiceStub,
+    });
 }
 
 describe('RosApiService', () => {
@@ -65,12 +61,12 @@ describe('RosApiService', () => {
                     fieldtypes: ['string'],
                     fieldarraylen: [-1],
                     examples: [],
-                }
+                },
             ];
 
             const result = RosApiService.expandTypeDef('std_msgs/String', typedefs);
             expect(result).toEqual({
-                data: 'string'
+                data: 'string',
             });
         });
 
@@ -89,7 +85,7 @@ describe('RosApiService', () => {
                     fieldtypes: ['geometry_msgs/Point'],
                     fieldarraylen: [-1],
                     examples: [],
-                }
+                },
             ];
 
             const result = RosApiService.expandTypeDef('geometry_msgs/Pose', typedefs);
@@ -97,8 +93,8 @@ describe('RosApiService', () => {
                 position: {
                     x: 'float64',
                     y: 'float64',
-                    z: 'float64'
-                }
+                    z: 'float64',
+                },
             });
         });
 
@@ -110,12 +106,12 @@ describe('RosApiService', () => {
                     fieldtypes: ['float64'],
                     fieldarraylen: [0], // variable length array
                     examples: [],
-                }
+                },
             ];
 
             const result = RosApiService.expandTypeDef('std_msgs/Float64MultiArray', typedefs);
             expect(result).toEqual({
-                data: ['float64']
+                data: ['float64'],
             });
         });
 
@@ -134,7 +130,7 @@ describe('RosApiService', () => {
                     fieldtypes: ['std_msgs/Header', 'uint32', 'uint32', 'uint8'],
                     fieldarraylen: [-1, -1, -1, 0],
                     examples: [],
-                }
+                },
             ];
 
             const result = RosApiService.expandTypeDef('sensor_msgs/Image', typedefs);
@@ -142,11 +138,11 @@ describe('RosApiService', () => {
                 header: {
                     seq: 'uint32',
                     stamp: 'time',
-                    frame_id: 'string'
+                    frame_id: 'string',
                 },
                 height: 'uint32',
                 width: 'uint32',
-                data: ['uint8']
+                data: ['uint8'],
             });
         });
 
@@ -157,19 +153,19 @@ describe('RosApiService', () => {
         });
 
         it('should avoid infinite recursion (though ROS messages are DAG)', () => {
-             const typedefs: rosapi.TypeDef[] = [
+            const typedefs: rosapi.TypeDef[] = [
                 {
                     type: 'recursive/Type',
                     fieldnames: ['self'],
                     fieldtypes: ['recursive/Type'],
                     fieldarraylen: [-1],
                     examples: [],
-                }
+                },
             ];
 
             const result = RosApiService.expandTypeDef('recursive/Type', typedefs);
             expect(result).toEqual({
-                self: 'recursive/Type'
+                self: 'recursive/Type',
             });
         });
     });
@@ -181,15 +177,17 @@ describe('RosApiService', () => {
 
         function buildRos(serviceTypes: Record<string, string>): Ros {
             return {
-                getServiceType: jest.fn((service: string, onSuccess: (type: string) => void, onError: (error: string) => void) => {
-                    const type = serviceTypes[service];
-                    // rosapi answers with an empty type for services it cannot see.
-                    if (type === undefined) {
-                        onError('no such service');
-                        return;
-                    }
-                    onSuccess(type);
-                }),
+                getServiceType: jest.fn(
+                    (service: string, onSuccess: (type: string) => void, onError: (error: string) => void) => {
+                        const type = serviceTypes[service];
+                        // rosapi answers with an empty type for services it cannot see.
+                        if (type === undefined) {
+                            onError('no such service');
+                            return;
+                        }
+                        onSuccess(type);
+                    },
+                ),
             } as unknown as Ros;
         }
 

@@ -16,9 +16,11 @@ function buildTriggerFunctions(parameters: Record<string, unknown>): ITriggerFun
     return {
         getCredentials: jest.fn().mockResolvedValue({}),
         emit: jest.fn(),
-        getNodeParameter: jest.fn().mockImplementation((name: string, fallback: unknown) =>
-            name in parameters ? parameters[name] : fallback,
-        ),
+        getNodeParameter: jest
+            .fn()
+            .mockImplementation((name: string, fallback: unknown) =>
+                name in parameters ? parameters[name] : fallback,
+            ),
         getWorkflowStaticData: jest.fn().mockReturnValue({}),
         setWorkflowStaticData: jest.fn(),
         getNode: jest.fn().mockReturnValue({ name: 'ROS2 Topic Trigger', type: 'rosTopicTrigger' }),
@@ -47,13 +49,13 @@ describe('RosTopicTrigger', () => {
             mockRosBridgeService.connect.mockResolvedValue(buildMockRos());
             mockRosBridgeService.subscribeToTopic.mockImplementation(async (ros, topic, type, callback) => {
                 callback({ data: 'Hello from ROS!' });
-                return () => { };
+                return () => {};
             });
             // Start the trigger
             await node.trigger.call(mockTriggerFunctions);
 
             // Wait for the message to be processed
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise((resolve) => setTimeout(resolve, 50));
 
             expect(mockTriggerFunctions.emit).toHaveBeenCalledWith([
                 [
@@ -87,14 +89,12 @@ describe('RosTopicTrigger', () => {
             mockRosBridgeService.connect.mockResolvedValue(buildMockRos());
             mockRosBridgeService.subscribeToTopic.mockImplementation(async (ros, topic, type, callback) => {
                 callback({ data: 'Hello from ROS!' });
-                return () => { };
+                return () => {};
             });
 
             await node.trigger.call(mockTriggerFunctions);
 
-            expect(mockTriggerFunctions.emit).toHaveBeenCalledWith([
-                [{ json: { data: 'Hello from ROS!' } }],
-            ]);
+            expect(mockTriggerFunctions.emit).toHaveBeenCalledWith([[{ json: { data: 'Hello from ROS!' } }]]);
         });
 
         it('should only emit messages matching the configured conditions', async () => {
@@ -118,7 +118,7 @@ describe('RosTopicTrigger', () => {
             mockRosBridgeService.subscribeToTopic.mockImplementation(async (ros, topic, type, callback) => {
                 callback({ data: 'boring message' });
                 callback({ data: 'IMPORTANT message' });
-                return () => { };
+                return () => {};
             });
 
             await node.trigger.call(mockTriggerFunctions);
@@ -216,7 +216,7 @@ describe('RosTopicTrigger', () => {
             (mockTriggerFunctions.getCredentials as jest.Mock).mockResolvedValue({ readOnly: true });
 
             mockRosBridgeService.connect.mockResolvedValue(buildMockRos());
-            mockRosBridgeService.subscribeToTopic.mockResolvedValue(() => { });
+            mockRosBridgeService.subscribeToTopic.mockResolvedValue(() => {});
 
             await node.trigger.call(mockTriggerFunctions);
 

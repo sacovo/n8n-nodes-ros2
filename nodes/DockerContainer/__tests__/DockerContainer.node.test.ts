@@ -38,7 +38,11 @@ describe('DockerContainer Node', () => {
     it('should be correctly initialized', () => {
         expect(node.description.name).toBe('dockerContainer');
         expect(node.description.displayName).toBe('Docker Container');
-        expect(node.description.credentials).toContainEqual({ name: 'dockerApi', required: true, testedBy: 'dockerApi' });
+        expect(node.description.credentials).toContainEqual({
+            name: 'dockerApi',
+            required: true,
+            testedBy: 'dockerApi',
+        });
     });
 
     it('should handle start operation with socket', async () => {

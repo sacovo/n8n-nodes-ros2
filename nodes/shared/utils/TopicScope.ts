@@ -20,7 +20,10 @@ export function normalizeRosName(name: unknown): string {
     if (typeof name !== 'string') {
         return '';
     }
-    const segments = name.trim().split('/').filter((segment) => segment !== '');
+    const segments = name
+        .trim()
+        .split('/')
+        .filter((segment) => segment !== '');
     return segments.length === 0 ? '' : `/${segments.join('/')}`;
 }
 
@@ -53,9 +56,7 @@ function matchesPrefix(name: string, prefix: string): boolean {
         return false;
     }
 
-    return prefixSegments.every(
-        (segment, index) => segment === '*' || segment === nameSegments[index],
-    );
+    return prefixSegments.every((segment, index) => segment === '*' || segment === nameSegments[index]);
 }
 
 /**

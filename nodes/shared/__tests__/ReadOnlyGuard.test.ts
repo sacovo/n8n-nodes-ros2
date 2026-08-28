@@ -36,13 +36,13 @@ describe('assertWriteAllowed', () => {
     });
 
     it('throws a node error naming the refused action', () => {
-        expect(() =>
-            assertWriteAllowed(context, { readOnly: true }, 'Publishing to topic "/cmd_vel"'),
-        ).toThrow(NodeOperationError);
+        expect(() => assertWriteAllowed(context, { readOnly: true }, 'Publishing to topic "/cmd_vel"')).toThrow(
+            NodeOperationError,
+        );
 
-        expect(() =>
-            assertWriteAllowed(context, { readOnly: true }, 'Publishing to topic "/cmd_vel"'),
-        ).toThrow(/Publishing to topic "\/cmd_vel" is blocked/);
+        expect(() => assertWriteAllowed(context, { readOnly: true }, 'Publishing to topic "/cmd_vel"')).toThrow(
+            /Publishing to topic "\/cmd_vel" is blocked/,
+        );
     });
 
     it('keeps the item index on the error so the failing item is reported', () => {

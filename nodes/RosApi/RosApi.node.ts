@@ -1,9 +1,4 @@
-import type {
-    IExecuteFunctions,
-    INodeExecutionData,
-    INodeType,
-    INodeTypeDescription,
-} from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosApiService } from '../shared/services/RosApiService';
@@ -31,7 +26,8 @@ export class RosApi implements INodeType {
         },
         usableAsTool: {
             replacements: {
-                description: 'Discover the live ROS2 graph: list topics, services, nodes, action servers, and parameters, get their types, and look up node details. Crucially, the "getDefinition" operation returns the fully expanded JSON structure (including nested custom types) of any message, service, or action type. The "getType" operation can additionally return human-written documentation: a description of how the specific topic/service is used, and the raw message definition whose comments document units and allowed values. Always call this tool first to learn the exact payload shape before publishing to a topic, calling a service, or starting an action. Parameters belong to a node and are addressed as "nodeName:parameterName" (e.g. "/talker:max_vel_x"), which is how the parameter "list" operation returns them; an unqualified parameter name is refused.',
+                description:
+                    'Discover the live ROS2 graph: list topics, services, nodes, action servers, and parameters, get their types, and look up node details. Crucially, the "getDefinition" operation returns the fully expanded JSON structure (including nested custom types) of any message, service, or action type. The "getType" operation can additionally return human-written documentation: a description of how the specific topic/service is used, and the raw message definition whose comments document units and allowed values. Always call this tool first to learn the exact payload shape before publishing to a topic, calling a service, or starting an action. Parameters belong to a node and are addressed as "nodeName:parameterName" (e.g. "/talker:max_vel_x"), which is how the parameter "list" operation returns them; an unqualified parameter name is refused.',
             },
         },
         inputs: [NodeConnectionTypes.Main],
@@ -99,7 +95,7 @@ export class RosApi implements INodeType {
                 returnData.push({
                     json: {
                         ...metadata,
-                        ...result as Record<string, unknown>,
+                        ...(result as Record<string, unknown>),
                         retrievedAt: new Date().toISOString(),
                     },
                     pairedItem: { item: i },

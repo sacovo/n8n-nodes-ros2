@@ -116,9 +116,7 @@ describe('checkFilter with normalized legacy conditions (Deep Sampling regressio
 
     it('lets empty leftover condition rows pass every message', () => {
         const emptyRow = normalizeFilterConditions(
-            filterWith([
-                { leftValue: '', rightValue: '', operator: { type: 'string', operation: 'equals' } },
-            ]),
+            filterWith([{ leftValue: '', rightValue: '', operator: { type: 'string', operation: 'equals' } }]),
         );
 
         expect(checkFilter({ json: { message: { data: 1 } } }, emptyRow)).toBe(true);

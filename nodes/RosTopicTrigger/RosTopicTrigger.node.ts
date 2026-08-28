@@ -1,10 +1,4 @@
-import type {
-    IDataObject,
-    INodeType,
-    INodeTypeDescription,
-    ITriggerFunctions,
-    ITriggerResponse,
-} from 'n8n-workflow';
+import type { IDataObject, INodeType, INodeTypeDescription, ITriggerFunctions, ITriggerResponse } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
@@ -71,7 +65,8 @@ export class RosTopicTrigger implements INodeType {
                 type: 'resourceLocator',
                 default: { mode: 'list', value: '' },
                 required: true,
-                description: 'The ROS 2 message type (e.g. std_msgs/String). "Detected" mode will automatically fetch the type from the selected topic.',
+                description:
+                    'The ROS 2 message type (e.g. std_msgs/String). "Detected" mode will automatically fetch the type from the selected topic.',
                 typeOptions: {
                     loadOptionsDependsOn: ['topicName'],
                 },
@@ -105,7 +100,8 @@ export class RosTopicTrigger implements INodeType {
                 placeholder: 'Add Condition',
                 type: 'filter',
                 default: {},
-                description: 'Only start the workflow for messages matching these conditions. Reference message fields by their path as a plain string, e.g. "data" or "pose.position.x".',
+                description:
+                    'Only start the workflow for messages matching these conditions. Reference message fields by their path as a plain string, e.g. "data" or "pose.position.x".',
                 typeOptions: {
                     filter: {
                         version: 1,
@@ -146,9 +142,7 @@ export class RosTopicTrigger implements INodeType {
         },
         listSearch: {
             getTopicsList: topicListSearch(),
-            getDetectedType: detectedTypeSearch('topicName', (ros, topic) =>
-                RosApiService.getTopicType(ros, topic),
-            ),
+            getDetectedType: detectedTypeSearch('topicName', (ros, topic) => RosApiService.getTopicType(ros, topic)),
         },
     };
 
@@ -177,13 +171,10 @@ export class RosTopicTrigger implements INodeType {
                 this.emit([[{ json }]]);
             };
 
-            const stop = await connectWithReconnect(
-                credentials as unknown as RosBridgeCredentials,
-                async (ros) => {
-                    const unsubscribe = await RosBridgeService.subscribeToTopic(ros, topicName, messageType, onMessage);
-                    return unsubscribe;
-                },
-            );
+            const stop = await connectWithReconnect(credentials as unknown as RosBridgeCredentials, async (ros) => {
+                const unsubscribe = await RosBridgeService.subscribeToTopic(ros, topicName, messageType, onMessage);
+                return unsubscribe;
+            });
 
             return {
                 closeFunction: stop,

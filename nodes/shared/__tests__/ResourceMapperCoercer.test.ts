@@ -67,10 +67,10 @@ describe('ResourceMapperCoercer', () => {
         });
 
         it('parses number and boolean fields entered as strings', () => {
-            const structure = mapper(
-                { count: '42', enabled: 'true' },
-                [field('count', 'number'), field('enabled', 'boolean')],
-            );
+            const structure = mapper({ count: '42', enabled: 'true' }, [
+                field('count', 'number'),
+                field('enabled', 'boolean'),
+            ]);
             expect(ResourceMapperCoercer.coerceMessage(structure, ctx, 0)).toEqual({
                 count: 42,
                 enabled: true,
@@ -88,10 +88,10 @@ describe('ResourceMapperCoercer', () => {
         });
 
         it('passes through null / undefined field values', () => {
-            const structure = mapper(
-                { a: null, b: undefined as unknown as string },
-                [field('a', 'array'), field('b', 'number')],
-            );
+            const structure = mapper({ a: null, b: undefined as unknown as string }, [
+                field('a', 'array'),
+                field('b', 'number'),
+            ]);
             expect(ResourceMapperCoercer.coerceMessage(structure, ctx, 0)).toEqual({
                 a: null,
                 b: undefined,
@@ -107,9 +107,7 @@ describe('ResourceMapperCoercer', () => {
 
         it('throws when a string parses to the wrong JSON type', () => {
             const structure = mapper({ data: '0.5' }, [field('data', 'array')]);
-            expect(() => ResourceMapperCoercer.coerceMessage(structure, ctx, 0)).toThrow(
-                /cannot be parsed into array/,
-            );
+            expect(() => ResourceMapperCoercer.coerceMessage(structure, ctx, 0)).toThrow(/cannot be parsed into array/);
         });
 
         it('throws when a number field is not numeric', () => {

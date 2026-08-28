@@ -56,10 +56,7 @@ describe('RosApiService.getTopicRawDefinition', () => {
     const rawTypesResponse = {
         topics: ['/cmd_vel', '/chatter'],
         types: ['geometry_msgs/msg/Twist', 'std_msgs/msg/String'],
-        typedefs_full_text: [
-            '# Velocity command\nVector3 linear # m/s\nVector3 angular # rad/s',
-            'string data',
-        ],
+        typedefs_full_text: ['# Velocity command\nVector3 linear # m/s\nVector3 angular # rad/s', 'string data'],
     };
 
     function buildRos(): Ros {
@@ -101,12 +98,18 @@ describe('RosApiService.expandRootTypeDef', () => {
     };
 
     it('expands via exact root name when it matches', () => {
-        const result = RosApiService.expandRootTypeDef('rcl_interfaces/GetParameters_Request', [requestTypeDef, nestedTypeDef]);
+        const result = RosApiService.expandRootTypeDef('rcl_interfaces/GetParameters_Request', [
+            requestTypeDef,
+            nestedTypeDef,
+        ]);
         expect(result).toEqual({ names: ['string'], options: { names: ['string'] } });
     });
 
     it('falls back to the first typedef when the root name is mangled by rosapi', () => {
-        const result = RosApiService.expandRootTypeDef('rcl_interfaces/srv/GetParameters', [requestTypeDef, nestedTypeDef]);
+        const result = RosApiService.expandRootTypeDef('rcl_interfaces/srv/GetParameters', [
+            requestTypeDef,
+            nestedTypeDef,
+        ]);
         expect(result).toEqual({ names: ['string'], options: { names: ['string'] } });
     });
 
@@ -186,12 +189,8 @@ describe('RosApiService.getNodeDefinition', () => {
         const result = await RosApiService.getNodeDefinition(ros, '/talker');
 
         expect(result).toEqual({
-            publishing: [
-                { name: '/chatter', type: 'std_msgs/msg/String', definition: { data: 'string' } },
-            ],
-            subscribing: [
-                { name: '/listen', type: 'std_msgs/msg/String', definition: { data: 'string' } },
-            ],
+            publishing: [{ name: '/chatter', type: 'std_msgs/msg/String', definition: { data: 'string' } }],
+            subscribing: [{ name: '/listen', type: 'std_msgs/msg/String', definition: { data: 'string' } }],
             services: [
                 {
                     name: '/talker/get_parameters',

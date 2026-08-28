@@ -1,9 +1,4 @@
-import type {
-    IExecuteFunctions,
-    INodeExecutionData,
-    INodeType,
-    INodeTypeDescription,
-} from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
@@ -29,7 +24,8 @@ export class RosTopicNextMessage implements INodeType {
         },
         usableAsTool: {
             replacements: {
-                description: 'Wait (blocking, with a configurable timeout) for the next message published on a ROS2 topic and return its contents. Use this to read the current value of a sensor or state topic (e.g. battery level, robot pose) on demand. Use the ROS2 API tool\'s "getDefinition" operation to know what fields the returned message will contain.',
+                description:
+                    'Wait (blocking, with a configurable timeout) for the next message published on a ROS2 topic and return its contents. Use this to read the current value of a sensor or state topic (e.g. battery level, robot pose) on demand. Use the ROS2 API tool\'s "getDefinition" operation to know what fields the returned message will contain.',
             },
         },
         inputs: [NodeConnectionTypes.Main],
@@ -73,7 +69,8 @@ export class RosTopicNextMessage implements INodeType {
                 type: 'resourceLocator',
                 default: { mode: 'list', value: '' },
                 required: true,
-                description: 'The ROS 2 message type (e.g. std_msgs/String). "Detected" mode will automatically fetch the type from the selected topic.',
+                description:
+                    'The ROS 2 message type (e.g. std_msgs/String). "Detected" mode will automatically fetch the type from the selected topic.',
                 typeOptions: {
                     loadOptionsDependsOn: ['topicName'],
                 },
@@ -107,7 +104,8 @@ export class RosTopicNextMessage implements INodeType {
                 placeholder: 'Add Condition',
                 type: 'filter',
                 default: {},
-                description: 'Only accept messages matching these conditions; others are skipped while waiting. Reference message fields by their path as a plain string, e.g. "data" or "pose.position.x".',
+                description:
+                    'Only accept messages matching these conditions; others are skipped while waiting. Reference message fields by their path as a plain string, e.g. "data" or "pose.position.x".',
                 typeOptions: {
                     filter: {
                         version: 1,
@@ -148,9 +146,7 @@ export class RosTopicNextMessage implements INodeType {
         },
         listSearch: {
             getTopicsList: topicListSearch(),
-            getDetectedType: detectedTypeSearch('topicName', (ros, topic) =>
-                RosApiService.getTopicType(ros, topic),
-            ),
+            getDetectedType: detectedTypeSearch('topicName', (ros, topic) => RosApiService.getTopicType(ros, topic)),
         },
     };
 
@@ -161,15 +157,14 @@ export class RosTopicNextMessage implements INodeType {
         for (let i = 0; i < items.length; i++) {
             let ros;
             try {
-                const credentials = await this.getCredentials('rosBridgeApi') as unknown as RosBridgeCredentials;
+                const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
 
                 // Extract parameters
 
                 const topicNameLocator = this.getNodeParameter('topicName', i, {
                     extractValue: true,
                 }) as { value: string } | string;
-                const topicName =
-                    typeof topicNameLocator === 'string' ? topicNameLocator : topicNameLocator?.value;
+                const topicName = typeof topicNameLocator === 'string' ? topicNameLocator : topicNameLocator?.value;
 
                 const messageTypeLocator = this.getNodeParameter('messageType', i, {
                     extractValue: true,

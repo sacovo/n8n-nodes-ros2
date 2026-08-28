@@ -31,17 +31,21 @@ export const rosApiProperties: INodeProperties[] = [
         },
         options: [
             {
-                name: 'Get Definition', value: 'getDefinition',
+                name: 'Get Definition',
+                value: 'getDefinition',
                 action: 'Get the expanded definition of an action',
                 description: 'Get the expanded goal, result and feedback structure of an action type',
             },
             {
-                name: 'Get Type', value: 'getType',
+                name: 'Get Type',
+                value: 'getType',
                 action: 'Get the type of an action',
-                description: 'Get the action type of an action server by its name, optionally with its documentation (description)',
+                description:
+                    'Get the action type of an action server by its name, optionally with its documentation (description)',
             },
             {
-                name: 'List', value: 'list',
+                name: 'List',
+                value: 'list',
                 action: 'List action servers',
                 description: 'List all available action servers',
             },
@@ -61,17 +65,21 @@ export const rosApiProperties: INodeProperties[] = [
         },
         options: [
             {
-                name: 'Get Definition', value: 'getDefinition',
+                name: 'Get Definition',
+                value: 'getDefinition',
                 action: 'Get the expanded definitions of all topics and services of a node',
-                description: 'Get every topic, service and action of a node together with the expanded structure of their message types',
+                description:
+                    'Get every topic, service and action of a node together with the expanded structure of their message types',
             },
             {
-                name: 'Get Details', value: 'getDetails',
+                name: 'Get Details',
+                value: 'getDetails',
                 action: 'Get details of a node',
                 description: 'List the names of the topics and services of a node',
             },
             {
-                name: 'List', value: 'list',
+                name: 'List',
+                value: 'list',
                 action: 'List nodes',
                 description: 'List all running nodes',
             },
@@ -91,17 +99,20 @@ export const rosApiProperties: INodeProperties[] = [
         },
         options: [
             {
-                name: 'Get', value: 'get',
+                name: 'Get',
+                value: 'get',
                 action: 'Get a parameter',
                 description: 'Get the value of a parameter',
             },
             {
-                name: 'List', value: 'list',
+                name: 'List',
+                value: 'list',
                 action: 'List parameters',
                 description: 'List all parameter names',
             },
             {
-                name: 'Set', value: 'set',
+                name: 'Set',
+                value: 'set',
                 action: 'Set a parameter',
                 description: 'Set the value of a parameter',
             },
@@ -121,22 +132,28 @@ export const rosApiProperties: INodeProperties[] = [
         },
         options: [
             {
-                name: 'Get Definition', value: 'getDefinition',
+                name: 'Get Definition',
+                value: 'getDefinition',
                 action: 'Get the expanded definition of a service',
-                description: 'Get the expanded request and response structure of a service, so you know which fields a call expects and returns',
+                description:
+                    'Get the expanded request and response structure of a service, so you know which fields a call expects and returns',
             },
             {
-                name: 'Get Type', value: 'getType',
+                name: 'Get Type',
+                value: 'getType',
                 action: 'Get the type of a service',
-                description: 'Get the service type of a service by its name, optionally with its documentation (description)',
+                description:
+                    'Get the service type of a service by its name, optionally with its documentation (description)',
             },
             {
-                name: 'List', value: 'list',
+                name: 'List',
+                value: 'list',
                 action: 'List services',
                 description: 'List all available services',
             },
             {
-                name: 'List for Type', value: 'listForType',
+                name: 'List for Type',
+                value: 'listForType',
                 action: 'List services of a type',
                 description: 'List all services that use a given service type',
             },
@@ -156,27 +173,34 @@ export const rosApiProperties: INodeProperties[] = [
         },
         options: [
             {
-                name: 'Get Definition', value: 'getDefinition',
+                name: 'Get Definition',
+                value: 'getDefinition',
                 action: 'Get the expanded definition of a topic message type',
-                description: 'Get the expanded message structure of a topic, so you know which fields to publish or expect when subscribing',
+                description:
+                    'Get the expanded message structure of a topic, so you know which fields to publish or expect when subscribing',
             },
             {
-                name: 'Get Details', value: 'getDetails',
+                name: 'Get Details',
+                value: 'getDetails',
                 action: 'Get details of a topic',
                 description: 'Get the raw type definitions of a topic message type',
             },
             {
-                name: 'Get Type', value: 'getType',
+                name: 'Get Type',
+                value: 'getType',
                 action: 'Get the type of a topic',
-                description: 'Get the message type of a topic by its name, optionally with its documentation (description and raw message definition including comments)',
+                description:
+                    'Get the message type of a topic by its name, optionally with its documentation (description and raw message definition including comments)',
             },
             {
-                name: 'List', value: 'list',
+                name: 'List',
+                value: 'list',
                 action: 'List topics',
                 description: 'List all available topics and their message types',
             },
             {
-                name: 'List for Type', value: 'listForType',
+                name: 'List for Type',
+                value: 'listForType',
                 action: 'List topics of a type',
                 description: 'List all topics that use a given message type',
             },
@@ -260,7 +284,8 @@ export const rosApiProperties: INodeProperties[] = [
         name: 'parameterNodeName',
         type: 'resourceLocator',
         default: { mode: 'list', value: '' },
-        description: 'The node that owns the parameter. ROS 2 parameters live on a node, so rosapi addresses them as "&lt;node&gt;:&lt;parameter&gt;". Leave empty only if you enter a fully qualified parameter name below.',
+        description:
+            'The node that owns the parameter. ROS 2 parameters live on a node, so rosapi addresses them as "&lt;node&gt;:&lt;parameter&gt;". Leave empty only if you enter a fully qualified parameter name below.',
         displayOptions: {
             show: {
                 resource: ['parameter'],
@@ -291,7 +316,8 @@ export const rosApiProperties: INodeProperties[] = [
         type: 'resourceLocator',
         default: { mode: 'list', value: '' },
         required: true,
-        description: 'Select one of the parameters of the node above, or enter a name manually. A manual name may be either the bare parameter (combined with the node above) or the fully qualified "&lt;node&gt;:&lt;parameter&gt;".',
+        description:
+            'Select one of the parameters of the node above, or enter a name manually. A manual name may be either the bare parameter (combined with the node above) or the fully qualified "&lt;node&gt;:&lt;parameter&gt;".',
         typeOptions: {
             loadOptionsDependsOn: ['parameterNodeName'],
         },
@@ -372,7 +398,8 @@ export const rosApiProperties: INodeProperties[] = [
                 operation: ['getType'],
             },
         },
-        description: 'Whether to also read the latched &lt;name&gt;/desc documentation topic (std_msgs/String, published by the node owning this interface) and return its text as "description". Null when the interface is undocumented.',
+        description:
+            'Whether to also read the latched &lt;name&gt;/desc documentation topic (std_msgs/String, published by the node owning this interface) and return its text as "description". Null when the interface is undocumented.',
     },
     {
         displayName: 'Include Raw Definition',
@@ -385,7 +412,8 @@ export const rosApiProperties: INodeProperties[] = [
                 operation: ['getType'],
             },
         },
-        description: 'Whether to also return the raw message definition text as written in the .msg source, including comments that document units and allowed values. Only available for message types currently used by an active topic; null otherwise.',
+        description:
+            'Whether to also return the raw message definition text as written in the .msg source, including comments that document units and allowed values. Only available for message types currently used by an active topic; null otherwise.',
     },
     {
         displayName: 'Grep Pattern',
@@ -410,6 +438,7 @@ export const rosApiProperties: INodeProperties[] = [
                 operation: ['list'],
             },
         },
-        description: 'Whether to return a single "topics" array of { name, type } objects instead of the separate "topics" and "types" arrays. Avoids having to match items across two arrays by index.',
+        description:
+            'Whether to return a single "topics" array of { name, type } objects instead of the separate "topics" and "types" arrays. Avoids having to match items across two arrays by index.',
     },
 ];

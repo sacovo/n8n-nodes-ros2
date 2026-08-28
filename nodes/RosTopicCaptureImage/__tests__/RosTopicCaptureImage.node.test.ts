@@ -170,10 +170,11 @@ describe('RosTopicCaptureImage', () => {
 
             const result = await node.execute.call(mockExecuteFunctions);
 
-            expect(mockImageResizer.resize).toHaveBeenCalledWith(
-                Buffer.from('dGVzdA==', 'base64'),
-                { maxWidth: 640, maxHeight: 480, quality: 70 },
-            );
+            expect(mockImageResizer.resize).toHaveBeenCalledWith(Buffer.from('dGVzdA==', 'base64'), {
+                maxWidth: 640,
+                maxHeight: 480,
+                quality: 70,
+            });
             expect(result[0][0].json).toEqual({
                 topic: '/camera/image/compressed',
                 messageType: 'sensor_msgs/msg/CompressedImage',
@@ -224,10 +225,11 @@ describe('RosTopicCaptureImage', () => {
 
             await node.execute.call(mockExecuteFunctions);
 
-            expect(mockImageResizer.resize).toHaveBeenCalledWith(
-                Buffer.from('dGVzdA==', 'base64'),
-                { maxWidth: 320, maxHeight: undefined, quality: 80 },
-            );
+            expect(mockImageResizer.resize).toHaveBeenCalledWith(Buffer.from('dGVzdA==', 'base64'), {
+                maxWidth: 320,
+                maxHeight: undefined,
+                quality: 80,
+            });
         });
 
         it('should throw error when data is missing from message', async () => {
@@ -255,7 +257,9 @@ describe('RosTopicCaptureImage', () => {
                 throw new Error('Image message data is empty or missing.');
             });
 
-            await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow('Image message data is empty or missing.');
+            await expect(node.execute.call(mockExecuteFunctions)).rejects.toThrow(
+                'Image message data is empty or missing.',
+            );
             expect(mockNodeErrorHandler.handle).toHaveBeenCalled();
         });
     });

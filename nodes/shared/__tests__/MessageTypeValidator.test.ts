@@ -22,12 +22,7 @@ const float64MultiArray: ExpandedTypeDef = {
 describe('MessageTypeValidator', () => {
     describe('validate', () => {
         it('parses an array field entered as a JSON string', () => {
-            const result = MessageTypeValidator.validate(
-                { data: '[0.5, 0.5, 0.6]' },
-                float64MultiArray,
-                ctx,
-                0,
-            );
+            const result = MessageTypeValidator.validate({ data: '[0.5, 0.5, 0.6]' }, float64MultiArray, ctx, 0);
             expect(result).toEqual({ data: [0.5, 0.5, 0.6] });
         });
 
@@ -72,38 +67,33 @@ describe('MessageTypeValidator', () => {
         });
 
         it('throws when an array field cannot be parsed into an array', () => {
-            expect(() =>
-                MessageTypeValidator.validate({ data: 'not-json' }, float64MultiArray, ctx, 0),
-            ).toThrow(/"data" expects an array/);
+            expect(() => MessageTypeValidator.validate({ data: 'not-json' }, float64MultiArray, ctx, 0)).toThrow(
+                /"data" expects an array/,
+            );
         });
 
         it('throws with the element path when an array element has the wrong type', () => {
-            expect(() =>
-                MessageTypeValidator.validate({ data: [1, 'nope', 3] }, float64MultiArray, ctx, 0),
-            ).toThrow(/"data\[1\]" expects a number/);
+            expect(() => MessageTypeValidator.validate({ data: [1, 'nope', 3] }, float64MultiArray, ctx, 0)).toThrow(
+                /"data\[1\]" expects a number/,
+            );
         });
 
         it('throws with the nested path when a deep field has the wrong type', () => {
             expect(() =>
-                MessageTypeValidator.validate(
-                    { layout: { data_offset: 'abc' } },
-                    float64MultiArray,
-                    ctx,
-                    0,
-                ),
+                MessageTypeValidator.validate({ layout: { data_offset: 'abc' } }, float64MultiArray, ctx, 0),
             ).toThrow(/"layout\.data_offset" expects a number/);
         });
 
         it('rejects unknown fields and lists the allowed ones', () => {
-            expect(() =>
-                MessageTypeValidator.validate({ nope: 1 }, float64MultiArray, ctx, 0),
-            ).toThrow(/"nope" is not a field of this type\. Allowed fields: layout, data/);
+            expect(() => MessageTypeValidator.validate({ nope: 1 }, float64MultiArray, ctx, 0)).toThrow(
+                /"nope" is not a field of this type\. Allowed fields: layout, data/,
+            );
         });
 
         it('rejects an object where an array is expected', () => {
-            expect(() =>
-                MessageTypeValidator.validate({ data: { 0: 1 } }, float64MultiArray, ctx, 0),
-            ).toThrow(/"data" expects an array/);
+            expect(() => MessageTypeValidator.validate({ data: { 0: 1 } }, float64MultiArray, ctx, 0)).toThrow(
+                /"data" expects an array/,
+            );
         });
     });
 
@@ -139,12 +129,7 @@ describe('MessageTypeValidator', () => {
 
         it('still throws on a genuine type mismatch', async () => {
             await expect(
-                MessageTypeValidator.validateAgainstType(
-                    { data: 'not-json' },
-                    ctx,
-                    0,
-                    async () => float64MultiArray,
-                ),
+                MessageTypeValidator.validateAgainstType({ data: 'not-json' }, ctx, 0, async () => float64MultiArray),
             ).rejects.toThrow(/"data" expects an array/);
         });
     });

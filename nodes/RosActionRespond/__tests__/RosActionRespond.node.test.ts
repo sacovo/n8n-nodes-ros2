@@ -20,10 +20,7 @@ const mockActionServerService = RosActionServerService as jest.Mocked<typeof Ros
 const mockParameterExtractor = ParameterExtractor as jest.Mocked<typeof ParameterExtractor>;
 const mockNodeErrorHandler = NodeErrorHandler as jest.Mocked<typeof NodeErrorHandler>;
 
-function buildExecuteFunctions(
-    operation: string,
-    credentials: Record<string, unknown> = {},
-): IExecuteFunctions {
+function buildExecuteFunctions(operation: string, credentials: Record<string, unknown> = {}): IExecuteFunctions {
     return {
         getInputData: jest.fn().mockReturnValue([{}]),
         getCredentials: jest.fn().mockResolvedValue(credentials),
@@ -93,9 +90,7 @@ describe('RosActionRespond', () => {
             ['setCanceled', 'setCanceled'],
             ['setFailed', 'setFailed'],
         ] as const)('should refuse %s', async (operation, serviceMethod) => {
-            const result = await node.execute.call(
-                buildExecuteFunctions(operation, { readOnly: true }),
-            );
+            const result = await node.execute.call(buildExecuteFunctions(operation, { readOnly: true }));
 
             expect(result[0][0].json.error).toContain('read-only');
             expect(mockActionServerService[serviceMethod]).not.toHaveBeenCalled();
