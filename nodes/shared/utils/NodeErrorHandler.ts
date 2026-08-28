@@ -5,6 +5,7 @@
 import type { IExecuteFunctions } from 'n8n-workflow';
 import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import { RosBridgeConnectionError, RosBridgeTimeoutError } from '../services/RosBridgeService';
+import type { NodeContext } from './NodeContext';
 
 export class NodeErrorHandler {
     /**
@@ -28,23 +29,19 @@ export class NodeErrorHandler {
             .some((output) => output.type === NodeConnectionTypes.AiTool);
     }
 
-    static handle(
-        executeFunctions: IExecuteFunctions,
-        error: Error | unknown,
-        itemIndex: number,
-        shouldContinueOnFail: boolean = false,
-    ): { error: Error; isApiError: boolean } | null {
+    /**
+     * Rethrows `error` as the n8n error type that fits it: connection and
+     * timeout failures are the remote system's fault and surface as a
+     * NodeApiError, everything else as a NodeOperationError. Never returns.
+     */
+    static handle(context: NodeContext, error: Error | unknown, itemIndex: number): never {
         const actualError = error instanceof Error ? error : new Error(String(error));
 
-        if (shouldContinueOnFail) {
-            return null;
-        }
-
         if (actualError instanceof RosBridgeConnectionError || actualError instanceof RosBridgeTimeoutError) {
-            throw new NodeApiError(executeFunctions.getNode(), { message: actualError.message, itemIndex });
+            throw new NodeApiError(context.getNode(), { message: actualError.message, itemIndex });
         }
 
-        throw new NodeOperationError(executeFunctions.getNode(), actualError, { itemIndex });
+        throw new NodeOperationError(context.getNode(), actualError, { itemIndex });
     }
 
     static buildErrorOutput(error: Error | unknown): { error: string } {

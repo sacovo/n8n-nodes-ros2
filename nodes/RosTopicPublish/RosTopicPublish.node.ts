@@ -3,21 +3,18 @@ import type {
     INodeExecutionData,
     INodeType,
     INodeTypeDescription,
-    ILoadOptionsFunctions,
-    INodeListSearchResult,
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
-import type { Ros } from 'roslib';
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { RosApiService } from '../shared/services/RosApiService';
-import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
+import { detectedTypeSearch, topicListSearch, typeFieldsMapper } from '../shared/utils/LoadOptions';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
 import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
-import { assertInScope, filterByScope, parseTopicScope } from '../shared/utils/TopicScope';
+import { assertInScope, parseTopicScope } from '../shared/utils/TopicScope';
 import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 export class RosTopicPublish implements INodeType {
@@ -266,119 +263,21 @@ export class RosTopicPublish implements INodeType {
         credentialTest: {
             rosBridgeApi: rosBridgeApiTest,
         },
-        loadOptions: {},
         listSearch: {
-            async getDetectedType(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
-                try {
-                    const topicNameLocator = this.getNodeParameter('topicName', 0, {
-                        extractValue: true,
-                    }) as { value: string } | string;
-                    const topicName =
-                        typeof topicNameLocator === 'string' ? topicNameLocator : topicNameLocator?.value;
-
-                    if (!topicName) {
-                        return { results: [] };
-                    }
-
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const type = await RosApiService.getTopicType(ros, topicName);
-                        if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
-                            return {
-                                results: [
-                                    {
-                                        name: `Detected: ${type}`,
-                                        value: type,
-                                    },
-                                ],
-                            };
-                        }
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    // Ignore errors
-                }
-                return { results: [] };
-            },
-
-            async getTopicsList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
-                try {
-                    // Convenience only - the enforced gate is in execute().
-                    let scope: string[] = [];
-                    try {
-                        const options = (this.getNodeParameter('options', 0, {}) || {}) as {
-                            allowedNamespaces?: string;
-                        };
-                        scope = parseTopicScope(options.allowedNamespaces);
-                    } catch {
-                        // Options not resolvable in this context: show everything
-                    }
-
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const topics = await RosApiService.getTopics(ros);
-                        return {
-                            results: RosN8nFormatter.formatTopicListForN8n(
-                                filterByScope(topics.topics || [], scope),
-                                filter,
-                            ),
-                        };
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { results: [] };
-                }
-            },
+            getTopicsList: topicListSearch({ scopeOptionsParameter: 'options' }),
+            getDetectedType: detectedTypeSearch('topicName', (ros, topic) =>
+                RosApiService.getTopicType(ros, topic),
+            ),
         },
         resourceMapping: {
-            async getMessageFieldsForType(this: ILoadOptionsFunctions) {
-                try {
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const messageTypeLocator = this.getNodeParameter('messageType', 0, {
-                            extractValue: true,
-                        }) as { value: string } | string;
-                        let messageType =
-                            typeof messageTypeLocator === 'string'
-                                ? messageTypeLocator
-                                : messageTypeLocator?.value;
-
-                        // Auto-detect type from topic if not provided
-                        if (!messageType) {
-                            const topicNameLocator = this.getNodeParameter('topicName', 0, {
-                                extractValue: true,
-                            }) as { value: string } | string;
-                            const topicName =
-                                typeof topicNameLocator === 'string'
-                                    ? topicNameLocator
-                                    : topicNameLocator?.value;
-                            if (topicName) {
-                                messageType = await RosApiService.getTopicType(ros, topicName);
-                            }
-                        }
-
-                        if (!messageType) {
-                            return { fields: [] };
-                        }
-
-                        const typeDefs = await RosApiService.getMessageDetails(ros, messageType);
-                        return RosN8nFormatter.getRosMessageStructure(typeDefs);
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { fields: [] };
-                }
-            },
+            getMessageFieldsForType: typeFieldsMapper({
+                typeParameter: 'messageType',
+                source: {
+                    parameter: 'topicName',
+                    resolve: (ros, topic) => RosApiService.getTopicType(ros, topic),
+                },
+                fetchTypeDefs: (ros, type) => RosApiService.getMessageDetails(ros, type),
+            }),
         },
     };
 
@@ -387,7 +286,6 @@ export class RosTopicPublish implements INodeType {
         const returnData: INodeExecutionData[] = [];
 
         for (let i = 0; i < items.length; i++) {
-            let ros: Ros | undefined;
             try {
                 const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
 
@@ -425,7 +323,7 @@ export class RosTopicPublish implements INodeType {
                 );
                 assertInScope(this, topicName, parseTopicScope(options.allowedNamespaces), i);
 
-                ros = await RosBridgeService.connect(credentials);
+                const ros = await RosBridgeService.connect(credentials);
 
                 let message: JsonRecord = {};
                 if (operation === 'advertise') {
@@ -447,7 +345,6 @@ export class RosTopicPublish implements INodeType {
                     // type before sending. Skipped if the type can't be
                     // introspected; mismatches abort the publish.
                     if (messageType) {
-                        const rosClient = ros;
                         message = await MessageTypeValidator.validateAgainstType(
                             message,
                             this,
@@ -455,7 +352,7 @@ export class RosTopicPublish implements INodeType {
                             async () =>
                                 RosApiService.expandRootTypeDef(
                                     messageType,
-                                    await RosApiService.getMessageDetails(rosClient, messageType),
+                                    await RosApiService.getMessageDetails(ros, messageType),
                                 ),
                         );
                     }
@@ -495,10 +392,6 @@ export class RosTopicPublish implements INodeType {
                     continue;
                 }
                 NodeErrorHandler.handle(this, error, i);
-            } finally {
-                if (ros) {
-                    RosBridgeService.close(ros);
-                }
             }
         }
 

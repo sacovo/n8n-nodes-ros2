@@ -7,22 +7,26 @@ import type { IExecuteFunctions } from 'n8n-workflow';
 
 describe('ParameterExtractor', () => {
     describe('parseJsonParameter', () => {
+        // parseJsonParameter reports failures as NodeOperationError, which needs
+        // the node it happened on.
+        const context = { getNode: () => ({ name: 'Test Node' }) } as unknown as IExecuteFunctions;
+
         it('parses valid JSON object', () => {
             const input = '{"key": "value", "number": 42}';
 
-            const result = ParameterExtractor.parseJsonParameter(input, 'testParam');
+            const result = ParameterExtractor.parseJsonParameter(input, 'testParam', context);
 
             expect(result).toEqual({ key: 'value', number: 42 });
         });
 
         it('returns empty object for empty string', () => {
-            const result = ParameterExtractor.parseJsonParameter('', 'testParam');
+            const result = ParameterExtractor.parseJsonParameter('', 'testParam', context);
 
             expect(result).toEqual({});
         });
 
         it('returns empty object for whitespace only', () => {
-            const result = ParameterExtractor.parseJsonParameter('   ', 'testParam');
+            const result = ParameterExtractor.parseJsonParameter('   ', 'testParam', context);
 
             expect(result).toEqual({});
         });
@@ -30,7 +34,7 @@ describe('ParameterExtractor', () => {
         it('throws error for invalid JSON', () => {
             const input = '{invalid json}';
 
-            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam')).toThrow(
+            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam', context)).toThrow(
                 'Invalid JSON in parameter "testParam"',
             );
         });
@@ -38,7 +42,7 @@ describe('ParameterExtractor', () => {
         it('throws error for JSON array', () => {
             const input = '[1, 2, 3]';
 
-            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam')).toThrow(
+            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam', context)).toThrow(
                 'must be a JSON object',
             );
         });
@@ -46,7 +50,7 @@ describe('ParameterExtractor', () => {
         it('throws error for JSON string', () => {
             const input = '"just a string"';
 
-            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam')).toThrow(
+            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam', context)).toThrow(
                 'must be a JSON object',
             );
         });
@@ -54,7 +58,7 @@ describe('ParameterExtractor', () => {
         it('throws error for JSON null', () => {
             const input = 'null';
 
-            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam')).toThrow(
+            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam', context)).toThrow(
                 'must be a JSON object',
             );
         });
@@ -62,7 +66,7 @@ describe('ParameterExtractor', () => {
         it('throws error for JSON number', () => {
             const input = '42';
 
-            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam')).toThrow(
+            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam', context)).toThrow(
                 'must be a JSON object',
             );
         });
@@ -70,7 +74,7 @@ describe('ParameterExtractor', () => {
         it('throws error for JSON boolean', () => {
             const input = 'true';
 
-            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam')).toThrow(
+            expect(() => ParameterExtractor.parseJsonParameter(input, 'testParam', context)).toThrow(
                 'must be a JSON object',
             );
         });

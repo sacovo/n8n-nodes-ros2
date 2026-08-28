@@ -157,4 +157,37 @@ describe('RosN8nFormatter', () => {
             expect(result).toEqual([]);
         });
     });
+    describe('use as a detached callback', () => {
+        // The load-options factories in LoadOptions.ts take these formatters as
+        // plain callbacks, so none of them may rely on `this`. Passing an
+        // unbound reference used to throw, and the factories swallow errors
+        // into an empty dropdown, which hides the breakage completely.
+        it.each([
+            ['formatTopicListForN8n', RosN8nFormatter.formatTopicListForN8n],
+            ['formatServiceListForN8n', RosN8nFormatter.formatServiceListForN8n],
+            ['formatActionListForN8n', RosN8nFormatter.formatActionListForN8n],
+            ['formatNodeListForN8n', RosN8nFormatter.formatNodeListForN8n],
+            ['formatParameterListForN8n', RosN8nFormatter.formatParameterListForN8n],
+        ])('%s works when called unbound', (_name, format) => {
+            expect(format(['/a', '/b'])).toEqual([
+                { name: '/a', value: '/a' },
+                { name: '/b', value: '/b' },
+            ]);
+        });
+
+        it('getRosMessageStructure works when called unbound', () => {
+            const getRosMessageStructure = RosN8nFormatter.getRosMessageStructure;
+            const result = getRosMessageStructure([
+                {
+                    type: 'std_msgs/String',
+                    fieldnames: ['data'],
+                    fieldtypes: ['string'],
+                    fieldarraylen: [-1],
+                    examples: [],
+                },
+            ]);
+            expect(result.fields).toHaveLength(1);
+            expect(result.fields[0]).toMatchObject({ id: 'data', type: 'string' });
+        });
+    });
 });

@@ -3,8 +3,6 @@ import type {
     INodeExecutionData,
     INodeType,
     INodeTypeDescription,
-    ILoadOptionsFunctions,
-    INodeListSearchResult,
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
@@ -14,6 +12,7 @@ import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { detectedTypeSearch, listSearch, typeFieldsMapper } from '../shared/utils/LoadOptions';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { ResourceMapperCoercer } from '../shared/utils/ResourceMapperCoercer';
 import { MessageTypeValidator } from '../shared/utils/MessageTypeValidator';
@@ -178,106 +177,25 @@ export class RosServiceCall implements INodeType {
             rosBridgeApi: rosBridgeApiTest,
         },
         listSearch: {
-            async getDetectedServiceType(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
-                try {
-                    const serviceNameLocator = this.getNodeParameter('serviceName', 0, {
-                        extractValue: true,
-                    }) as { value: string } | string;
-                    const serviceName =
-                        typeof serviceNameLocator === 'string' ? serviceNameLocator : serviceNameLocator?.value;
-
-                    if (!serviceName) {
-                        return { results: [] };
-                    }
-
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const type = await RosApiService.getServiceType(ros, serviceName);
-                        if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
-                            return {
-                                results: [
-                                    {
-                                        name: `Detected: ${type}`,
-                                        value: type,
-                                    },
-                                ],
-                            };
-                        }
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    // Ignore errors
-                }
-                return { results: [] };
-            },
-
-            async getServicesList(
-                this: ILoadOptionsFunctions,
-                filter?: string
-            ): Promise<INodeListSearchResult> {
-                try {
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const services = await RosApiService.getServices(ros);
-                        return { results: RosN8nFormatter.formatServiceListForN8n(services, filter) };
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { results: [] };
-                }
-            },
+            getServicesList: listSearch(
+                (ros) => RosApiService.getServices(ros),
+                RosN8nFormatter.formatServiceListForN8n,
+            ),
+            getDetectedServiceType: detectedTypeSearch('serviceName', (ros, service) =>
+                RosApiService.getServiceType(ros, service),
+            ),
         },
         resourceMapping: {
-            async getRequestFieldsForType(this: ILoadOptionsFunctions) {
-                try {
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const serviceTypeLocator = this.getNodeParameter('serviceType', 0, {
-                            extractValue: true,
-                        }) as { value: string } | string;
-                        let serviceType =
-                            typeof serviceTypeLocator === 'string'
-                                ? serviceTypeLocator
-                                : serviceTypeLocator?.value;
-
-                        // Auto-detect type from service if not provided
-                        if (!serviceType) {
-                            const serviceNameLocator = this.getNodeParameter('serviceName', 0, {
-                                extractValue: true,
-                            }) as { value: string } | string;
-                            const serviceName =
-                                typeof serviceNameLocator === 'string'
-                                    ? serviceNameLocator
-                                    : serviceNameLocator?.value;
-                            if (serviceName) {
-                                serviceType = await RosApiService.getServiceType(ros, serviceName);
-                            }
-                        }
-
-                        if (!serviceType) {
-                            return { fields: [] };
-                        }
-
-                        // For services, we need the Request part of the type definition
-                        const requestType = serviceType.endsWith('_Request') ? serviceType : `${serviceType}_Request`;
-                        const typeDefs = await RosApiService.getMessageDetails(ros, requestType);
-                        return RosN8nFormatter.getRosMessageStructure(typeDefs);
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { fields: [] };
-                }
-            },
+            getRequestFieldsForType: typeFieldsMapper({
+                typeParameter: 'serviceType',
+                source: {
+                    parameter: 'serviceName',
+                    resolve: (ros, service) => RosApiService.getServiceType(ros, service),
+                },
+                // The mapper describes the request half of the service type.
+                normalizeType: (type) => (type.endsWith('_Request') ? type : `${type}_Request`),
+                fetchTypeDefs: (ros, type) => RosApiService.getMessageDetails(ros, type),
+            }),
         },
     };
 
@@ -318,7 +236,7 @@ export class RosServiceCall implements INodeType {
                     request = ResourceMapperCoercer.coerceMessage(requestStructure, this, i);
                 } else {
                     const requestJson = this.getNodeParameter('requestJson', i) as string;
-                    request = ParameterExtractor.parseJsonParameter(requestJson, 'requestJson');
+                    request = ParameterExtractor.parseJsonParameter(requestJson, 'requestJson', this, i);
                 }
 
                 const timeoutMs = ParameterExtractor.extractRequiredNumber(this, i, 'timeoutMs');
@@ -369,8 +287,6 @@ export class RosServiceCall implements INodeType {
                 }
 
                 NodeErrorHandler.handle(this, error, i);
-            } finally {
-                RosBridgeService.close(ros);
             }
         }
 

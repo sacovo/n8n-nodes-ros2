@@ -50,7 +50,6 @@ describe('RosApi', () => {
                 topics: ['/chatter', '/cmd_vel'],
                 types: ['std_msgs/String', 'geometry_msgs/Twist'],
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -66,7 +65,6 @@ describe('RosApi', () => {
 
             expect(mockRosBridgeService.connect).toHaveBeenCalled();
             expect(mockRosApiService.getTopics).toHaveBeenCalled();
-            expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
         it('should get topics filtered by grep pattern successfully', async () => {
@@ -94,7 +92,6 @@ describe('RosApi', () => {
                 topics: ['/chatter', '/cmd_vel', '/chatter_debug'],
                 types: ['std_msgs/String', 'geometry_msgs/Twist', 'std_msgs/String'],
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -134,7 +131,6 @@ describe('RosApi', () => {
                 topics: ['/chatter', '/cmd_vel', '/chatter_debug'],
                 types: ['std_msgs/String', 'geometry_msgs/Twist', 'std_msgs/String'],
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -172,7 +168,6 @@ describe('RosApi', () => {
                 topics: ['/chatter', '/cmd_vel', '/chatter_debug', '/chatter['],
                 types: ['std_msgs/String', 'geometry_msgs/Twist', 'std_msgs/String', 'std_msgs/String'],
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -205,7 +200,6 @@ describe('RosApi', () => {
                 topics: ['/chatter', '/cmd_vel'],
                 types: ['std_msgs/String', 'geometry_msgs/Twist'],
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -245,7 +239,6 @@ describe('RosApi', () => {
                 topics: ['/chatter', '/cmd_vel', '/chatter_debug'],
                 types: ['std_msgs/String', 'geometry_msgs/Twist', 'std_msgs/String'],
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -276,7 +269,6 @@ describe('RosApi', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getServices.mockResolvedValue(['service1', 'service2']);
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -306,7 +298,6 @@ describe('RosApi', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getNodes.mockResolvedValue(['node1', 'node2']);
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -336,7 +327,6 @@ describe('RosApi', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getActionServers.mockResolvedValue(['action1', 'action2']);
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -362,7 +352,6 @@ describe('RosApi', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getTopics.mockRejectedValue(new Error('ROS API unavailable'));
-            mockRosBridgeService.close.mockImplementation(() => { });
             mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation((ctx) => ctx.continueOnFail());
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'ROS API unavailable' });
 
@@ -392,7 +381,6 @@ describe('RosApi', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getTopics.mockRejectedValue(new Error('rosbridge unreachable'));
-            mockRosBridgeService.close.mockImplementation(() => { });
             // Use the real decision logic so tool executions actually take the soft-fail path
             const { NodeErrorHandler: realNodeErrorHandler } =
                 jest.requireActual<typeof import('../../shared/utils/NodeErrorHandler')>('../../shared/utils/NodeErrorHandler');
@@ -439,7 +427,6 @@ describe('RosApi', () => {
             });
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             mockNodeErrorHandler.handle.mockImplementation((context, error: unknown) => {
                 throw new Error((error as { message: string }).message);
@@ -485,7 +472,6 @@ describe('RosApi', () => {
                 });
 
                 mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
-                mockRosBridgeService.close.mockImplementation(() => { });
 
                 mockNodeErrorHandler.handle.mockImplementation((context, error: any) => {
                     throw error;
@@ -542,7 +528,6 @@ describe('RosApi', () => {
             mockRosApiService.getTopicType.mockResolvedValue('geometry_msgs/msg/Twist');
             mockRosApiService.getInterfaceDescription.mockResolvedValue('Drive command for the rover base');
             mockRosApiService.getTopicRawDefinition.mockResolvedValue('Vector3 linear # m/s');
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -574,7 +559,6 @@ describe('RosApi', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getTopicType.mockResolvedValue('geometry_msgs/msg/Twist');
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -603,7 +587,6 @@ describe('RosApi', () => {
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getServiceType.mockResolvedValue('fhnw_interfaces/srv/SetValue');
             mockRosApiService.getInterfaceDescription.mockResolvedValue('Sets the turntable target position in mm');
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -649,7 +632,6 @@ describe('RosApi', () => {
                 }
             ]);
             mockRosApiService.expandRootTypeDef.mockReturnValue({ data: 'string' });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -700,7 +682,6 @@ describe('RosApi', () => {
                     },
                 ],
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -761,7 +742,6 @@ describe('RosApi', () => {
             mockRosApiService.getServiceRequestDetails.mockResolvedValue([]);
             mockRosApiService.getServiceResponseDetails.mockResolvedValue([]);
             mockRosApiService.expandRootTypeDef.mockReturnValueOnce({}).mockReturnValueOnce({ success: 'bool', message: 'string' });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -802,7 +782,6 @@ describe('RosApi', () => {
                 .mockReturnValueOnce({ order: 'int32' })
                 .mockReturnValueOnce({ sequence: ['int32'] })
                 .mockReturnValueOnce({ partial_sequence: ['int32'] });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -836,7 +815,6 @@ describe('RosApi', () => {
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getActionType.mockResolvedValue('test_msgs/action/Fibonacci');
             mockRosApiService.getInterfaceDescription.mockResolvedValue('Computes the Fibonacci sequence up to the given order');
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -866,7 +844,6 @@ describe('RosApi', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosApiService.getActionType.mockResolvedValue('');
-            mockRosBridgeService.close.mockImplementation(() => { });
             mockNodeErrorHandler.handle.mockImplementation((context, error: unknown) => {
                 throw error;
             });

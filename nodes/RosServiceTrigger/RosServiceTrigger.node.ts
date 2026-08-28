@@ -1,10 +1,8 @@
 import type {
-    IExecuteFunctions,
     INodeType,
     INodeTypeDescription,
     ITriggerFunctions,
     ITriggerResponse,
-    ILoadOptionsFunctions,
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
@@ -14,7 +12,7 @@ import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
-import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
+import { typeFieldsMapper } from '../shared/utils/LoadOptions';
 import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 
 // Trigger nodes cannot be invoked as AI tools, so usableAsTool is omitted
@@ -130,28 +128,10 @@ export class RosServiceTrigger implements INodeType {
             rosBridgeApi: rosBridgeApiTest,
         },
         resourceMapping: {
-            async getResponseFieldsForType(this: ILoadOptionsFunctions) {
-                try {
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const serviceType = this.getNodeParameter('serviceType', 0) as string;
-
-                        if (!serviceType) {
-                            return { fields: [] };
-                        }
-
-                        const typeDefs = await RosApiService.getServiceResponseDetails(ros, serviceType);
-                        return RosN8nFormatter.getRosMessageStructure(typeDefs);
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { fields: [] };
-                }
-            },
+            getResponseFieldsForType: typeFieldsMapper({
+                typeParameter: 'serviceType',
+                fetchTypeDefs: (ros, type) => RosApiService.getServiceResponseDetails(ros, type),
+            }),
         },
     };
 
@@ -178,7 +158,7 @@ export class RosServiceTrigger implements INodeType {
                 }
             } else {
                 const responseJson = this.getNodeParameter('responseJson') as string;
-                responsePayload = ParameterExtractor.parseJsonParameter(responseJson, 'responseJson');
+                responsePayload = ParameterExtractor.parseJsonParameter(responseJson, 'responseJson', this);
             }
 
             const onServiceCall = (request: JsonRecord, response: JsonRecord) => {
@@ -210,18 +190,14 @@ export class RosServiceTrigger implements INodeType {
                     serviceType,
                     onServiceCall,
                 );
-                return async () => {
-                    await unsubscribe();
-                    RosBridgeService.close(ros);
-                };
+                return unsubscribe;
             });
 
             return {
                 closeFunction: stop,
             };
         } catch (error) {
-            NodeErrorHandler.handle(this as unknown as IExecuteFunctions, error as Error, 0);
-            throw error;
+            NodeErrorHandler.handle(this, error, 0);
         }
     }
 }

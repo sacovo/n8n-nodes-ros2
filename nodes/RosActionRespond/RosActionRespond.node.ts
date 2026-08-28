@@ -130,6 +130,8 @@ export class RosActionRespond implements INodeType {
                     payload = ParameterExtractor.parseJsonParameter(
                         this.getNodeParameter('payloadJson', i) as string,
                         'payloadJson',
+                        this,
+                        i,
                     );
                 }
 

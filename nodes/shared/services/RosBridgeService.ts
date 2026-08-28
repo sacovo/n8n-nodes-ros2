@@ -177,17 +177,13 @@ export class RosBridgeService {
         return ros;
     }
 
-    static close(ros: Ros | null | undefined): void {
-        void ros;
-        // With connection pooling, we don't want to actually close the connection
-        // on every node execution, as ROS 2 discovery takes time.
-    }
-
     /**
-     * Tears down every pooled connection. Node executions must not call this -
-     * the pool deliberately outlives them - but a process that wants to exit
-     * (the system tests, or a future n8n shutdown hook) needs a way to release
-     * the sockets that otherwise keep the event loop alive.
+     * Tears down every pooled connection. Node executions must not call this:
+     * connections are pooled precisely because ROS 2 discovery is slow, so a
+     * finished execution deliberately leaves its socket open for the next one.
+     * Only a process that wants to exit (the system tests, or a future n8n
+     * shutdown hook) needs to release the sockets that otherwise keep the
+     * event loop alive.
      */
     static closeAll(): void {
         for (const [url, ros] of this.connectionPool.entries()) {

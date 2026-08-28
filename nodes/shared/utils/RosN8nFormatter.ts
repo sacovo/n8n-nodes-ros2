@@ -6,6 +6,12 @@ import type { FieldType, INodePropertyOptions, ResourceMapperFields } from 'n8n-
 import { rosapi } from 'roslib';
 import { RosApiService } from '../services/RosApiService';
 
+/**
+ * Formatting helpers between ROS introspection results and the shapes n8n's
+ * editor expects. Every method addresses the class by name rather than through
+ * `this`, so they stay correct when handed to the load-options factories in
+ * {@link ../utils/LoadOptions} as plain callbacks.
+ */
 export class RosN8nFormatter {
     static formatTopicMessage(topicName: string, messageType: string, message: unknown): import("n8n-workflow").IDataObject {
         return {
@@ -90,35 +96,35 @@ export class RosN8nFormatter {
      * Formats topic list from getRosTopics into n8n dropdown options
      */
     static formatTopicListForN8n(topics: string[], filter?: string): INodePropertyOptions[] {
-        return this.formatListForN8n(topics, filter);
+        return RosN8nFormatter.formatListForN8n(topics, filter);
     }
 
     /**
      * Formats service list from getRosServices into n8n dropdown options
      */
     static formatServiceListForN8n(services: string[], filter?: string): INodePropertyOptions[] {
-        return this.formatListForN8n(services, filter);
+        return RosN8nFormatter.formatListForN8n(services, filter);
     }
 
     /**
      * Formats action server list from getRosActionServers into n8n dropdown options
      */
     static formatActionListForN8n(actions: string[], filter?: string): INodePropertyOptions[] {
-        return this.formatListForN8n(actions, filter);
+        return RosN8nFormatter.formatListForN8n(actions, filter);
     }
 
     /**
      * Formats node list from getNodes into n8n dropdown options
      */
     static formatNodeListForN8n(nodes: string[], filter?: string): INodePropertyOptions[] {
-        return this.formatListForN8n(nodes, filter);
+        return RosN8nFormatter.formatListForN8n(nodes, filter);
     }
 
     /**
      * Formats parameter list from getParams into n8n dropdown options
      */
     static formatParameterListForN8n(parameters: string[], filter?: string): INodePropertyOptions[] {
-        return this.formatListForN8n(parameters, filter);
+        return RosN8nFormatter.formatListForN8n(parameters, filter);
     }
 
     /**
@@ -145,7 +151,7 @@ export class RosN8nFormatter {
                 fieldtype += '[]';
             }
 
-            const n8nType = this.mapRosTypeToN8nFieldType(fieldtype);
+            const n8nType = RosN8nFormatter.mapRosTypeToN8nFieldType(fieldtype);
 
             let description = `ROS message field of type ${fieldtype}`;
             // n8n's resource mapper does not render a per-field description or

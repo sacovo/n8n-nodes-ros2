@@ -4,9 +4,6 @@ import type {
     INodeTypeDescription,
     ITriggerFunctions,
     ITriggerResponse,
-    ILoadOptionsFunctions,
-    INodeListSearchResult,
-    IExecuteFunctions,
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
@@ -14,6 +11,7 @@ import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '..
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { RosApiService } from '../shared/services/RosApiService';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { detectedTypeSearch, topicListSearch } from '../shared/utils/LoadOptions';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
 import { checkFilter, normalizeFilterConditions, type FilterData } from '../shared/utils/MessageFilter';
@@ -146,59 +144,11 @@ export class RosTopicTrigger implements INodeType {
         credentialTest: {
             rosBridgeApi: rosBridgeApiTest,
         },
-        loadOptions: {},
         listSearch: {
-            async getDetectedType(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
-                try {
-                    const topicNameLocator = this.getNodeParameter('topicName', 0, {
-                        extractValue: true,
-                    }) as { value: string } | string;
-                    const topicName =
-                        typeof topicNameLocator === 'string' ? topicNameLocator : topicNameLocator?.value;
-
-                    if (!topicName) {
-                        return { results: [] };
-                    }
-
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const type = await RosApiService.getTopicType(ros, topicName);
-                        if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
-                            return {
-                                results: [
-                                    {
-                                        name: `Detected: ${type}`,
-                                        value: type,
-                                    },
-                                ],
-                            };
-                        }
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    // Ignore errors
-                }
-                return { results: [] };
-            },
-
-            async getTopicsList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
-                try {
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const topics = await RosApiService.getTopics(ros);
-                        return { results: RosN8nFormatter.formatTopicListForN8n(topics.topics || [], filter) };
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { results: [] };
-                }
-            },
+            getTopicsList: topicListSearch(),
+            getDetectedType: detectedTypeSearch('topicName', (ros, topic) =>
+                RosApiService.getTopicType(ros, topic),
+            ),
         },
     };
 
@@ -231,10 +181,7 @@ export class RosTopicTrigger implements INodeType {
                 credentials as unknown as RosBridgeCredentials,
                 async (ros) => {
                     const unsubscribe = await RosBridgeService.subscribeToTopic(ros, topicName, messageType, onMessage);
-                    return () => {
-                        unsubscribe();
-                        RosBridgeService.close(ros);
-                    };
+                    return unsubscribe;
                 },
             );
 
@@ -242,8 +189,7 @@ export class RosTopicTrigger implements INodeType {
                 closeFunction: stop,
             };
         } catch (error) {
-            NodeErrorHandler.handle(this as unknown as IExecuteFunctions, error as Error, 0);
-            throw error;
+            NodeErrorHandler.handle(this, error, 0);
         }
     }
 }

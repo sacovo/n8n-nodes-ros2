@@ -5,10 +5,17 @@
 import type { IExecuteFunctions } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
+import type { NodeContext } from './NodeContext';
+
 export type JsonRecord = Record<string, unknown>;
 
 export class ParameterExtractor {
-    static parseJsonParameter(input: string, parameterName: string): JsonRecord {
+    static parseJsonParameter(
+        input: string,
+        parameterName: string,
+        context: NodeContext,
+        itemIndex = 0,
+    ): JsonRecord {
         if (!input.trim()) {
             return {};
         }
@@ -17,11 +24,19 @@ export class ParameterExtractor {
         try {
             parsed = JSON.parse(input);
         } catch (error) {
-            throw new Error(`Invalid JSON in parameter "${parameterName}": ${(error as Error).message}`);
+            throw new NodeOperationError(
+                context.getNode(),
+                `Invalid JSON in parameter "${parameterName}": ${(error as Error).message}`,
+                { itemIndex },
+            );
         }
 
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-            throw new Error(`Parameter "${parameterName}" must be a JSON object`);
+            throw new NodeOperationError(
+                context.getNode(),
+                `Parameter "${parameterName}" must be a JSON object`,
+                { itemIndex },
+            );
         }
 
         return parsed as JsonRecord;
@@ -104,6 +119,6 @@ export class ParameterExtractor {
             );
         }
 
-        return this.parseJsonParameter(value, parameterName);
+        return this.parseJsonParameter(value, parameterName, executeFunctions, itemIndex);
     }
 }

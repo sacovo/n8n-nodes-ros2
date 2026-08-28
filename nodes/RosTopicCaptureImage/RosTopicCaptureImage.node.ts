@@ -3,8 +3,6 @@ import type {
     INodeExecutionData,
     INodeType,
     INodeTypeDescription,
-    ILoadOptionsFunctions,
-    INodeListSearchResult,
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
@@ -13,7 +11,7 @@ import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { RosApiService } from '../shared/services/RosApiService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
-import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
+import { detectedTypeSearch, topicListSearch } from '../shared/utils/LoadOptions';
 import { ImageResizer } from '../shared/utils/ImageResizer';
 
 export class RosTopicCaptureImage implements INodeType {
@@ -154,60 +152,11 @@ export class RosTopicCaptureImage implements INodeType {
         credentialTest: {
             rosBridgeApi: rosBridgeApiTest,
         },
-        loadOptions: {},
         listSearch: {
-            async getDetectedType(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
-                try {
-                    const topicNameLocator = this.getNodeParameter('topicName', 0, {
-                        extractValue: true,
-                    }) as { value: string } | string;
-                    const topicName =
-                        typeof topicNameLocator === 'string' ? topicNameLocator : topicNameLocator?.value;
-
-                    if (!topicName) {
-                        return { results: [] };
-                    }
-
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const type = await RosApiService.getTopicType(ros, topicName);
-                        if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
-                            return {
-                                results: [
-                                    {
-                                        name: `Detected: ${type}`,
-                                        value: type,
-                                    },
-                                ],
-                            };
-                        }
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    // Ignore errors
-                }
-                return { results: [] };
-            },
-
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            async getTopicsList(this: ILoadOptionsFunctions, filter?: string, paginationToken?: string): Promise<INodeListSearchResult> {
-                try {
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const topics = await RosApiService.getTopics(ros);
-                        return { results: RosN8nFormatter.formatTopicListForN8n(topics.topics || [], filter) };
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { results: [] };
-                }
-            },
+            getTopicsList: topicListSearch(),
+            getDetectedType: detectedTypeSearch('topicName', (ros, topic) =>
+                RosApiService.getTopicType(ros, topic),
+            ),
         },
     };
 
@@ -319,10 +268,6 @@ export class RosTopicCaptureImage implements INodeType {
                     });
                 } else {
                     NodeErrorHandler.handle(this, error as Error, i);
-                }
-            } finally {
-                if (ros) {
-                    RosBridgeService.close(ros);
                 }
             }
         }

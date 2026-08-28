@@ -59,7 +59,6 @@ describe('RosTopicPublish', () => {
                 });
                 expect(mockRosApiService.getTopics).toHaveBeenCalled();
                 expect(mockRosN8nFormatter.formatTopicListForN8n).toHaveBeenCalledWith(['/topic1', '/topic2'], 'top');
-                expect(mockRosBridgeService.close).toHaveBeenCalled();
             });
         });
 
@@ -83,7 +82,6 @@ describe('RosTopicPublish', () => {
                     ],
                 });
                 expect(mockRosApiService.getTopicType).toHaveBeenCalledWith(expect.anything(), '/topic1');
-                expect(mockRosBridgeService.close).toHaveBeenCalled();
             });
 
             it('should return empty list if filter does not match', async () => {
@@ -124,7 +122,6 @@ describe('RosTopicPublish', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.publishTopic.mockResolvedValue(undefined);
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -146,7 +143,6 @@ describe('RosTopicPublish', () => {
                 undefined,
                 undefined,
             );
-            expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
         it('should advertise topic only when operation is advertise', async () => {
@@ -165,7 +161,6 @@ describe('RosTopicPublish', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.advertiseTopic.mockResolvedValue(undefined);
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -184,7 +179,6 @@ describe('RosTopicPublish', () => {
                 'std_msgs/msg/String',
             );
             expect(mockRosBridgeService.publishTopic).not.toHaveBeenCalled();
-            expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
         it('should publish message with custom options (discoveryDelay and burst)', async () => {
@@ -207,7 +201,6 @@ describe('RosTopicPublish', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.publishTopic.mockResolvedValue(undefined);
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -242,7 +235,6 @@ describe('RosTopicPublish', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.publishTopic.mockRejectedValue(new Error('Publish failed'));
-            mockRosBridgeService.close.mockImplementation(() => { });
             mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation((ctx) => ctx.continueOnFail());
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'Publish failed' });
 
@@ -329,7 +321,6 @@ describe('RosTopicPublish', () => {
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.publishTopic.mockResolvedValue(undefined);
             mockRosBridgeService.advertiseTopic.mockResolvedValue(undefined);
-            mockRosBridgeService.close.mockImplementation(() => { });
         });
 
         it('should publish a topic inside an allowed namespace', async () => {

@@ -104,24 +104,6 @@ describe('RosBridgeService', () => {
         });
     });
 
-    describe('close', () => {
-        it('does NOT close a Ros connection (due to pooling)', () => {
-            const mockRos = { close: jest.fn() } as unknown as Ros;
-
-            RosBridgeService.close(mockRos);
-
-            expect(mockRos.close).not.toHaveBeenCalled();
-        });
-
-        it('handles null Ros connection', () => {
-            expect(() => RosBridgeService.close(null)).not.toThrow();
-        });
-
-        it('handles undefined Ros connection', () => {
-            expect(() => RosBridgeService.close(undefined)).not.toThrow();
-        });
-    });
-
     describe('connect (pool reuse)', () => {
         const getConnectionPool = () =>
             (RosBridgeService as unknown as { connectionPool: Map<string, Ros> }).connectionPool;

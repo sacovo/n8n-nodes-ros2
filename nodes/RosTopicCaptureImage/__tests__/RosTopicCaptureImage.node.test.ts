@@ -55,7 +55,6 @@ describe('RosTopicCaptureImage', () => {
                 format: 'jpeg',
                 data: 'dGVzdA==', // 'test' in base64
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -80,7 +79,6 @@ describe('RosTopicCaptureImage', () => {
                 'sensor_msgs/msg/CompressedImage',
                 5000,
             );
-            expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
         it('should handle different formats like PNG', async () => {
@@ -112,7 +110,6 @@ describe('RosTopicCaptureImage', () => {
                 format: 'png',
                 data: 'dGVzdA==',
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -170,7 +167,6 @@ describe('RosTopicCaptureImage', () => {
                 format: 'jpeg',
                 data: 'dGVzdA==',
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -225,7 +221,6 @@ describe('RosTopicCaptureImage', () => {
                 format: 'jpeg',
                 data: 'dGVzdA==',
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             await node.execute.call(mockExecuteFunctions);
 
@@ -255,7 +250,6 @@ describe('RosTopicCaptureImage', () => {
                 format: 'jpeg',
                 // data is missing
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             mockNodeErrorHandler.handle.mockImplementation(() => {
                 throw new Error('Image message data is empty or missing.');

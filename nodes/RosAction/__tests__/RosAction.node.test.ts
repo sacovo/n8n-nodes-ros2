@@ -48,7 +48,6 @@ describe('RosAction', () => {
         jest.clearAllMocks();
         node = new RosAction();
         mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
-        mockRosBridgeService.close.mockImplementation(() => { });
         jest.spyOn(NodeErrorHandler, 'shouldReturnErrorOutput').mockReturnValue(false);
     });
 

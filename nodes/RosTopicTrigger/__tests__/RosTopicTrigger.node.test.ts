@@ -9,7 +9,6 @@ import type { Ros } from 'roslib';
 
 // Mock the services
 jest.mock('../../shared/services/RosBridgeService');
-jest.mock('../../shared/utils/NodeErrorHandler');
 
 const mockRosBridgeService = RosBridgeService as jest.Mocked<typeof RosBridgeService>;
 
@@ -22,6 +21,7 @@ function buildTriggerFunctions(parameters: Record<string, unknown>): ITriggerFun
         ),
         getWorkflowStaticData: jest.fn().mockReturnValue({}),
         setWorkflowStaticData: jest.fn(),
+        getNode: jest.fn().mockReturnValue({ name: 'ROS2 Topic Trigger', type: 'rosTopicTrigger' }),
     } as unknown as ITriggerFunctions;
 }
 
@@ -153,6 +153,7 @@ describe('RosTopicTrigger', () => {
                 getNodeParameter: jest.fn().mockImplementation(() => {
                     throw new Error('Invalid topic name');
                 }),
+                getNode: jest.fn().mockReturnValue({ name: 'ROS2 Topic Trigger', type: 'rosTopicTrigger' }),
             } as unknown as ITriggerFunctions;
 
             await expect(node.trigger.call(mockTriggerFunctions)).rejects.toThrow('Invalid topic name');

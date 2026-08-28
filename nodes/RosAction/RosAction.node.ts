@@ -1,8 +1,6 @@
 import type {
     IExecuteFunctions,
-    ILoadOptionsFunctions,
     INodeExecutionData,
-    INodeListSearchResult,
     INodeType,
     INodeTypeDescription,
 } from 'n8n-workflow';
@@ -13,6 +11,7 @@ import { RosApiService } from '../shared/services/RosApiService';
 import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { detectedTypeSearch, listSearch, typeFieldsMapper } from '../shared/utils/LoadOptions';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { assertWriteAllowed } from '../shared/utils/ReadOnlyGuard';
 import { rosActionProperties } from './RosActionDescription';
@@ -53,106 +52,23 @@ export class RosAction implements INodeType {
             rosBridgeApi: rosBridgeApiTest,
         },
         listSearch: {
-            async getActionsList(
-                this: ILoadOptionsFunctions,
-                filter?: string,
-            ): Promise<INodeListSearchResult> {
-                try {
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const actions = await RosApiService.getActionServers(ros);
-                        return { results: RosN8nFormatter.formatActionListForN8n(actions, filter) };
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { results: [] };
-                }
-            },
-
-            async getDetectedActionType(
-                this: ILoadOptionsFunctions,
-                filter?: string,
-            ): Promise<INodeListSearchResult> {
-                try {
-                    const serverNameLocator = this.getNodeParameter('serverName', 0, {
-                        extractValue: true,
-                    }) as { value: string } | string;
-                    const serverName =
-                        typeof serverNameLocator === 'string'
-                            ? serverNameLocator
-                            : serverNameLocator?.value;
-
-                    if (!serverName) {
-                        return { results: [] };
-                    }
-
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const type = await RosApiService.getActionType(ros, serverName);
-                        if (type && (!filter || type.toLowerCase().includes(filter.toLowerCase()))) {
-                            return {
-                                results: [{ name: `Detected: ${type}`, value: type }],
-                            };
-                        }
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    // Ignore errors
-                }
-                return { results: [] };
-            },
+            getActionsList: listSearch(
+                (ros) => RosApiService.getActionServers(ros),
+                RosN8nFormatter.formatActionListForN8n,
+            ),
+            getDetectedActionType: detectedTypeSearch('serverName', (ros, server) =>
+                RosApiService.getActionType(ros, server),
+            ),
         },
         resourceMapping: {
-            async getGoalFieldsForType(this: ILoadOptionsFunctions) {
-                try {
-                    const credentials = (await this.getCredentials(
-                        'rosBridgeApi',
-                    )) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const actionTypeLocator = this.getNodeParameter('actionType', 0, {
-                            extractValue: true,
-                        }) as { value: string } | string;
-                        let actionType =
-                            typeof actionTypeLocator === 'string'
-                                ? actionTypeLocator
-                                : actionTypeLocator?.value;
-
-                        // Auto-detect type from server if not provided
-                        if (!actionType) {
-                            const serverNameLocator = this.getNodeParameter('serverName', 0, {
-                                extractValue: true,
-                            }) as { value: string } | string;
-                            const serverName =
-                                typeof serverNameLocator === 'string'
-                                    ? serverNameLocator
-                                    : serverNameLocator?.value;
-                            if (serverName) {
-                                actionType = await RosApiService.getActionType(ros, serverName);
-                            }
-                        }
-
-                        if (!actionType) {
-                            return { fields: [] };
-                        }
-
-                        const typeDefs = await RosApiService.getActionGoalDetails(ros, actionType);
-                        return RosN8nFormatter.getRosMessageStructure(typeDefs);
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { fields: [] };
-                }
-            },
+            getGoalFieldsForType: typeFieldsMapper({
+                typeParameter: 'actionType',
+                source: {
+                    parameter: 'serverName',
+                    resolve: (ros, server) => RosApiService.getActionType(ros, server),
+                },
+                fetchTypeDefs: (ros, type) => RosApiService.getActionGoalDetails(ros, type),
+            }),
         },
     };
 
@@ -186,8 +102,6 @@ export class RosAction implements INodeType {
                 }
 
                 NodeErrorHandler.handle(this, error, i);
-            } finally {
-                RosBridgeService.close(ros);
             }
         }
 

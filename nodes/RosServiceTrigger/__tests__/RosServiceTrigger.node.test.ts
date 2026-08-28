@@ -78,7 +78,6 @@ describe('RosServiceTrigger', () => {
         if (result && result.closeFunction) {
             await result.closeFunction();
             expect(mockUnsubscribe).toHaveBeenCalled();
-            expect(RosBridgeService.close).toHaveBeenCalled();
         }
     });
 

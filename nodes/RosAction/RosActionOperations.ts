@@ -61,6 +61,8 @@ async function buildGoal(
         goal = ParameterExtractor.parseJsonParameter(
             node.getNodeParameter('goalJson', itemIndex) as string,
             'goalJson',
+            node,
+            itemIndex,
         );
     }
 

@@ -3,7 +3,7 @@
 	"version": "0.7.0",
 	"description": "ROS2 rosbridge integration for n8n workflows.",
 	"license": "MIT",
-	"homepage": "https://github.com/fhnw-rover/n8n/n8n-nodes-ros2",
+	"homepage": "https://github.com/sacovo/n8n-nodes-ros2",
 	"keywords": [
 		"n8n-community-node-package"
 	],
@@ -13,7 +13,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/fhnw-rover/n8n/n8n-nodes-ros2.git"
+		"url": "git+https://github.com/sacovo/n8n-nodes-ros2.git"
 	},
 	"scripts": {
 		"build": "n8n-node build",

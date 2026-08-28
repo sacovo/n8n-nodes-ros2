@@ -61,7 +61,6 @@ describe('RosServiceCall', () => {
                 });
                 expect(mockRosApiService.getServices).toHaveBeenCalled();
                 expect(mockRosN8nFormatter.formatServiceListForN8n).toHaveBeenCalledWith(['/service1', '/service2'], 'srv');
-                expect(mockRosBridgeService.close).toHaveBeenCalled();
             });
 
             it('should return empty list on error', async () => {
@@ -102,7 +101,6 @@ describe('RosServiceCall', () => {
             mockRosBridgeService.callService.mockResolvedValue({
                 sum: 8,
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -123,7 +121,6 @@ describe('RosServiceCall', () => {
                 { a: 5, b: 3 },
                 expect.any(Number),
             );
-            expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
         it('should handle service call errors with continueOnFail', async () => {
@@ -147,7 +144,6 @@ describe('RosServiceCall', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.callService.mockRejectedValue(new Error('Service not available'));
-            mockRosBridgeService.close.mockImplementation(() => { });
             mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation((ctx) => ctx.continueOnFail());
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'Service not available' });
 

@@ -14,17 +14,13 @@
  * tool: agents only fill parameters, they never pick credentials.
  */
 
-import type { INode } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
+
+import type { NodeContext } from './NodeContext';
 
 /** Shape shared by every credential that carries the read-only switch. */
 export interface ReadOnlyCapableCredentials {
     readOnly?: boolean;
-}
-
-/** The bit of the node context the guard needs; kept minimal so execute, trigger and loadOptions contexts all fit. */
-interface NodeContext {
-    getNode(): INode;
 }
 
 /**

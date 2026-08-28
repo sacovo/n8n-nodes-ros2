@@ -1,5 +1,4 @@
 import type {
-    IExecuteFunctions,
     INodeType,
     INodeTypeDescription,
     ITriggerFunctions,
@@ -8,7 +7,7 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { RosActionServerService } from '../shared/services/RosActionServerService';
-import { RosBridgeService, type JsonRecord, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
+import type { JsonRecord, RosBridgeCredentials } from '../shared/services/RosBridgeService';
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
 import { connectWithReconnect } from '../shared/utils/TriggerReconnect';
@@ -131,18 +130,14 @@ export class RosActionTrigger implements INodeType {
                     onGoal,
                     onCancel,
                 );
-                return async () => {
-                    await unadvertise();
-                    RosBridgeService.close(ros);
-                };
+                return unadvertise;
             });
 
             return {
                 closeFunction: stop,
             };
         } catch (error) {
-            NodeErrorHandler.handle(this as unknown as IExecuteFunctions, error as Error, 0);
-            throw error;
+            NodeErrorHandler.handle(this, error, 0);
         }
     }
 }

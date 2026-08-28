@@ -45,7 +45,6 @@ describe('RosTopicNextMessage', () => {
             mockRosBridgeService.waitForTopicMessage.mockResolvedValue({
                 data: 'Hello ROS!'
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             const result = await node.execute.call(mockExecuteFunctions);
 
@@ -66,7 +65,6 @@ describe('RosTopicNextMessage', () => {
                 5000,
                 expect.any(Function),
             );
-            expect(mockRosBridgeService.close).toHaveBeenCalled();
         });
 
         it('should normalize legacy expression conditions and filter messages (regression for pre-0.2.0 exports)', async () => {
@@ -103,7 +101,6 @@ describe('RosTopicNextMessage', () => {
                 filterCallback = callback;
                 return { data: 3 };
             });
-            mockRosBridgeService.close.mockImplementation(() => { });
 
             await node.execute.call(mockExecuteFunctions);
 
@@ -132,7 +129,6 @@ describe('RosTopicNextMessage', () => {
 
             mockRosBridgeService.connect.mockResolvedValue({} as unknown as Ros);
             mockRosBridgeService.waitForTopicMessage.mockRejectedValue(new Error('Timeout waiting for message'));
-            mockRosBridgeService.close.mockImplementation(() => { });
             mockNodeErrorHandler.shouldReturnErrorOutput.mockImplementation((ctx) => ctx.continueOnFail());
             mockNodeErrorHandler.buildErrorOutput.mockReturnValue({ error: 'Timeout waiting for message' });
 

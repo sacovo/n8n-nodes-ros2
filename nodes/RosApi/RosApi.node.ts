@@ -1,8 +1,6 @@
 import type {
     IExecuteFunctions,
-    ILoadOptionsFunctions,
     INodeExecutionData,
-    INodeListSearchResult,
     INodeType,
     INodeTypeDescription,
 } from 'n8n-workflow';
@@ -12,6 +10,7 @@ import { RosApiService } from '../shared/services/RosApiService';
 import { RosBridgeService, type RosBridgeCredentials } from '../shared/services/RosBridgeService';
 import { ParameterExtractor } from '../shared/utils/ParameterExtractor';
 import { NodeErrorHandler } from '../shared/utils/NodeErrorHandler';
+import { getLocatorValue, listSearch } from '../shared/utils/LoadOptions';
 import { RosN8nFormatter } from '../shared/utils/RosN8nFormatter';
 import { rosBridgeApiTest } from '../shared/utils/CredentialTests';
 import { rosApiProperties } from './RosApiDescription';
@@ -52,20 +51,7 @@ export class RosApi implements INodeType {
             rosBridgeApi: rosBridgeApiTest,
         },
         listSearch: {
-            async getNodesList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
-                try {
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const nodes = await RosApiService.getNodes(ros);
-                        return { results: RosN8nFormatter.formatNodeListForN8n(nodes, filter) };
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { results: [] };
-                }
-            },
+            getNodesList: listSearch((ros) => RosApiService.getNodes(ros), RosN8nFormatter.formatNodeListForN8n),
 
             /**
              * Lists the parameters of the node picked above. rosapi reports
@@ -73,31 +59,16 @@ export class RosApi implements INodeType {
              * selected only its own parameters are offered, by their bare
              * name, and the node prefix is added back when the operation runs.
              */
-            async getParametersList(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
-                try {
-                    const nodeLocator = this.getNodeParameter('parameterNodeName', 0, {
-                        extractValue: true,
-                    }) as { value?: string } | string;
-                    const rawNodeName = typeof nodeLocator === 'string' ? nodeLocator : nodeLocator?.value;
-                    const nodeName = typeof rawNodeName === 'string' ? rawNodeName.trim() : '';
-
-                    const credentials = (await this.getCredentials('rosBridgeApi')) as unknown as RosBridgeCredentials;
-                    const ros = await RosBridgeService.connect(credentials);
-                    try {
-                        const parameters = await RosApiService.getParams(ros);
-                        const owned = nodeName
-                            ? parameters
-                                  .filter((parameter) => parameter.startsWith(`${nodeName}:`))
-                                  .map((parameter) => parameter.slice(nodeName.length + 1))
-                            : parameters;
-                        return { results: RosN8nFormatter.formatParameterListForN8n(owned, filter) };
-                    } finally {
-                        RosBridgeService.close(ros);
-                    }
-                } catch {
-                    return { results: [] };
+            getParametersList: listSearch(async (ros, ctx) => {
+                const nodeName = getLocatorValue(ctx, 'parameterNodeName');
+                const parameters = await RosApiService.getParams(ros);
+                if (!nodeName) {
+                    return parameters;
                 }
-            },
+                return parameters
+                    .filter((parameter) => parameter.startsWith(`${nodeName}:`))
+                    .map((parameter) => parameter.slice(nodeName.length + 1));
+            }, RosN8nFormatter.formatParameterListForN8n),
         },
     };
 
@@ -142,10 +113,6 @@ export class RosApi implements INodeType {
                     continue;
                 } else {
                     NodeErrorHandler.handle(this, error as Error, i);
-                }
-            } finally {
-                if (ros) {
-                    RosBridgeService.close(ros);
                 }
             }
         }

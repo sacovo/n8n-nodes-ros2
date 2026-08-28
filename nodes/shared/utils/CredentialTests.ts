@@ -22,9 +22,8 @@ import { RosBridgeService, type RosBridgeCredentials } from '../services/RosBrid
 
 /**
  * Tests a rosbridge credential by opening a WebSocket connection through
- * RosBridgeService. Note that RosBridgeService.close() is intentionally a
- * no-op (connections are pooled), so a successful test connection stays pooled
- * for reuse, which is expected.
+ * RosBridgeService. Connections are pooled, so a successful test deliberately
+ * leaves its socket open for the next execution to reuse.
  */
 export async function rosBridgeApiTest(
     this: ICredentialTestFunctions,
@@ -43,8 +42,7 @@ export async function rosBridgeApiTest(
     };
 
     try {
-        const ros = await RosBridgeService.connect(credentials);
-        RosBridgeService.close(ros);
+        await RosBridgeService.connect(credentials);
         return {
             status: 'OK',
             message: 'Connection to rosbridge established successfully',
