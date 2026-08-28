@@ -13,6 +13,19 @@ services:
       - demo
     volumes:
       - ./scripts:/demo-scripts:ro
+      # Read-only on purpose: the entrypoint publishes a redacted copy of these
+      # into the viewer's docroot and must not be able to write back over the
+      # originals. Mounted here rather than baked into the image so editing a
+      # blurb only costs a restart.
+      - ./gallery:/demo-gallery:ro
+    environment:
+      # Map background, applied to turtlesim at startup. Not a free choice: the
+      # trails and landmarks are drawn in bright colours over it, and the rover
+      # sprite is a mostly black photo, so going darker hides the rover and
+      # going lighter hides the blue trail and the lake. See README.
+      - MAP_BG_R=${MAP_BG_R:-58}
+      - MAP_BG_G=${MAP_BG_G:-64}
+      - MAP_BG_B=${MAP_BG_B:-80}
     shm_size: "256mb"
 
   n8n:

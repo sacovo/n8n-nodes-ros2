@@ -50,6 +50,21 @@ with the copies in this folder.
 `rover_node.py` wraps turtlesim in a rover-shaped interface. Everything it does
 shows up on the live view, and the trail colour is the status LED.
 
+The thing driving around is a photo of the actual rover rather than a turtle.
+`make_turtle.py` scales `rover.png` down over turtlesim's own sprites at build
+time, which is fiddlier than it sounds for two reasons, both of them in that
+script's header: turtlesim loads a **hardcoded** list of sprite filenames and
+picks one per turtle **at random**, so all eleven have to be overwritten; and
+`meter_` is the sprite's height, so the 45 px sprite is the only reason the map
+is 11.08 units across. Writing a bigger one silently rescales the world and
+moves every landmark. Swapping in a different photo needs nothing but a new
+`rover.png` — the script keeps whatever size turtlesim ships.
+
+A photo cannot look right at every heading the way a top-down sprite would,
+since turtlesim rotates it to the heading. It is oriented to sit upright facing
+**east**, because that is the heading `rover_node.py` teleports to at startup
+and after every reset, so it looks natural whenever it is parked.
+
 **Actions**
 
 | Action | Type | What it does |
@@ -105,6 +120,16 @@ so a form or an agent can offer destinations without hardcoding them.
 
 `nw`, `ne`, `sw` and `se` still exist as plain corner waypoints. The map runs
 from 0 to 11.08 on both axes.
+
+The background colour is `MAP_BG_R`/`MAP_BG_G`/`MAP_BG_B` in `.env`, applied on
+container start — no rebuild, just `docker compose up -d ros2`. It defaults to a
+mid grey `(58, 64, 80)`, and the range that works is narrower than it looks.
+turtlesim's own default is the same blue as the `blue` LED, which erases that
+trail outright. Below roughly `(35, 38, 50)` the rover sprite — a photo of a
+mostly black robot — sinks into the map and only its wheels show. Above roughly
+`(80, 88, 105)` the blue trail and the lake go muddy instead, since both are
+drawn in the darkest colours on the map. The default sits between the two, and
+anything outside that band trades one of them away.
 
 The battery drains about 0.9 %/s while driving and recharges at 6 %/s on the
 dock, so a patrol costs roughly a quarter of the pack. That is deliberate — it
@@ -224,6 +249,26 @@ interrupted, not a bug.
 involved, which is the quickest way to tell a robot problem from a workflow
 problem.
 
+## The workflow gallery
+
+Below the live view, the landing page shows the n8n workflows that drive the
+**real** FHNW rover: deep sampling, the maintenance task, the tool changer, a
+named-position mover and the production ROS 2 agent. Each gets a card with a
+preview of its node graph — click it for the full graph — the ROS interfaces it
+touches, and a download link.
+
+These are exports from the production instance and live in `gallery/`. Nothing
+imports them: they name a drill, a load cell and a manipulator that the
+simulated rover does not have, and they ship `active: true`. The n8n container
+never sees the folder; only the ros2 container mounts it, read-only, to render
+the page.
+
+They are not published verbatim either. `gallery/publish.py` strips an internal
+camera host and the Asana workspace ids, and pseudonymises every
+instance-local identifier — including the webhook ids, which on the production
+instance are URLs that start a real drill. See `gallery/README.md` for the rules
+and for how to add a workflow.
+
 ## Security choices
 
 **The live readout is a read-only JSON endpoint, not rosbridge.** The viewer page
@@ -339,13 +384,16 @@ demo/
 ├── reset.sh              restore the demo to its shipped state
 ├── systemd/              timer + unit for running reset.sh hourly
 ├── credentials/          rosbridge credential, normal and read-only
-├── workflows/            the eight demo workflows
+├── workflows/            the eleven demo workflows, imported into n8n
+├── gallery/              real rover workflows, shown on the landing page only
 ├── scripts/              ROS-side helpers, mounted into the ros2 container
 └── ros2/
     ├── Dockerfile        rosbridge + turtlesim + Xvfb + x11vnc + noVNC
     ├── entrypoint.sh     starts the display, the viewer and the ROS stack
     ├── rover_node.py     the rover: actions, services, battery, map, status API
     ├── camera_node.py    publishes the screen as a camera topic
+    ├── rover.png         photo of the real rover, used as the turtlesim sprite
+    ├── make_turtle.py    scales it over turtlesim's sprites at build time
     ├── web/index.html    the public landing page around the viewer
     └── rover_interfaces/ custom msg/srv/action package
 ```

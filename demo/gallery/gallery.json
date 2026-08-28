@@ -1,0 +1,92 @@
+{
+  "_comment": [
+    "Curated index for the workflow gallery on the landing page.",
+    "",
+    "The .json files beside this one are verbatim n8n exports from the real FHNW",
+    "rover, so they are NOT demo workflows: they name real hardware interfaces",
+    "that the simulated rover does not have. Nothing imports them into n8n.",
+    "publish.py renders them into the viewer's docroot, applying `redactions`",
+    "and pseudonymising every instance-local identifier on the way out."
+  ],
+
+  "redactions": [
+    {
+      "find": "172.16.10.121:5000",
+      "replace": "camera-server.internal:5000",
+      "why": "internal machine-vision host on the rover's own network"
+    },
+    {
+      "find": "28583477664368",
+      "replace": "000000000000000",
+      "why": "Asana workspace gid"
+    },
+    {
+      "find": "1211345167666263",
+      "replace": "111111111111111",
+      "why": "Asana project gid (sampling runs)"
+    },
+    {
+      "find": "1212803998020655",
+      "replace": "222222222222222",
+      "why": "Asana project gid (agent-filed tasks)"
+    }
+  ],
+
+  "workflows": [
+    {
+      "slug": "deep-sampling",
+      "title": "Deep Sampling",
+      "subtitle": "Drill a core, weigh it, file the result",
+      "blurb": "The full sampling run as one operator-driven sequence: drive to the sampling site, photograph it, drill out a core, drop it in the onboard container, weigh it and photograph the result. The drill is driven entirely through its own ROS service surface — <code>man_lower_drill</code>, <code>man_up</code>, <code>man_unload</code>, target speed up and down — while <code>max_depth</code> and the load cell are read back from topics between steps. Depth and mass end up on an Asana task, so the science record writes itself.",
+      "highlights": [
+        "Reads a load cell and a depth encoder straight off ROS topics",
+        "Forms between steps: a human confirms before the drill moves",
+        "Captures the front camera into an Asana attachment"
+      ]
+    },
+    {
+      "slug": "maintenance-task",
+      "title": "Maintenance Task",
+      "subtitle": "A manipulator working a switch panel",
+      "blurb": "The largest workflow here, and the one that looks least like a script: an operator walks a panel of switches, sockets and rods, and at each step n8n moves the arm, hands control to a learned policy, and checks whether it worked. Failures fall through to a retry or a manual skip that re-enables the spacemouse, so a stuck switch stalls one step instead of the run. Vision comes from <code>/detect_board_objects</code>; the arm is posed through ROS parameters and actions.",
+      "highlights": [
+        "Action goals for the policy controller, with retry and manual override",
+        "Sub-workflows per panel element, called 22 times over",
+        "Operator dropdowns generated from what the vision service found"
+      ]
+    },
+    {
+      "slug": "toolchanger",
+      "title": "Toolchanger",
+      "subtitle": "Pick up and drop off end effectors",
+      "blurb": "Swapping the arm's end effector, which is the kind of job that is all edge cases. The coupler is locked and unlocked by publishing to <code>/wecant/TCC/Lock/Set</code>, the gripper is homed over a service, and <code>/joint_states</code> plus the gripper's own absolute-position topic are read back to confirm the tool actually seated. <code>/shake_gripper</code> is exactly what it sounds like — a deliberate wiggle to prove the tool is latched before the arm trusts it.",
+      "highlights": [
+        "Topic publish, service call and topic read in one control loop",
+        "Pickup and dropoff share a slot-selection sub-workflow",
+        "Verifies the latch physically instead of assuming it took"
+      ]
+    },
+    {
+      "slug": "position-anfahren",
+      "title": "Position anfahren",
+      "subtitle": "Named joint positions, three ways in",
+      "blurb": "The small one, and the one most worth copying. A named position goes in, <code>/move_to_joint_positions</code> gets called, and that is the whole workflow — but it exposes itself three ways at once: a form for a human, a webhook for a script, and an execute-workflow trigger so every other workflow here can reuse it. The position names come from an n8n data table rather than being hardcoded, so the vocabulary is editable without touching the graph.",
+      "highlights": [
+        "One body, three triggers: form, webhook, sub-workflow",
+        "Position names looked up from a data table",
+        "The building block the bigger workflows call into"
+      ]
+    },
+    {
+      "slug": "ros2-agent",
+      "title": "ROS2 Agent",
+      "subtitle": "A chat agent with the robot as its tool belt",
+      "blurb": "The production sibling of the demo's workflow 07. Nothing about the robot is hardcoded: the agent lists nodes, expands services and topics into concrete field definitions, reads messages, calls services and looks through the camera, filling in every ROS name and payload itself. It can also search, create and update Asana tasks, so \"check the gripper and open a ticket if it is sticking\" is one sentence rather than two systems.",
+      "highlights": [
+        "Seven ROS2 API tools for runtime discovery, plus service call and camera",
+        "Asana tools alongside the robot tools in one agent",
+        "Reachable as chat or as a plain webhook"
+      ]
+    }
+  ]
+}

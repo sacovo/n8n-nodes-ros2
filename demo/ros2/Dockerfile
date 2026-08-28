@@ -65,6 +65,15 @@ RUN git clone --branch ${ROSBRIDGE_BRANCH} ${ROSBRIDGE_REPO} src/rosbridge_suite
 # inside it, so deleting it would leave dangling symlinks for the generated
 # rover_interfaces types.
 
+# Make the robot on screen look like the actual rover. turtlesim loads a
+# hardcoded list of sprite filenames and picks one at random per turtle, so this
+# overwrites all of them; it also derives the world scale from the sprite's
+# height, so the size is preserved. See make_turtle.py for both.
+COPY rover.png make_turtle.py /tmp/turtle/
+RUN python3 /tmp/turtle/make_turtle.py /tmp/turtle/rover.png \
+      /opt/ros/jazzy/share/turtlesim/images/ \
+ && rm -rf /tmp/turtle
+
 COPY --chown=ubuntu:ubuntu rover_node.py camera_node.py /app/
 COPY --chown=ubuntu:ubuntu --chmod=755 entrypoint.sh /app/entrypoint.sh
 COPY web/index.html web/embed.html /usr/share/novnc/
@@ -82,6 +91,13 @@ EXPOSE 9090 6080 8081
 # above — on /ros2_ws in the build layer, on /app by the COPYs — so this only
 # has to create the X11 socket directory.
 RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
+
+# The workflow gallery is rendered into the docroot at startup rather than baked
+# in, because the redaction has to run over the bind-mounted originals. noVNC's
+# docroot is root-owned and the entrypoint is not, so this is the one directory
+# in it the unprivileged user may write.
+RUN mkdir -p /usr/share/novnc/gallery && chown ubuntu:ubuntu /usr/share/novnc/gallery
+
 USER ubuntu
 
 ENTRYPOINT ["/app/entrypoint.sh"]

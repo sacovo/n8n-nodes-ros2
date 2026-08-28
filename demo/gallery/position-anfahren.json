@@ -1,0 +1,281 @@
+{
+  "name": "Position anfahren",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Position anfahren",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name der Position"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "c3118b8e-0e3e-41d0-a3fb-88ca1f14012a",
+      "name": "On form submission",
+      "webhookId": "ceacfa29-525c-4943-8d8a-6e2433f22f89"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"name\": {{ $json['Name der Position'] || $json.body.name }}\n}\n ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        0
+      ],
+      "id": "3024a4f7-139c-4aee-ac64-288ca6e2a441",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "76YHftYyyfLzeBHV",
+          "mode": "list",
+          "cachedResultName": "Joint Positions",
+          "cachedResultUrl": "/projects/5xHsmXy3jGevRGaB/datatables/76YHftYyyfLzeBHV"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Name",
+              "keyValue": "={{ $json.name }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        384,
+        0
+      ],
+      "id": "63f7c320-befc-40cb-af06-d0422c3e2949",
+      "name": "Get row(s)",
+      "alwaysOutputData": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "de4e2cbe-bfd7-4106-a220-e60d12caf8cc",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -64,
+        -192
+      ],
+      "id": "c6812216-ec2c-4434-af55-a7f68810033a",
+      "name": "Webhook",
+      "webhookId": "de4e2cbe-bfd7-4106-a220-e60d12caf8cc"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Name der Position"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        192
+      ],
+      "id": "73ab7655-32d5-4004-a097-1676f963db80",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.response.estimated_duration + 0.5 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "b2aba576-db5f-45c7-8c20-88ad72912a4d",
+      "name": "Wait",
+      "webhookId": "60fba278-3aec-429c-9d70-1b4022c38f5d"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/move_to_joint_positions",
+          "mode": "list",
+          "cachedResultName": "/move_to_joint_positions"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/MoveToJointPositions",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/MoveToJointPositions"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "joint_positions": "={{ $json.positions }}",
+            "num_steps": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "joint_positions",
+              "displayName": "joint_positions (double[])",
+              "type": "array",
+              "required": false,
+              "description": "ROS message field of type double[]",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "num_steps",
+              "displayName": "num_steps (int32)",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type int32",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        608,
+        0
+      ],
+      "id": "a0ef699c-7b71-48c6-8bff-93c880db4d01",
+      "name": "Move to Position",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "Name der Position": "tool_view_right"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Move to Position",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to Position": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 600,
+    "availableInMCP": false,
+    "errorWorkflow": "lnfJMsJRFVOemaw9"
+  },
+  "versionId": "0932543c-c031-4e77-962b-1b94401a9932",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43789cd0cb2da5253891697a7073de5e1c75ab012ce78cbcac3f94f517f92f73"
+  },
+  "nodeGroups": [],
+  "id": "YjiHwrU6QG5e67Zf",
+  "tags": []
+}

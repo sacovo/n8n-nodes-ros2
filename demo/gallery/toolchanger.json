@@ -1,0 +1,1456 @@
+{
+  "name": "Toolchanger",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Toolchange",
+        "formDescription": "Choose action and slot",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Action",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "pickup"
+                  },
+                  {
+                    "option": "park"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Target",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "left"
+                  },
+                  {
+                    "option": "right"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -1424,
+        -928
+      ],
+      "id": "f65c1843-1c5d-40f2-87da-d39d7cc1103b",
+      "name": "On form submission",
+      "webhookId": "4a2c7c7b-d0d5-414c-b97d-3abc4646a569"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "toolchange-overview"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -528,
+        -1008
+      ],
+      "id": "bbb3aa46-b497-420c-a8ab-f884768bba6e",
+      "name": "Overview anfahren"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TCC/Lock/Set",
+          "mode": "list",
+          "cachedResultName": "/wecant/TCC/Lock/Set"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "messageInputMode": "fixed",
+        "messageStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "data": 0
+          },
+          "matchingColumns": [
+            "data"
+          ],
+          "schema": [
+            {
+              "id": "data",
+              "displayName": "data",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicPublish",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -1008
+      ],
+      "id": "09c52ab0-8b61-47f0-99cd-0118f9ae4390",
+      "name": "TCC open",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TCC/Lock/Set",
+          "mode": "list",
+          "cachedResultName": "/wecant/TCC/Lock/Set"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "messageInputMode": "fixed",
+        "messageStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "data": 1
+          },
+          "matchingColumns": [
+            "data"
+          ],
+          "schema": [
+            {
+              "id": "data",
+              "displayName": "data",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicPublish",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -1008
+      ],
+      "id": "2ea772e6-7c50-48df-954a-09d166e76ecc",
+      "name": "TCC Lock",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "=pickup_slot_{{ $('Edit Fields').item.json.Target }}"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -80,
+        -1008
+      ],
+      "id": "85cea298-0cd3-469e-8314-bb5f71e95b6e",
+      "name": "Pickup Pos anfahren"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        -736
+      ],
+      "id": "db991671-2553-4bae-9376-aa07ee1b4df9",
+      "name": "Wait1",
+      "webhookId": "038f7bff-5b56-4453-9339-7170dd034317"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "=tool_view_{{ $('Edit Fields').item.json.Target }}"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -304,
+        -1008
+      ],
+      "id": "9e5313ed-eb3f-41e1-b81b-847598870524",
+      "name": "Slot anfahren"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "=pickup_slot_{{ $('Edit Fields').item.json.Target }}-insert"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        -1008
+      ],
+      "id": "97e95193-52d0-44db-af04-57274c613468",
+      "name": "Andrücken"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/shake_gripper",
+          "mode": "list",
+          "cachedResultName": "/shake_gripper"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/ShakeGripper",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/ShakeGripper"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "amplitude": 0.1,
+            "duration": 1,
+            "joints": "[3,4,5]",
+            "frequency": 4
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "joints",
+              "displayName": "joints (int32[])",
+              "type": "array",
+              "required": false,
+              "description": "ROS message field of type int32[]",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "amplitude",
+              "displayName": "amplitude (double)",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type double",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "frequency",
+              "displayName": "frequency (double)",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type double",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "duration",
+              "displayName": "duration (double)",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type double",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -1008
+      ],
+      "id": "1a1ece70-69f6-4fdc-92bd-2ebf55ce8316",
+      "name": "Shake",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "=pickup_slot_{{ $('Edit Fields').item.json.Target }}-ascent"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        -1008
+      ],
+      "id": "99fdbf7f-c46e-4b02-828b-456e1bd91665",
+      "name": "Tool heben"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/GRAB/Grip_Home/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/GRAB/Grip_Home/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value (float)",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        -1008
+      ],
+      "id": "70058d6b-4dcf-44ee-a757-2164dd6deab2",
+      "name": "Tool initialisieren",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Action }}",
+                    "rightValue": "pickup",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bdbb7035-a773-4bc9-8fe2-8ea810f2b53d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Pickup"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2486ff18-49ba-4b41-b3a7-a93461be4f3f",
+                    "leftValue": "={{ $json.Action }}",
+                    "rightValue": "park",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Park"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -752,
+        -832
+      ],
+      "id": "b9e9ae75-655e-46c4-be9e-64651ee827a7",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "=park_slot_{{ $('Edit Fields').item.json.Target }}-pre"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -304,
+        -736
+      ],
+      "id": "412e5687-a334-4b0c-a70f-3899bc198cf5",
+      "name": "Parkplatz anfahren"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "=park_slot_{{ $('Edit Fields').item.json.Target }}"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        -736
+      ],
+      "id": "60eb8661-d988-4678-b484-dbdefb9c6565",
+      "name": "Park Pose anfahren"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TCC/Lock/Set",
+          "mode": "list",
+          "cachedResultName": "/wecant/TCC/Lock/Set"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "messageInputMode": "fixed",
+        "messageStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "data": 0
+          },
+          "matchingColumns": [
+            "data"
+          ],
+          "schema": [
+            {
+              "id": "data",
+              "displayName": "data",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicPublish",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -736
+      ],
+      "id": "1c608798-0cef-4c18-8676-18631f8e0a28",
+      "name": "TCC öffnen",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "=tool_view_{{ $('Edit Fields').item.json.Target }}"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1488,
+        -736
+      ],
+      "id": "bc29569c-3a98-40e6-8718-4de962cc86f4",
+      "name": "Retract"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/joint_states",
+          "mode": "list",
+          "cachedResultName": "/joint_states"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "sensor_msgs/msg/JointState",
+          "mode": "list",
+          "cachedResultName": "Detected: sensor_msgs/msg/JointState"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "d0911f94-9833-482c-8c2d-4ddfbe55aead",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        -832
+      ],
+      "id": "6402f223-0c33-4f67-95da-cfeee84ed24b",
+      "name": "ROS2 Topic Next Message",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "Target"
+            },
+            {
+              "name": "Action"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1424,
+        -736
+      ],
+      "id": "cd146c8e-518a-4f16-b641-950492e47e97",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "928375c4-5610-4afc-ab54-9aee3fac43f0",
+              "name": "Action",
+              "value": "={{ $('On form submission').item.json.Action }}",
+              "type": "string"
+            },
+            {
+              "id": "df1bfdc4-88e8-4a48-89ca-c5e229c5897e",
+              "name": "Target",
+              "value": "={{ $('On form submission').item.json.Target }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -976,
+        -832
+      ],
+      "id": "e495dbcf-ff5f-4bfc-8f5d-bc1d9428de34",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/GRAB/Grip_Abs/Value",
+          "mode": "list",
+          "cachedResultName": "/wecant/GRAB/Grip_Abs/Value"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "a0c8dbb2-e2f7-442a-8fe1-28fa19ff572f",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -736
+      ],
+      "id": "7853da56-1647-43b8-b558-005fcbf233b9",
+      "name": "ROS2 Topic Next Message1",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9e7ee259-ccf8-4eb7-9516-d1fdfd7c8194",
+              "leftValue": "={{ $json.message[\"data\"] }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        144,
+        -736
+      ],
+      "id": "1e52fa56-13d3-405f-a087-6bced76c8624",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": []
+        },
+        "options": {
+          "formTitle": "Bitte gripper schliessen!"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        368,
+        -816
+      ],
+      "id": "c237c2d3-16d7-432e-aee8-097fa9301ea1",
+      "name": "Form",
+      "webhookId": "5b887067-e65a-4ef7-8a17-2133307b6b82"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/shake_gripper",
+          "mode": "list",
+          "cachedResultName": "/shake_gripper"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/ShakeGripper",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/ShakeGripper"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "amplitude": 0.08,
+            "frequency": 10,
+            "duration": 3,
+            "joints": "[2,4,5]"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "joints",
+              "displayName": "joints (int32[])",
+              "type": "array",
+              "required": false,
+              "description": "ROS message field of type int32[]",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "amplitude",
+              "displayName": "amplitude (double)",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type double",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "frequency",
+              "displayName": "frequency (double)",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type double",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "duration",
+              "displayName": "duration (double)",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type double",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        -736
+      ],
+      "id": "959f83ab-8d46-4402-a240-c18ea2fc05db",
+      "name": "ROS2 Service Call",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "pre-tool-rack"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -528,
+        -736
+      ],
+      "id": "695748fc-3c0b-4f34-92c4-35e8e7eb8718",
+      "name": "Pre-Tool"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "pre-tool-rack"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        -1008
+      ],
+      "id": "527e444c-2bfe-4ea5-801d-8553fd42002b",
+      "name": "Pre-Tool1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "ROS2 Topic Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Overview anfahren": {
+      "main": [
+        [
+          {
+            "node": "Slot anfahren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TCC open": {
+      "main": [
+        [
+          {
+            "node": "Andrücken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pickup Pos anfahren": {
+      "main": [
+        [
+          {
+            "node": "TCC open",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TCC Lock": {
+      "main": [
+        [
+          {
+            "node": "Tool heben",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "ROS2 Service Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slot anfahren": {
+      "main": [
+        [
+          {
+            "node": "Pickup Pos anfahren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Andrücken": {
+      "main": [
+        [
+          {
+            "node": "Shake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shake": {
+      "main": [
+        [
+          {
+            "node": "TCC Lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool heben": {
+      "main": [
+        [
+          {
+            "node": "Pre-Tool1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Overview anfahren",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pre-Tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parkplatz anfahren": {
+      "main": [
+        [
+          {
+            "node": "ROS2 Topic Next Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Park Pose anfahren": {
+      "main": [
+        [
+          {
+            "node": "TCC öffnen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TCC öffnen": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROS2 Topic Next Message": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool initialisieren": {
+      "main": [
+        []
+      ]
+    },
+    "Retract": {
+      "main": [
+        []
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "ROS2 Topic Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROS2 Topic Next Message1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Park Pose anfahren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form": {
+      "main": [
+        [
+          {
+            "node": "Park Pose anfahren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROS2 Service Call": {
+      "main": [
+        [
+          {
+            "node": "Retract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-Tool": {
+      "main": [
+        [
+          {
+            "node": "Parkplatz anfahren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-Tool1": {
+      "main": [
+        [
+          {
+            "node": "Tool initialisieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8be1b426-6c98-4f40-97d3-4d8dffcaa737",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43789cd0cb2da5253891697a7073de5e1c75ab012ce78cbcac3f94f517f92f73"
+  },
+  "nodeGroups": [],
+  "id": "v0mbOuoUhdF8mScF",
+  "tags": []
+}

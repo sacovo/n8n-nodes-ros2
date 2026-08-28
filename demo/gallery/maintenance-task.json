@@ -1,0 +1,3664 @@
+{
+  "name": "Maintenance Task",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "My Form",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -208,
+        480
+      ],
+      "id": "f7f36bc1-4ac7-4412-af94-01df27319aa4",
+      "name": "On form submission",
+      "webhookId": "3dc16061-7787-4434-88f9-611b1f6791c4"
+    },
+    {
+      "parameters": {
+        "content": "## Set the main Switch to On\n\n- Move gripper to switch position\n- Start goal with policy controller\n- If success: continue\n- Else: Retry\n\nOn Error: Set error value to display in form\n\nManual skip -> Enable Spacemouse again",
+        "height": 320,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        -16
+      ],
+      "id": "622617e5-ba14-4610-b374-342e51bba7b7",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Set four switches to on position\n- Operator selects from dropdown\n- Move to target\n- Policy action\n- Move back to gripper base pos\n- Operator selects again until done",
+        "height": 304,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        80
+      ],
+      "id": "f520afb8-9886-48ea-a2d7-d5afad1c38eb",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Three rotary switches\n- Select from dropdown until done\n- Try"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        -736
+      ],
+      "id": "fbe69cda-5757-40d6-ae43-4250006f2909",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Insert plug into socket\n"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7120,
+        -112
+      ],
+      "id": "cdcc3721-e7f9-4e43-b265-0885af4371f1",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Turn rotary power switches"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4960,
+        -160
+      ],
+      "id": "1011c96d-b5f3-4181-a822-32f18687a92f",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Place plate on electromagnet"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3072,
+        -416
+      ],
+      "id": "37621e6d-0507-4f85-9e88-6c2e7884a8ca",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        480
+      ],
+      "id": "3167817d-9c26-4218-b7f2-df13cc1fb3e2",
+      "name": "Wait",
+      "webhookId": "e73f120e-bc06-444a-a905-2009ba03c559"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2704,
+        384
+      ],
+      "id": "fe8e82de-767e-49b2-b470-11238bbe3c57",
+      "name": "Wait1",
+      "webhookId": "c5b3cd00-d7ec-4cb3-bdbc-933ccc791ee1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4496,
+        432
+      ],
+      "id": "3e9dcf3a-1288-45ba-ba9d-73ee1d11f242",
+      "name": "Wait2",
+      "webhookId": "991906bd-1c4c-44a0-b1ab-9015acb73f1e"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bcc3949c-f6fe-45f9-918b-41cf246a7f5d",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4944,
+        432
+      ],
+      "id": "58dd8867-68bb-4c2d-a73a-822c863a8c75",
+      "name": "If5"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        6288,
+        144
+      ],
+      "id": "e993eeb4-f733-4da1-b024-5d85b71caa81",
+      "name": "Wait3",
+      "webhookId": "991906bd-1c4c-44a0-b1ab-9015acb73f1e"
+    },
+    {
+      "parameters": {
+        "content": "## Change Tool"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6208,
+        -128
+      ],
+      "id": "a875f441-5efc-4459-8cc8-e85b68a88e05",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        8752,
+        240
+      ],
+      "id": "c9c3bdd3-a95b-4cb3-8fd8-fb651aeda008",
+      "name": "Wait4",
+      "webhookId": "991906bd-1c4c-44a0-b1ab-9015acb73f1e"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "value": "/spacemouse_node",
+          "mode": "list",
+          "cachedResultName": "/spacemouse_node"
+        },
+        "parameterName": {
+          "__rl": true,
+          "value": "autonomous",
+          "mode": "list",
+          "cachedResultName": "autonomous"
+        },
+        "parameterValue": "true"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        464,
+        480
+      ],
+      "id": "82557c9e-12a3-40df-a50a-37aecef3bab1",
+      "name": "Set Spacemouse to Auto",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "home"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        688,
+        480
+      ],
+      "id": "f1a1e3ed-7a02-4407-9abd-7664f82c5b3c",
+      "name": "Move to Board View position"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/detect_board_objects",
+          "mode": "list",
+          "cachedResultName": "/detect_board_objects"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/DetectBoardObjects",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/DetectBoardObjects"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slug": "main-switch"
+          },
+          "matchingColumns": [
+            "slug"
+          ],
+          "schema": [
+            {
+              "id": "slug",
+              "displayName": "slug (string)",
+              "type": "string",
+              "required": false,
+              "description": "ROS message field of type string",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        912,
+        480
+      ],
+      "id": "c8a2a876-152c-4c68-bc0c-2c96281f3782",
+      "name": "Detect Board Positions",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e5621b27-0fca-42e8-95dd-b96a88f5f872",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1360,
+        384
+      ],
+      "id": "9f6bf786-431c-4692-baf4-de83d3b90737",
+      "name": "Main Switch: Manual?"
+    },
+    {
+      "parameters": {
+        "serverName": {
+          "__rl": true,
+          "value": "/align_to_target",
+          "mode": "list",
+          "cachedResultName": "/align_to_target"
+        },
+        "actionType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/action/AlignToTarget",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/action/AlignToTarget"
+        },
+        "goalInputMode": "fixed",
+        "goalStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "keep_orientation": false,
+            "target_frame": "board"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "target_frame",
+              "displayName": "target_frame (string)",
+              "type": "string",
+              "required": false,
+              "description": "ROS message field of type string",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "target_pose",
+              "displayName": "target_pose (geometry_msgs/Pose) {position, orientation}",
+              "type": "object",
+              "required": false,
+              "description": "ROS message field of type geometry_msgs/Pose. Structure: {\"position\":{\"x\":\"double\",\"y\":\"double\",\"z\":\"double\"},\"orientation\":{\"x\":\"double\",\"y\":\"double\",\"z\":\"double\",\"w\":\"double\"}}",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "source_frame",
+              "displayName": "source_frame (string)",
+              "type": "string",
+              "required": false,
+              "description": "ROS message field of type string",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "keep_orientation",
+              "displayName": "keep_orientation (boolean)",
+              "type": "boolean",
+              "required": false,
+              "description": "ROS message field of type boolean",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        240
+      ],
+      "id": "97b1e412-7cf5-48a5-867c-71f049a733d7",
+      "name": "Main: Align",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serverName": {
+          "__rl": true,
+          "value": "/run_policy",
+          "mode": "list",
+          "cachedResultName": "/run_policy"
+        },
+        "actionType": {
+          "__rl": true,
+          "value": "lerobot_interfaces/action/RunPolicy",
+          "mode": "list",
+          "cachedResultName": "Detected: lerobot_interfaces/action/RunPolicy"
+        },
+        "goalInputMode": "fixed",
+        "goalStructure": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "policy_name",
+              "displayName": "policy_name (string)",
+              "type": "string",
+              "required": false,
+              "description": "ROS message field of type string",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            },
+            {
+              "id": "task",
+              "displayName": "task (string)",
+              "type": "string",
+              "required": false,
+              "description": "ROS message field of type string",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [
+        1808,
+        240
+      ],
+      "id": "f821fd10-9b8f-4e6d-9755-b86c1c36e352",
+      "name": "Main: Policy",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Task completed",
+              "fieldType": "radio",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "yes"
+                  },
+                  {
+                    "option": "no"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        2032,
+        304
+      ],
+      "id": "202e2bac-01b8-4fcd-9159-5015316118cb",
+      "name": "Confirm: Main",
+      "webhookId": "38d78904-b42e-4637-adec-bccfb7722229"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Execution Type",
+              "fieldType": "radio",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "autonomous"
+                  },
+                  {
+                    "option": "manual"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "formTitle": "Start Schalter"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1136,
+        480
+      ],
+      "id": "3e4d6adc-aa73-424e-83af-fa4f442dd678",
+      "name": "Start: Main Switch",
+      "webhookId": "8ff80639-3880-4eca-8ec7-2d52c8833864"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b2193825-338b-477e-bd62-bdc496665270",
+              "leftValue": "={{ $json['Task completed'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2256,
+        576
+      ],
+      "id": "bf192de2-5a32-422b-9305-3f1c749f7a54",
+      "name": "Main: Done?"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "value": "/spacemouse_node",
+          "mode": "list",
+          "cachedResultName": "/spacemouse_node"
+        },
+        "parameterName": {
+          "__rl": true,
+          "value": "autonomous",
+          "mode": "list",
+          "cachedResultName": "autonomous"
+        },
+        "parameterValue": "false"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        480
+      ],
+      "id": "a340f813-5a03-4dab-a90e-2f1915b1192c",
+      "name": "Main: Spacemouse manual",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Lra9Ns6wbgcw5fOk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Lra9Ns6wbgcw5fOk",
+          "cachedResultName": "Set Beacon Color"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "r": 0,
+            "g": 0,
+            "b": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "r",
+              "displayName": "r",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "g",
+              "displayName": "g",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "b",
+              "displayName": "b",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1808,
+        480
+      ],
+      "id": "e8d550a5-f5e5-404e-b5ae-0336712d1761",
+      "name": "Beacon: Manual"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Lra9Ns6wbgcw5fOk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Lra9Ns6wbgcw5fOk",
+          "cachedResultName": "Set Beacon Color"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "r": 0,
+            "g": 0,
+            "b": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "r",
+              "displayName": "r",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "g",
+              "displayName": "g",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "b",
+              "displayName": "b",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2480,
+        384
+      ],
+      "id": "1c0c2ee9-905b-48fd-abf4-cd95cffbcd28",
+      "name": "Beacon: auto"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "value": "/spacemouse_node",
+          "mode": "list",
+          "cachedResultName": "/spacemouse_node"
+        },
+        "parameterName": {
+          "__rl": true,
+          "value": "autonomous",
+          "mode": "id"
+        },
+        "parameterValue": "true"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        384
+      ],
+      "id": "ed1de47e-0d6c-4731-9f09-2afeecce401f",
+      "name": "Spacemouse: Auto",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "home"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2480,
+        576
+      ],
+      "id": "3ddc414a-1578-4e41-a9e5-dcf45a693616",
+      "name": "Move to Board Overview"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/detect_board_objects",
+          "mode": "list",
+          "cachedResultName": "/detect_board_objects"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/DetectBoardObjects",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/DetectBoardObjects"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slug": "switch"
+          },
+          "matchingColumns": [
+            "slug"
+          ],
+          "schema": [
+            {
+              "id": "slug",
+              "displayName": "slug (string)",
+              "type": "string",
+              "required": false,
+              "description": "ROS message field of type string",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        2704,
+        576
+      ],
+      "id": "c9a45096-88af-4150-8cd8-700827cabd09",
+      "name": "Detect Flip Positions",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        2928,
+        576
+      ],
+      "id": "179d365e-a47b-4a7b-9227-88e9194459e8",
+      "name": "Start: Flip Switches",
+      "webhookId": "0a7ec8c0-1f94-43bf-869b-6950be68be1d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bcc3949c-f6fe-45f9-918b-41cf246a7f5d",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3152,
+        336
+      ],
+      "id": "6742169b-7d0e-45be-8ec2-4a8727102518",
+      "name": "Flip: Manual"
+    },
+    {
+      "parameters": {
+        "serverName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [
+        3376,
+        192
+      ],
+      "id": "ba115ffe-7fc3-4813-a510-bb2b7c92ee7c",
+      "name": "Flip: Align",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serverName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [
+        3600,
+        192
+      ],
+      "id": "c61be79b-e0f3-41a3-ba3c-a7476c60ea66",
+      "name": "Flip: Policy",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        3824,
+        288
+      ],
+      "id": "8e3c8395-5fd4-4809-9bc0-8618b04ab0f8",
+      "name": "Flip: Confirm",
+      "webhookId": "421f26f3-4fe1-4c56-b86e-a507c84654ef"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "parameterName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        3376,
+        432
+      ],
+      "id": "2b4b4157-109e-4be9-904a-0f26e216ce28",
+      "name": "Spacemouse manual",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3600,
+        432
+      ],
+      "id": "2021664b-9ab3-40e3-939d-92d565e89bd6",
+      "name": "Beacon manual"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Lra9Ns6wbgcw5fOk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Lra9Ns6wbgcw5fOk",
+          "cachedResultName": "Set Beacon Color"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "r": 0,
+            "g": 0,
+            "b": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "r",
+              "displayName": "r",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "g",
+              "displayName": "g",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "b",
+              "displayName": "b",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4272,
+        432
+      ],
+      "id": "21130397-6207-4517-a57f-05a865059a4a",
+      "name": "Beacon auto"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "value": "/spacemouse_node",
+          "mode": "list",
+          "cachedResultName": "/spacemouse_node"
+        },
+        "parameterName": {
+          "__rl": true,
+          "value": "autonomous",
+          "mode": "id"
+        },
+        "parameterValue": "true"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        4720,
+        432
+      ],
+      "id": "6d70a374-5bb7-4a32-9b02-cf6fa8a05c3c",
+      "name": "Spacemouse auto",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "30d60324-419c-4d58-8bec-499913d064a5",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4048,
+        624
+      ],
+      "id": "d90e9555-0af9-4796-8dd9-86d963e258d2",
+      "name": "Flip: Done?"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name der Position": "home"
+          },
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4272,
+        624
+      ],
+      "id": "f702e0e9-2063-4f86-8a1e-b600b7e2da3b",
+      "name": "Move to Board Overview1"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/detect_board_objects",
+          "mode": "list",
+          "cachedResultName": "/detect_board_objects"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/DetectBoardObjects",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/DetectBoardObjects"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slug": "switch"
+          },
+          "matchingColumns": [
+            "slug"
+          ],
+          "schema": [
+            {
+              "id": "slug",
+              "displayName": "slug (string)",
+              "type": "string",
+              "required": false,
+              "description": "ROS message field of type string",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        4496,
+        624
+      ],
+      "id": "b3a38e8e-943b-4691-8652-35b7f554a719",
+      "name": "Detect Switches",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        4720,
+        624
+      ],
+      "id": "1c69f1a5-0d4b-42bb-9570-c6f00fea2040",
+      "name": "Switch: Manual?",
+      "webhookId": "0a7ec8c0-1f94-43bf-869b-6950be68be1d"
+    },
+    {
+      "parameters": {
+        "serverName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [
+        5168,
+        144
+      ],
+      "id": "0df1bf78-15c6-4687-983e-bdb86ab0dc70",
+      "name": "Switch: Align",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serverName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [
+        5392,
+        144
+      ],
+      "id": "ebd33fb7-0af0-4fac-a271-251131f90804",
+      "name": "Switch: Policy",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        5616,
+        64
+      ],
+      "id": "f096d89f-2791-4b47-8ca4-5827673f1c3e",
+      "name": "Switch: Confirm",
+      "webhookId": "421f26f3-4fe1-4c56-b86e-a507c84654ef"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "30d60324-419c-4d58-8bec-499913d064a5",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5840,
+        352
+      ],
+      "id": "66ad907c-0c2a-48cd-a38c-a847ca95eb90",
+      "name": "Switch: Done?"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "v0mbOuoUhdF8mScF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/v0mbOuoUhdF8mScF",
+          "cachedResultName": "Toolchanger"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slot": "right",
+            "action": "park"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "slot",
+              "displayName": "slot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        6736,
+        352
+      ],
+      "id": "cbf4e06b-aedf-4a32-9b51-48e22f3e1bca",
+      "name": "Park Gripper"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        6064,
+        352
+      ],
+      "id": "a814e4f1-239a-43e8-a7ca-c2a76cac879d",
+      "name": "Move to tool overview"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "serviceType": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        6288,
+        352
+      ],
+      "id": "aae9e48b-c4e7-4880-aaee-6742898470d9",
+      "name": "Get Tool Status",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        6512,
+        352
+      ],
+      "id": "0c00bfd1-f991-4087-bf3b-e21a82e870ab",
+      "name": "Select Tool Slots",
+      "webhookId": "1552b455-7086-4414-9eac-9d1d4776d9b6"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "v0mbOuoUhdF8mScF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/v0mbOuoUhdF8mScF",
+          "cachedResultName": "Toolchanger"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slot": "pickup",
+            "action": "right"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "slot",
+              "displayName": "slot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        6960,
+        352
+      ],
+      "id": "092bdf97-0b79-4c59-81df-66a1cf7c4da8",
+      "name": "Pickup Plug-Tool"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        7184,
+        352
+      ],
+      "id": "6deacb5c-0bae-4ac6-973a-46f8ab524c53",
+      "name": "Plug: Start",
+      "webhookId": "a13f3eb0-d6ea-4d2c-a24e-715906bae863"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "77fec169-d4fb-434e-a42d-c1447edca3fc",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        7408,
+        352
+      ],
+      "id": "633703f3-0aed-4025-b531-c76102307074",
+      "name": "Plug: Manual?"
+    },
+    {
+      "parameters": {
+        "serverName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [
+        7856,
+        240
+      ],
+      "id": "9b8ff8a6-8135-4cbc-9914-fe35d6c01f92",
+      "name": "Plug: Policy",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "51d7de2f-27f4-494c-bcd6-b9b93619ae3b",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        8304,
+        432
+      ],
+      "id": "295d4f21-9140-4c2b-b0a8-e75776a83400",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "parameterName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        7632,
+        528
+      ],
+      "id": "d6ee7af2-e493-4f8f-b4c9-57c43e5da36f",
+      "name": "Spacemouse manual1",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        7856,
+        528
+      ],
+      "id": "94ac6b27-1bd9-4d5c-a006-743cc6032611",
+      "name": "Beacon Manual"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Lra9Ns6wbgcw5fOk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Lra9Ns6wbgcw5fOk",
+          "cachedResultName": "Set Beacon Color"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "r": 0,
+            "g": 0,
+            "b": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "r",
+              "displayName": "r",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "g",
+              "displayName": "g",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "b",
+              "displayName": "b",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        8528,
+        240
+      ],
+      "id": "9e1ada33-f6ce-4a8f-930d-a8171140c713",
+      "name": "Beacon auto1"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "value": "/spacemouse_node",
+          "mode": "list",
+          "cachedResultName": "/spacemouse_node"
+        },
+        "parameterName": {
+          "__rl": true,
+          "value": "autonomous",
+          "mode": "id"
+        },
+        "parameterValue": "true"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        8976,
+        240
+      ],
+      "id": "c297a8be-bdcd-4bf6-8330-e3a4fa4063c8",
+      "name": "Spacemouse auto1",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        8080,
+        240
+      ],
+      "id": "253639fe-040f-491f-9366-c6ea514b3565",
+      "name": "Plug: Confirmation",
+      "webhookId": "45a1d7f8-cfaf-472c-980e-0c2161b5abe8"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "v0mbOuoUhdF8mScF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/v0mbOuoUhdF8mScF",
+          "cachedResultName": "Toolchanger"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slot": "right",
+            "action": "park"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "slot",
+              "displayName": "slot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        8752,
+        432
+      ],
+      "id": "757d79c8-2c66-4a14-aa28-0bf831cb5a1b",
+      "name": "Park Plug-Tool"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "v0mbOuoUhdF8mScF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/v0mbOuoUhdF8mScF",
+          "cachedResultName": "Toolchanger"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slot": "pickup",
+            "action": "right"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "slot",
+              "displayName": "slot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        8976,
+        432
+      ],
+      "id": "1ef40b2e-1380-4f21-8ae3-dc456232d4ba",
+      "name": "Pickup Gripper"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [
+            "Name der Position"
+          ],
+          "schema": [
+            {
+              "id": "Name der Position",
+              "displayName": "Name der Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        8528,
+        432
+      ],
+      "id": "9f301ba6-ee40-4165-a8a5-bec7c28b7207",
+      "name": "Move to tool overview1"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "parameterName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        9648,
+        640
+      ],
+      "id": "e2476c1c-f099-420f-bfa9-4b00c04db2fc",
+      "name": "Set a parameter",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        10096,
+        384
+      ],
+      "id": "33721bc3-533c-4bcb-bc18-bedda24fc87a",
+      "name": "Switch: Confirm1",
+      "webhookId": "421f26f3-4fe1-4c56-b86e-a507c84654ef"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        9200,
+        432
+      ],
+      "id": "95f9d2e9-cd43-4dc6-bbee-bfae814fa498",
+      "name": "Rod: Start",
+      "webhookId": "0a7ec8c0-1f94-43bf-869b-6950be68be1d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bcc3949c-f6fe-45f9-918b-41cf246a7f5d",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        9424,
+        432
+      ],
+      "id": "fce6602e-d970-4261-9860-78e5e20e18e6",
+      "name": "Rod: Manual"
+    },
+    {
+      "parameters": {
+        "serverName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "actionType": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosAction",
+      "typeVersion": 1,
+      "position": [
+        9872,
+        384
+      ],
+      "id": "384fa551-5efb-4865-ad18-030d236da282",
+      "name": "Rod: Policy",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        10768,
+        432
+      ],
+      "id": "d6170581-54ff-4247-b5a7-2e187a363071",
+      "name": "Wait5",
+      "webhookId": "991906bd-1c4c-44a0-b1ab-9015acb73f1e"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Lra9Ns6wbgcw5fOk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Lra9Ns6wbgcw5fOk",
+          "cachedResultName": "Set Beacon Color"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "r": 0,
+            "g": 0,
+            "b": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "r",
+              "displayName": "r",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "g",
+              "displayName": "g",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "b",
+              "displayName": "b",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        10544,
+        432
+      ],
+      "id": "85527eba-539b-462e-871f-2d575a0c5baa",
+      "name": "Beacon auto2"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "value": "/spacemouse_node",
+          "mode": "list",
+          "cachedResultName": "/spacemouse_node"
+        },
+        "parameterName": {
+          "__rl": true,
+          "value": "autonomous",
+          "mode": "id"
+        },
+        "parameterValue": "true"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        10992,
+        432
+      ],
+      "id": "8962066d-f12c-4082-9fa7-b2f7406ed638",
+      "name": "Spacemouse auto2",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1df5ec67-d8a8-4072-a273-2511c5f54b2e",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        10320,
+        624
+      ],
+      "id": "497bbddc-7a83-401c-8289-c71dad100935",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        9872,
+        640
+      ],
+      "id": "11660142-0035-4699-a15a-9fc0263c602a",
+      "name": "Execute Workflow"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YjiHwrU6QG5e67Zf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YjiHwrU6QG5e67Zf",
+          "cachedResultName": "Position anfahren"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "slot",
+              "displayName": "slot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        10544,
+        624
+      ],
+      "id": "5a2058d9-0f48-4427-a8fa-267945d6d44c",
+      "name": "Sleep pose"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Lra9Ns6wbgcw5fOk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Lra9Ns6wbgcw5fOk",
+          "cachedResultName": "Set Beacon Color"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "r": 0,
+            "g": 0,
+            "b": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "r",
+              "displayName": "r",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "g",
+              "displayName": "g",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "b",
+              "displayName": "b",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        10768,
+        624
+      ],
+      "id": "a61469bd-d9b8-4047-bddb-883f360b6759",
+      "name": "Beacon manual1"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "parameterName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        10992,
+        624
+      ],
+      "id": "c16dea13-7805-459c-96af-deccc054592c",
+      "name": "Set a parameter1",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        11216,
+        624
+      ],
+      "id": "424ebbbc-851a-42ee-bc59-04e4b33c572e",
+      "name": "Form",
+      "webhookId": "4c98d170-1acf-46c2-8790-53941fd2ff62"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "parameterName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        5168,
+        352
+      ],
+      "id": "85029f71-da4b-44f3-97c6-2f3089149acd",
+      "name": "Spacemouse manual2",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        5392,
+        352
+      ],
+      "id": "b77fc712-7927-43c2-9dbc-fda879280fa0",
+      "name": "Beacon manual2"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Lra9Ns6wbgcw5fOk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Lra9Ns6wbgcw5fOk",
+          "cachedResultName": "Set Beacon Color"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "r": 0,
+            "g": 0,
+            "b": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "r",
+              "displayName": "r",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "g",
+              "displayName": "g",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "b",
+              "displayName": "b",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        6064,
+        144
+      ],
+      "id": "e299f5fd-668a-4e75-aa4f-e8f3853937a7",
+      "name": "Beacon auto3"
+    },
+    {
+      "parameters": {
+        "resource": "parameter",
+        "operation": "set",
+        "parameterNodeName": {
+          "__rl": true,
+          "value": "/spacemouse_node",
+          "mode": "list",
+          "cachedResultName": "/spacemouse_node"
+        },
+        "parameterName": {
+          "__rl": true,
+          "value": "autonomous",
+          "mode": "id"
+        },
+        "parameterValue": "true"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApi",
+      "typeVersion": 1,
+      "position": [
+        6512,
+        144
+      ],
+      "id": "8905786a-cc75-4d62-b43e-2973d67b91d1",
+      "name": "Spacemouse auto3",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        8304,
+        240
+      ],
+      "id": "24163332-ace6-4ad8-9aa8-5abcf52d2f1e",
+      "name": "Merge"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2256,
+        384
+      ],
+      "id": "3207b8e9-9ba5-4526-bb7c-75cd6a44cd0f",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4048,
+        432
+      ],
+      "id": "8874b082-b9a3-442d-a3b8-a50fb515f36f",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        5840,
+        144
+      ],
+      "id": "eabd9960-5c8f-46e6-b5a8-b8f1d24ba00b",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        10320,
+        432
+      ],
+      "id": "a23e66a5-a8b8-4988-97a3-a0ea2c4e2ede",
+      "name": "Merge4"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Lra9Ns6wbgcw5fOk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Lra9Ns6wbgcw5fOk",
+          "cachedResultName": "Set Beacon Color"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "b": 255,
+            "g": 100,
+            "r": 100
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "r",
+              "displayName": "r",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "g",
+              "displayName": "g",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "b",
+              "displayName": "b",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        480
+      ],
+      "id": "fd13818a-2535-4cbb-a950-a89c32420c94",
+      "name": "Beacon: auto1"
+    }
+  ],
+  "pinData": {
+    "Confirm: Main": [
+      {
+        "json": {
+          "Task completed": "yes",
+          "submittedAt": "2026-08-18T16:12:26.722-04:00",
+          "formMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Beacon: auto1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Set Spacemouse to Auto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Spacemouse: Auto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Spacemouse auto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If5": {
+      "main": [
+        [
+          {
+            "node": "Switch: Align",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Spacemouse manual2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Spacemouse auto3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4": {
+      "main": [
+        [
+          {
+            "node": "Spacemouse auto1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Spacemouse to Auto": {
+      "main": [
+        [
+          {
+            "node": "Move to Board View position",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to Board View position": {
+      "main": [
+        [
+          {
+            "node": "Detect Board Positions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Board Positions": {
+      "main": [
+        [
+          {
+            "node": "Start: Main Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main Switch: Manual?": {
+      "main": [
+        [
+          {
+            "node": "Main: Align",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Main: Spacemouse manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main: Align": {
+      "main": [
+        [
+          {
+            "node": "Main: Policy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main: Policy": {
+      "main": [
+        [
+          {
+            "node": "Confirm: Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm: Main": {
+      "main": [
+        [
+          {
+            "node": "Main: Done?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Start: Main Switch": {
+      "main": [
+        [
+          {
+            "node": "Main Switch: Manual?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main: Done?": {
+      "main": [
+        [
+          {
+            "node": "Move to Board Overview",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Start: Main Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main: Spacemouse manual": {
+      "main": [
+        [
+          {
+            "node": "Beacon: Manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beacon: Manual": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Confirm: Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beacon: auto": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to Board Overview": {
+      "main": [
+        [
+          {
+            "node": "Detect Flip Positions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Flip Positions": {
+      "main": [
+        [
+          {
+            "node": "Start: Flip Switches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start: Flip Switches": {
+      "main": [
+        [
+          {
+            "node": "Flip: Manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flip: Manual": {
+      "main": [
+        [
+          {
+            "node": "Flip: Align",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Spacemouse manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flip: Align": {
+      "main": [
+        [
+          {
+            "node": "Flip: Policy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flip: Policy": {
+      "main": [
+        [
+          {
+            "node": "Flip: Confirm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flip: Confirm": {
+      "main": [
+        [
+          {
+            "node": "Flip: Done?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Start: Flip Switches",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spacemouse manual": {
+      "main": [
+        [
+          {
+            "node": "Beacon manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beacon manual": {
+      "main": [
+        [
+          {
+            "node": "Flip: Confirm",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Beacon auto": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flip: Done?": {
+      "main": [
+        [
+          {
+            "node": "Move to Board Overview1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Start: Flip Switches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to Board Overview1": {
+      "main": [
+        [
+          {
+            "node": "Detect Switches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Switches": {
+      "main": [
+        [
+          {
+            "node": "Switch: Manual?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Manual?": {
+      "main": [
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Align": {
+      "main": [
+        [
+          {
+            "node": "Switch: Policy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Policy": {
+      "main": [
+        [
+          {
+            "node": "Switch: Confirm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Confirm": {
+      "main": [
+        [
+          {
+            "node": "Switch: Done?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch: Manual?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Done?": {
+      "main": [
+        [
+          {
+            "node": "Move to tool overview",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Park Gripper": {
+      "main": [
+        [
+          {
+            "node": "Pickup Plug-Tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to tool overview": {
+      "main": [
+        [
+          {
+            "node": "Get Tool Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tool Status": {
+      "main": [
+        [
+          {
+            "node": "Select Tool Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Tool Slots": {
+      "main": [
+        [
+          {
+            "node": "Park Gripper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pickup Plug-Tool": {
+      "main": [
+        [
+          {
+            "node": "Plug: Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plug: Start": {
+      "main": [
+        [
+          {
+            "node": "Plug: Manual?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plug: Manual?": {
+      "main": [
+        [
+          {
+            "node": "Plug: Policy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Spacemouse manual1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plug: Policy": {
+      "main": [
+        [
+          {
+            "node": "Plug: Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Move to tool overview1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spacemouse manual1": {
+      "main": [
+        [
+          {
+            "node": "Beacon Manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beacon Manual": {
+      "main": [
+        [
+          {
+            "node": "Plug: Confirmation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beacon auto1": {
+      "main": [
+        [
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plug: Confirmation": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Park Plug-Tool": {
+      "main": [
+        [
+          {
+            "node": "Pickup Gripper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pickup Gripper": {
+      "main": [
+        [
+          {
+            "node": "Rod: Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to tool overview1": {
+      "main": [
+        [
+          {
+            "node": "Park Plug-Tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set a parameter": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch: Confirm1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rod: Start": {
+      "main": [
+        [
+          {
+            "node": "Rod: Manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rod: Manual": {
+      "main": [
+        [
+          {
+            "node": "Rod: Policy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set a parameter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rod: Policy": {
+      "main": [
+        [
+          {
+            "node": "Switch: Confirm1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait5": {
+      "main": [
+        [
+          {
+            "node": "Spacemouse auto2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beacon auto2": {
+      "main": [
+        [
+          {
+            "node": "Wait5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Sleep pose",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rod: Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow": {
+      "main": [
+        [
+          {
+            "node": "Switch: Confirm1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Sleep pose": {
+      "main": [
+        [
+          {
+            "node": "Beacon manual1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beacon manual1": {
+      "main": [
+        [
+          {
+            "node": "Set a parameter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set a parameter1": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spacemouse manual2": {
+      "main": [
+        [
+          {
+            "node": "Beacon manual2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beacon manual2": {
+      "main": [
+        [
+          {
+            "node": "Switch: Confirm",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Beacon auto3": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spacemouse auto3": {
+      "main": [
+        []
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Beacon: auto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Beacon auto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Beacon auto3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Beacon auto1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "Beacon auto2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beacon: auto1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ccdcfa29-ebe2-4f8d-8c9e-e1fe2dedcba0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43789cd0cb2da5253891697a7073de5e1c75ab012ce78cbcac3f94f517f92f73"
+  },
+  "nodeGroups": [],
+  "id": "evAf6h1XlaY91g2C",
+  "tags": []
+}

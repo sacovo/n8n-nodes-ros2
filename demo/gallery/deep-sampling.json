@@ -1,0 +1,2789 @@
+{
+  "name": "Deep Sampling v3",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Deep Sampling",
+        "options": {
+          "buttonLabel": "Start Init"
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -2544,
+        384
+      ],
+      "id": "89a43c71-3fe4-4cdc-a9a9-9dbeb141e3d1",
+      "name": "On form submission",
+      "webhookId": "03306da0-2780-4187-916b-455c701e2264"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "253eec16-9b20-4836-8dc4-8beb2de9e380",
+              "leftValue": "={{ $json.message.data }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2128,
+        384
+      ],
+      "id": "28e9eb6d-6e5a-4cec-a747-ab5a7c246ec3",
+      "name": "If initialized1"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Is the drivetrain lowered?",
+              "fieldType": "checkbox",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Yes"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "buttonLabel": "Start drilling"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        -432,
+        368
+      ],
+      "id": "18f0589e-e5f8-48c0-9730-152803f5a367",
+      "name": "Form Drivetrain",
+      "webhookId": "e2fbf5a2-4e0a-41f5-b52f-e83f23c09f7b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "253eec16-9b20-4836-8dc4-8beb2de9e380",
+              "leftValue": "={{ $json.message.data }}",
+              "rightValue": 9,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1984,
+        352
+      ],
+      "id": "a9d866fa-3e2a-46f5-8f52-53b8bec1610c",
+      "name": "If automatic_done"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "253eec16-9b20-4836-8dc4-8beb2de9e380",
+              "leftValue": "={{ $json.message.data }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2848,
+        336
+      ],
+      "id": "b044f2b3-4883-4540-a01b-a85eafdf4e41",
+      "name": "If 1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "253eec16-9b20-4836-8dc4-8beb2de9e380",
+              "leftValue": "={{ $json.message.data }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5456,
+        320
+      ],
+      "id": "05b43332-9538-4e8d-9c85-3505339a66b1",
+      "name": "If 5"
+    },
+    {
+      "parameters": {
+        "content": "# Drilling",
+        "height": 80,
+        "width": 672
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        192
+      ],
+      "id": "51a9f654-7da6-44f5-9fb8-2711cdb9757b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Unload",
+        "height": 80,
+        "width": 2272
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        192
+      ],
+      "id": "c32218c9-410e-4bc3-968c-e5d188903e04",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# Tare",
+        "height": 80,
+        "width": 1392
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4672,
+        192
+      ],
+      "id": "12e7e0fb-e8b4-407b-ad50-41ce5f49531b",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e9a18c6e-9c0b-4a30-a3a1-531fbcfa07d7",
+              "name": "averaging_time",
+              "value": "10",
+              "type": "string"
+            },
+            {
+              "id": "771f78dc-8f12-4770-bfaf-41253442f655",
+              "name": "loadcell_name",
+              "value": "LoadCell_A_1",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5728,
+        304
+      ],
+      "id": "66d74c2d-1422-4084-99e0-15152a242f48",
+      "name": "set weighing config"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "253eec16-9b20-4836-8dc4-8beb2de9e380",
+              "leftValue": "={{ $json.message.data }}",
+              "rightValue": 4,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        6880,
+        304
+      ],
+      "id": "8f733db0-fc82-4bbf-9f64-a4d6afccaada",
+      "name": "If 4"
+    },
+    {
+      "parameters": {
+        "content": "# Weigh Sample",
+        "height": 80,
+        "width": 1456
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6176,
+        192
+      ],
+      "id": "1e7e0795-9cad-41ae-9dd5-062ec36f49b0",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.averaging_time }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5936,
+        304
+      ],
+      "id": "a522c28d-fa6f-472e-846d-7a5f06f41da7",
+      "name": "Wait averaging",
+      "webhookId": "681aa000-e0eb-42c5-8bb1-bdff6a825cab"
+    },
+    {
+      "parameters": {
+        "options": {
+          "formDescription": "=reached depth: {{ $('get max depth').item.json.message.data.round(2) }} mm\nsample weigh: {{ $('get weight').item.json.message.data.round(2) }} g",
+          "buttonLabel": "Done"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        9344,
+        272
+      ],
+      "id": "5661ee2c-6f9b-4913-813c-2a3c6ca61278",
+      "name": "Show Drill Values",
+      "webhookId": "9d6d3144-7afa-41c5-90c7-c2c0960b90c0"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e624b7f3-3c1e-4c08-87ff-83cfa86d1418",
+              "leftValue": "={{ $json.message.data }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -736,
+        512
+      ],
+      "id": "db0457a3-d27c-4094-a1ca-b08e14235bd8",
+      "name": "If initialized"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('set weighing config').item.json.averaging_time }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        7136,
+        288
+      ],
+      "id": "73fef71b-9698-4736-8310-752339aa29df",
+      "name": "Wait averaging2",
+      "webhookId": "681aa000-e0eb-42c5-8bb1-bdff6a825cab"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1664,
+        512
+      ],
+      "id": "858791cf-7834-457e-9455-c750006337a3",
+      "name": "Wait boot",
+      "webhookId": "aa813539-e8e1-4508-adbf-50a503eec36f"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/max_depth/Value",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/max_depth/Value"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "189370f0-a64c-42a4-9492-ed32cc4d6750",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        8112,
+        288
+      ],
+      "id": "7ee87111-059d-4fda-8097-9ad4939c5f99",
+      "name": "get max depth",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/LoadCell_A_1/Weight/Value",
+          "mode": "list",
+          "cachedResultName": "/wecant/LoadCell_A_1/Weight/Value"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "189370f0-a64c-42a4-9492-ed32cc4d6750",
+              "leftValue": "=",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        7344,
+        288
+      ],
+      "id": "4b672302-7b2e-43e7-83b4-ca4d54b13178",
+      "name": "get weight",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1328,
+        512
+      ],
+      "id": "1548db8a-ab42-4b65-851d-136b09a0f9ed",
+      "name": "Wait",
+      "webhookId": "fbf84013-11e5-49f2-8554-9a5ebd35b4b9"
+    },
+    {
+      "parameters": {
+        "content": "# Set Parameters",
+        "height": 80,
+        "width": 304
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        976,
+        192
+      ],
+      "id": "f51a3629-ec11-4a33-87a9-f4fd5e5c8191",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/targ_container/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/targ_container/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 4
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        6400,
+        304
+      ],
+      "id": "b284ad20-4be0-4037-83bb-4826bfd26d92",
+      "name": "put container 1 onto loadcell",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/LoadCell_A_1/Tare/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/LoadCell_A_1/Tare/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        6160,
+        304
+      ],
+      "id": "ecfe9759-d474-4cae-a614-7fc94ae95ddb",
+      "name": "tare loadcell",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/targ_container/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/targ_container/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 5
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        4928,
+        320
+      ],
+      "id": "6cbe39a0-d085-4d7b-85a0-b0bc364a03ab",
+      "name": "put container 2 onto loadcell",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/man_drill_off/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/man_drill_off/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        4656,
+        320
+      ],
+      "id": "11f6b30d-3529-4cdb-b069-e8dd080e4c36",
+      "name": "stop unload",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/man_unload/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/man_unload/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        3488,
+        320
+      ],
+      "id": "70a28710-a776-4502-bad0-62b6784ced33",
+      "name": "start unloading",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/act_container/Value",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/act_container/Value"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "189370f0-a64c-42a4-9492-ed32cc4d6750",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        2624,
+        336
+      ],
+      "id": "5b32fbcf-8d55-4943-99c4-9fd13e28f2b5",
+      "name": "get actual container",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/act_container/Value",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/act_container/Value"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "189370f0-a64c-42a4-9492-ed32cc4d6750",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        5232,
+        320
+      ],
+      "id": "cc3072c0-6af2-4272-b810-a4040d22a091",
+      "name": "get actual container1",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/act_container/Value",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/act_container/Value"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "189370f0-a64c-42a4-9492-ed32cc4d6750",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        6656,
+        304
+      ],
+      "id": "4e53f2a3-47f3-4c02-9e2b-95d7d038d868",
+      "name": "get actual container2",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/targ_container/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/targ_container/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        336
+      ],
+      "id": "3ef26155-ccd1-4432-ba70-ab23707d9308",
+      "name": "put container 1 under drill",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/state/Value",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/state/Value"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "189370f0-a64c-42a4-9492-ed32cc4d6750",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        352
+      ],
+      "id": "bf41b6b3-1106-45ed-8fa6-5787aebd70bc",
+      "name": "get state2",
+      "retryOnFail": false,
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/auto_start/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/auto_start/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        352
+      ],
+      "id": "e15af9ea-31dd-4758-9c00-035f7cd5554a",
+      "name": "automatic start",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/targ_speed_up/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/targ_speed_up/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 30
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        352
+      ],
+      "id": "3e00eb1f-4745-45a5-8308-355687f26514",
+      "name": "set vertical speed up",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/targ_speed_down/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/targ_speed_down/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 5
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        976,
+        352
+      ],
+      "id": "c2c9cf92-2204-4eb5-a94e-9da81e7d8b8d",
+      "name": "set vertical speed down",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/state/Value",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/state/Value"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "189370f0-a64c-42a4-9492-ed32cc4d6750",
+              "leftValue": "={{ $json.message.data }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        512
+      ],
+      "id": "c83316f4-532a-4019-ba98-83f468c85265",
+      "name": "wait initialized1",
+      "retryOnFail": false,
+      "waitBetweenTries": 500,
+      "maxTries": 5,
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/initialize/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/initialize/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        512
+      ],
+      "id": "ff38057f-6b8f-4c48-9d4a-ec289eb87631",
+      "name": "start Init",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/state/Value",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/state/Value"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "std_msgs/msg/Float32",
+          "mode": "list",
+          "cachedResultName": "Detected: std_msgs/msg/Float32"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "189370f0-a64c-42a4-9492-ed32cc4d6750",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessage",
+      "typeVersion": 1,
+      "position": [
+        -2336,
+        384
+      ],
+      "id": "3e3d4133-9c3b-42d5-b30c-322f5103ac2f",
+      "name": "get state",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "23035bf4-c5e0-4896-bc2e-8fd6ba8190ed",
+              "leftValue": "={{ $json['Is the drivetrain lowered?'][0] }}",
+              "rightValue": "Yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -256,
+        368
+      ],
+      "id": "3f7a4031-290c-442b-9ad9-c7422a2eb265",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/MrCrap_A_8/switch/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/MrCrap_A_8/switch/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        -1872,
+        512
+      ],
+      "id": "853d2e03-9d57-4430-8a2f-187b10e6541f",
+      "name": "MrCrap on",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/reset/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/reset/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        -1488,
+        512
+      ],
+      "id": "a210e3c3-e05e-4916-8799-be5e735881d2",
+      "name": "Reset",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "The task scenario is as follows:\n1. Arrive to the sampling location\n2. Take a photo before sampling is started\n3. Perform sampling (drilled-out core in case of deep sampling)\n4. Place the collected sample/s in the onboard container\n5. Measure weight of the collected sample/s\n6. Take a photo after sampling is completed\n7. Drive to the start/finish line\n\n\nTODO: Image capture, store weight in datatable",
+        "height": 272,
+        "width": 480
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2416,
+        -48
+      ],
+      "id": "700791d7-84c7-4864-aaf0-b6b21d99a67a",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "# Take Photo",
+        "height": 80,
+        "width": 544
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        272,
+        192
+      ],
+      "id": "88572f98-ce57-400d-a86b-fa16213b4851",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "Take photo here",
+        "height": 80,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        8240,
+        176
+      ],
+      "id": "c9a8f9cc-11f1-47f3-98be-5078fd1dbdff",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Could not weigh the sample. Make sure that the LoadCell_A_1 is plugged in and connected over WECANT. What do you want to do now?",
+              "fieldType": "radio",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Retry weighing"
+                  },
+                  {
+                    "option": "Continue anyway"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "buttonLabel": "Execute chosen option"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        7552,
+        384
+      ],
+      "id": "8930d066-b4a9-4489-98bd-06187ac62fbb",
+      "name": "Form",
+      "webhookId": "40a7f6fb-213d-43f8-8a07-4d3180f31f7d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "37a6ae51-4dda-45b0-965d-f1f57d7a514f",
+              "leftValue": "={{ $json['Could not weigh the sample. Make sure that the LoadCell_A_1 is plugged in and connected over WECANT. What do you want to do now?'] }}",
+              "rightValue": "Retry weighing",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        7728,
+        384
+      ],
+      "id": "a4ef428c-3470-4900-aa43-14e92b60cf75",
+      "name": "If retry",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/man_lower_drill/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/man_lower_drill/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        3104,
+        320
+      ],
+      "id": "5c1eeb2a-eef0-420b-9ff9-53009a2ee932",
+      "name": "lower drill into container",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "/wecant/TURBO/man_up/SetValue",
+          "mode": "list",
+          "cachedResultName": "/wecant/TURBO/man_up/SetValue"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "fhnw_interfaces/srv/SetValue",
+          "mode": "list",
+          "cachedResultName": "Detected: fhnw_interfaces/srv/SetValue"
+        },
+        "requestInputMode": "fixed",
+        "requestStructure": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": 1
+          },
+          "matchingColumns": [
+            "value"
+          ],
+          "schema": [
+            {
+              "id": "value",
+              "displayName": "value",
+              "type": "number",
+              "required": false,
+              "description": "ROS message field of type float",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCall",
+      "typeVersion": 1,
+      "position": [
+        3904,
+        336
+      ],
+      "id": "4bdca1d2-146b-4375-af95-5e9e04ca3409",
+      "name": "move drill up",
+      "retryOnFail": true,
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Moving drill up out of the container failed. Please try to move it up and then press continue.",
+              "fieldType": "radio",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "(do not fill out)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "buttonLabel": "Continue"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        4192,
+        560
+      ],
+      "id": "e6f839ef-b8d7-4157-966e-11299d00aca1",
+      "name": "Drill up failed",
+      "webhookId": "c5bd9cc7-c93f-40e7-9c1b-09b237905873"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/cam_front/image_raw/compressed",
+          "mode": "list",
+          "cachedResultName": "/cam_front/image_raw/compressed"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "sensor_msgs/msg/CompressedImage"
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicCaptureImage",
+      "typeVersion": 1,
+      "position": [
+        432,
+        336
+      ],
+      "id": "1cf6d963-ca72-4689-a9d3-f11170513746",
+      "name": "ROS2 Topic Capture Image",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workspace": "28583477664368",
+        "name": "=Deep Sampling Execution: {{ new Date() }}",
+        "otherProperties": {
+          "projects": [
+            "1211345167666263"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
+      "position": [
+        64,
+        352
+      ],
+      "id": "b099013b-bc54-4ec9-9f6b-99307e215476",
+      "name": "Create a task",
+      "credentials": {
+        "asanaApi": {
+          "id": "7uZdgdx6h60VLqpu",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.asana.com/api/1.0/attachments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "asanaApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "parent",
+              "value": "={{ $('Create a task').item.json.gid }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        352
+      ],
+      "id": "b2ad0c41-0196-42c2-aa9e-39fe145ffc04",
+      "name": "HTTP Request",
+      "credentials": {
+        "asanaApi": {
+          "id": "7uZdgdx6h60VLqpu",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://app.asana.com/api/1.0/attachments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "asanaApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "parent",
+              "value": "={{ $('Create a task').item.json.gid }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        8752,
+        272
+      ],
+      "id": "d0049b78-765b-41c2-9c9c-140e525a0114",
+      "name": "HTTP Request1",
+      "credentials": {
+        "asanaApi": {
+          "id": "7uZdgdx6h60VLqpu",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "/cam_front/image_raw/compressed",
+          "mode": "list",
+          "cachedResultName": "/cam_front/image_raw/compressed"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "sensor_msgs/msg/CompressedImage"
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicCaptureImage",
+      "typeVersion": 1,
+      "position": [
+        8464,
+        272
+      ],
+      "id": "90e3036e-a831-4fb5-bd05-fedb992eb209",
+      "name": "ROS2 Topic Capture Image1",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Put drilling values into Asana task",
+        "height": 80,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        8688,
+        176
+      ],
+      "id": "35b5c38e-9242-475f-b3a5-21590cc00afb",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "resource": "taskComment",
+        "id": "={{ $('Create a task').item.json.gid }}",
+        "text": "=reached depth: {{ $('get max depth').item.json.message.data.round(2) }} mm\nsample weigh: {{ $('get weight').item.json.message.data.round(2) }} g",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
+      "position": [
+        9056,
+        272
+      ],
+      "id": "9ea5fc0f-d5db-4024-81e5-78a95ffcc5bb",
+      "name": "Add a task comment",
+      "credentials": {
+        "asanaApi": {
+          "id": "7uZdgdx6h60VLqpu",
+          "name": "Asana account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "# Initialize",
+        "height": 80,
+        "width": 1248
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1856,
+        208
+      ],
+      "id": "359e6997-0929-4493-96f4-7f1608fd56cb",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "url": "http://172.16.10.121:5000/camera/3/snapshot",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        480,
+        576
+      ],
+      "id": "f1d48fcf-159f-4769-a3d1-3326b126dd0c",
+      "name": "Capture Image (web)"
+    },
+    {
+      "parameters": {
+        "url": "http://172.16.10.121:5000/camera/3/snapshot",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        8464,
+        480
+      ],
+      "id": "bbda4a9e-8e6c-4f05-807c-d7d141cb9588",
+      "name": "Capture Image (web) (post)"
+    },
+    {
+      "parameters": {
+        "url": "http://172.16.10.121:5000/camera/3/snapshot",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6546bab8-d48e-448e-a541-0835ed062534",
+      "name": "Capture Image (web)1"
+    },
+    {
+      "parameters": {
+        "amount": 8
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3312,
+        320
+      ],
+      "id": "5f22a040-f02c-4be2-adc3-cc7a7617d068",
+      "name": "wait 8s",
+      "webhookId": "bc10c3cf-457a-49cd-bd80-57deb396aa3b"
+    },
+    {
+      "parameters": {
+        "amount": 50
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3680,
+        320
+      ],
+      "id": "de7acfc4-71e8-4904-91ca-57ff0a317ff9",
+      "name": "Wait 50s",
+      "webhookId": "6e4dc450-cb13-4549-9735-5d8f8466dd7b"
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4192,
+        320
+      ],
+      "id": "ee62a732-708c-46a6-a6fc-1db50bde1428",
+      "name": "Wait 20s",
+      "webhookId": "5318b4d8-25f8-4bf7-8fdd-00f0b7f7a4d9"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "get state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If initialized1": {
+      "main": [
+        [
+          {
+            "node": "Form Drivetrain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MrCrap on",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form Drivetrain": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If automatic_done": {
+      "main": [
+        [
+          {
+            "node": "put container 1 under drill",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get state2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If 1": {
+      "main": [
+        [
+          {
+            "node": "lower drill into container",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get actual container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If 5": {
+      "main": [
+        [
+          {
+            "node": "set weighing config",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get actual container1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set weighing config": {
+      "main": [
+        [
+          {
+            "node": "Wait averaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If 4": {
+      "main": [
+        [
+          {
+            "node": "Wait averaging2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get actual container2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait averaging": {
+      "main": [
+        [
+          {
+            "node": "tare loadcell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If initialized": {
+      "main": [
+        [
+          {
+            "node": "Form Drivetrain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "wait initialized1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait averaging2": {
+      "main": [
+        [
+          {
+            "node": "get weight",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait boot": {
+      "main": [
+        [
+          {
+            "node": "Reset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get max depth": {
+      "main": [
+        [
+          {
+            "node": "ROS2 Topic Capture Image1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Capture Image (web) (post)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get max depth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get weight": {
+      "main": [
+        [
+          {
+            "node": "get max depth",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "start Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "put container 1 onto loadcell": {
+      "main": [
+        [
+          {
+            "node": "get actual container2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tare loadcell": {
+      "main": [
+        [
+          {
+            "node": "put container 1 onto loadcell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "put container 2 onto loadcell": {
+      "main": [
+        [
+          {
+            "node": "get actual container1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "stop unload": {
+      "main": [
+        [
+          {
+            "node": "put container 2 onto loadcell",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "start unloading": {
+      "main": [
+        [
+          {
+            "node": "Wait 50s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get actual container": {
+      "main": [
+        [
+          {
+            "node": "If 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get actual container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get actual container1": {
+      "main": [
+        [
+          {
+            "node": "If 5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get actual container1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get actual container2": {
+      "main": [
+        [
+          {
+            "node": "If 4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get actual container2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "put container 1 under drill": {
+      "main": [
+        [
+          {
+            "node": "get actual container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get state2": {
+      "main": [
+        [
+          {
+            "node": "If automatic_done",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get state2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "automatic start": {
+      "main": [
+        [
+          {
+            "node": "get state2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set vertical speed up": {
+      "main": [
+        [
+          {
+            "node": "automatic start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set vertical speed down": {
+      "main": [
+        [
+          {
+            "node": "set vertical speed up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "wait initialized1": {
+      "main": [
+        [
+          {
+            "node": "If initialized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "start Init": {
+      "main": [
+        [
+          {
+            "node": "wait initialized1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get state": {
+      "main": [
+        [
+          {
+            "node": "If initialized1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "set vertical speed down",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Form Drivetrain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MrCrap on": {
+      "main": [
+        [
+          {
+            "node": "Wait boot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reset": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form": {
+      "main": [
+        [
+          {
+            "node": "If retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If retry": {
+      "main": [
+        [
+          {
+            "node": "get weight",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get max depth",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get max depth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "lower drill into container": {
+      "main": [
+        [
+          {
+            "node": "wait 8s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "move drill up": {
+      "main": [
+        [
+          {
+            "node": "Wait 20s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Drill up failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drill up failed": {
+      "main": [
+        [
+          {
+            "node": "stop unload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROS2 Topic Capture Image": {
+      "main": [
+        []
+      ]
+    },
+    "Create a task": {
+      "main": [
+        [
+          {
+            "node": "Capture Image (web)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "ROS2 Topic Capture Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROS2 Topic Capture Image1": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "set vertical speed down",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Add a task comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add a task comment": {
+      "main": [
+        [
+          {
+            "node": "Show Drill Values",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture Image (web)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture Image (web) (post)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "wait 8s": {
+      "main": [
+        [
+          {
+            "node": "start unloading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 50s": {
+      "main": [
+        [
+          {
+            "node": "move drill up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 20s": {
+      "main": [
+        [
+          {
+            "node": "stop unload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d5cf39e0-0168-4ea3-b2d1-330ea86041f4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43789cd0cb2da5253891697a7073de5e1c75ab012ce78cbcac3f94f517f92f73"
+  },
+  "nodeGroups": [],
+  "id": "xu00uTQ4g3U7ZFgD",
+  "tags": []
+}

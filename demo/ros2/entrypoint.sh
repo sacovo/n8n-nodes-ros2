@@ -41,6 +41,16 @@ x11vnc -display "${DISPLAY}" \
     -noxdamage \
     -quiet &
 
+# Render the workflow gallery before the web server comes up, so the landing
+# page never fetches a half-written index.json. A failure here must not take the
+# viewer down with it: the page hides the gallery section if the index is
+# missing, which is a better outcome than no live view at all.
+if [ -d /demo-gallery ]; then
+    echo "[demo] publishing the workflow gallery"
+    python3 /demo-gallery/publish.py /demo-gallery /usr/share/novnc/gallery \
+        || echo "[demo] gallery publish failed, continuing without it" >&2
+fi
+
 echo "[demo] serving noVNC on :6080"
 websockify --web=/usr/share/novnc 6080 localhost:5900 &
 
@@ -63,14 +73,16 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml \
 # Give turtlesim time to advertise its services before the rover node calls them.
 sleep 5
 
-# Dark map: turtlesim's default background is the same blue as one of the LED
-# colours, which makes that trail invisible. A dark background also matches the
-# public viewer page.
+# Map background. turtlesim's default is the same blue as one of the LED
+# colours, which makes that trail invisible, so it has to be something else.
+# The default here is a mid grey, squeezed from both sides: the rover sprite is
+# a mostly black photo that disappears on a very dark map, and the blue trail
+# and the lake disappear on a light one. Override with MAP_BG_R/G/B.
 echo "[demo] theming the map"
 for attempt in 1 2 3 4 5; do
-    if ros2 param set /turtlesim background_r "${MAP_BG_R:-24}" >/dev/null 2>&1 \
-        && ros2 param set /turtlesim background_g "${MAP_BG_G:-27}" >/dev/null 2>&1 \
-        && ros2 param set /turtlesim background_b "${MAP_BG_B:-38}" >/dev/null 2>&1; then
+    if ros2 param set /turtlesim background_r "${MAP_BG_R:-58}" >/dev/null 2>&1 \
+        && ros2 param set /turtlesim background_g "${MAP_BG_G:-64}" >/dev/null 2>&1 \
+        && ros2 param set /turtlesim background_b "${MAP_BG_B:-80}" >/dev/null 2>&1; then
         ros2 service call /clear std_srvs/srv/Empty >/dev/null 2>&1 || true
         break
     fi

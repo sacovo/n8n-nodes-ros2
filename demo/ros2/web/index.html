@@ -131,6 +131,124 @@
   .stale { opacity: 0.45; }
   @keyframes pulse { 50% { opacity: 0.35; } }
   .blinking { animation: pulse 1s ease-in-out infinite; }
+
+  /* Workflow gallery */
+  .section-head { max-width: 1100px; }
+  .section-head p { color: var(--muted); margin: 0.35rem 0 0; max-width: 62ch; }
+  #gallery[hidden] { display: none; }
+  .wf-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+  .wf {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .wf-head { padding: 1rem 1.1rem 0.75rem; }
+  .wf-head h3 { margin: 0; font-size: 1rem; font-weight: 650; letter-spacing: -0.01em; }
+  .wf-head .sub { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
+  /* A button so the preview is reachable by keyboard, styled back to a plain figure. */
+  .wf-preview {
+    display: block;
+    width: 100%;
+    /* JS overrides this with the graph's own shape; the fallback matters only
+       if the gallery script never runs. */
+    aspect-ratio: 2.4;
+    padding: 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: #12141a;
+    cursor: zoom-in;
+    color: inherit;
+    font: inherit;
+  }
+  .wf-preview svg { display: block; width: 100%; height: 100%; }
+  .wf-preview:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .wf-body { padding: 0.9rem 1.1rem 1.1rem; display: grid; gap: 0.7rem; }
+  .wf-body p { margin: 0; font-size: 0.88rem; }
+  .wf-body p code { font-size: 0.82em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .chip {
+    font-size: 0.72rem;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    white-space: nowrap;
+  }
+  .chip.iface {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--accent);
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.07);
+  }
+  .wf-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-top: 1px solid var(--line);
+    padding-top: 0.7rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .wf-meta a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .wf-meta a:hover { text-decoration: underline; }
+  .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.76rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .legend i { width: 0.7rem; height: 0.7rem; border-radius: 3px; display: inline-block; }
+
+  /* Expanded graph */
+  dialog.viewer {
+    width: min(94vw, 1200px);
+    height: min(88vh, 820px);
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--panel);
+    color: var(--text);
+    overflow: hidden;
+  }
+  dialog.viewer::backdrop { background: rgba(6, 8, 12, 0.78); }
+  .viewer-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .viewer-head h3 { margin: 0; font-size: 1rem; }
+  .viewer-head button {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 7px;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+  }
+  .viewer-head button:hover { color: var(--text); border-color: var(--muted); }
+  /* The graph is rendered at a fixed scale and is usually wider than the
+     dialog, so this pans rather than shrinks it. */
+  .viewer-stage {
+    height: calc(100% - 3.2rem);
+    background: #12141a;
+    overflow: auto;
+    display: grid;
+    place-content: center;
+    /* Plain `center` pushes the overflowing half of a wide graph out past the
+       scroll origin, where it cannot be reached. `safe` falls back to start
+       alignment exactly when that would happen, which also means these
+       left-to-right pipelines open at their trigger. Older browsers drop this
+       line and keep the centring above. */
+    place-content: safe center;
+  }
+  .viewer-stage svg { display: block; margin: 1rem; }
 </style>
 </head>
 <body>
@@ -200,7 +318,32 @@
       </ul>
     </div>
   </div>
+
+  <section id="gallery" hidden>
+    <div class="section-head">
+      <h2>Workflows from the real rover</h2>
+      <p>
+        The robot above is a simulation. These are the actual n8n workflows that
+        drive the physical FHNW rover — its drill, its arm and its tool changer —
+        exported from the machine that runs them. They name hardware this
+        simulation does not have, so they are here to read and download rather
+        than to run. Internal hosts and identifiers have been replaced.
+      </p>
+    </div>
+
+    <div class="wf-grid" id="wf-grid"></div>
+
+    <div class="legend" id="legend"></div>
+  </section>
 </main>
+
+<dialog class="viewer" id="viewer">
+  <div class="viewer-head">
+    <h3 id="viewer-title"></h3>
+    <button type="button" id="viewer-close" autofocus>Close</button>
+  </div>
+  <div class="viewer-stage" id="viewer-stage"></div>
+</dialog>
 
 <footer>This view is read-only — clicks and keystrokes are not forwarded to the robot.</footer>
 
@@ -267,6 +410,235 @@
 
   poll();
   setInterval(poll, 2000);
+})();
+
+// Workflow gallery. Everything it needs is precomputed into gallery/index.json
+// by publish.py, so this only lays out what it is handed — no workflow parsing
+// here, and no need to download the exports themselves to draw a preview.
+(function () {
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var KINDS = [
+    ['ros', '#4ade80', 'ROS 2 node'],
+    ['rostool', '#4fd4d4', 'ROS 2 agent tool'],
+    ['ai', '#a78bfa', 'AI'],
+    ['human', '#5a86ff', 'Form / operator'],
+    ['sub', '#f0cd3c', 'Sub-workflow'],
+    ['ext', '#eb9646', 'External service'],
+    ['flow', '#5a6072', 'Flow control']
+  ];
+  var COLOR = {};
+  KINDS.forEach(function (k) { COLOR[k[0]] = k[1]; });
+
+  function el(tag, attrs) {
+    var node = document.createElementNS(SVG_NS, tag);
+    for (var key in attrs) node.setAttribute(key, attrs[key]);
+    return node;
+  }
+
+  // n8n stores node positions in editor pixels, and the nodes it draws there are
+  // a fixed size regardless of how big the workflow is. So the boxes get a fixed
+  // size too: deriving one from the bounding box instead makes a wide workflow's
+  // nodes wider than the gap between them, and an 80-node graph collapses into
+  // a smear. Nothing here is closer together than 128 units.
+  var NODE_W = 110, NODE_H = 42;
+
+  // Returns the svg plus the aspect ratio it wants, so the caller can either
+  // give it a box of that shape (the card) or scale it up and scroll (the
+  // dialog). One renderer, both jobs.
+  function renderGraph(graph, pxPerUnit) {
+    var nodes = graph.nodes || [];
+    var svg = el('svg', { preserveAspectRatio: 'xMidYMid meet' });
+    if (!nodes.length) return { svg: svg, aspect: 1 };
+
+    var xs = nodes.map(function (n) { return n.x; });
+    var ys = nodes.map(function (n) { return n.y; });
+    var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+    var minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+
+    var pad = NODE_W;
+    var boxW = (maxX - minX) + NODE_W + pad * 2;
+    var boxH = (maxY - minY) + NODE_H + pad * 2;
+
+    svg.setAttribute('viewBox', [
+      minX - NODE_W / 2 - pad, minY - NODE_H / 2 - pad, boxW, boxH
+    ].join(' '));
+
+    if (pxPerUnit) {
+      svg.setAttribute('width', Math.round(boxW * pxPerUnit));
+      svg.setAttribute('height', Math.round(boxH * pxPerUnit));
+    }
+
+    var edges = el('g', { fill: 'none', 'stroke-linecap': 'round' });
+    (graph.edges || []).forEach(function (edge) {
+      var a = nodes[edge[0]], b = nodes[edge[1]];
+      if (!a || !b) return;
+      // AI connections hang off the agent downwards in the editor; dashing them
+      // keeps them from reading as ordinary execution order.
+      var isAi = edge[2] && edge[2].indexOf('ai_') === 0;
+      var line = el('line', {
+        x1: a.x, y1: a.y, x2: b.x, y2: b.y,
+        stroke: isAi ? '#a78bfa' : '#3a4152',
+        'stroke-width': isAi ? 5 : 6,
+        'stroke-opacity': isAi ? 0.75 : 0.9
+      });
+      if (isAi) line.setAttribute('stroke-dasharray', '12 10');
+      edges.appendChild(line);
+    });
+    svg.appendChild(edges);
+
+    var boxes = el('g', {});
+    nodes.forEach(function (n) {
+      var box = el('rect', {
+        x: n.x - NODE_W / 2, y: n.y - NODE_H / 2, width: NODE_W, height: NODE_H,
+        rx: 9,
+        fill: COLOR[n.k] || COLOR.flow,
+        'fill-opacity': n.k === 'flow' ? 0.55 : 0.9
+      });
+      var label = el('title', {});
+      label.textContent = n.n || '';
+      box.appendChild(label);
+      boxes.appendChild(box);
+    });
+    svg.appendChild(boxes);
+    return { svg: svg, aspect: boxW / boxH };
+  }
+
+  function chip(text, className) {
+    var span = document.createElement('span');
+    span.className = 'chip' + (className ? ' ' + className : '');
+    span.textContent = text;
+    return span;
+  }
+
+  var dialog = document.getElementById('viewer');
+  var stage = document.getElementById('viewer-stage');
+  var title = document.getElementById('viewer-title');
+
+  function expand(workflow) {
+    title.textContent = workflow.title + ' — ' + workflow.stats.nodes + ' nodes';
+    stage.textContent = '';
+    // These workflows run 20:1 wide, so fitting one into the dialog would shrink
+    // it back to the smear the thumbnail already shows. Render at a fixed scale
+    // that keeps a node about 40px across and let the stage scroll instead.
+    stage.appendChild(renderGraph(workflow.graph, 40 / NODE_W).svg);
+    // showModal is what gives us the backdrop, Escape-to-close and the focus
+    // trap for free; older browsers just get the cards without the zoom.
+    if (dialog.showModal) dialog.showModal();
+  }
+
+  document.getElementById('viewer-close').addEventListener('click', function () {
+    dialog.close();
+  });
+  // A click on the backdrop lands on the dialog element itself, not its content.
+  dialog.addEventListener('click', function (event) {
+    if (event.target === dialog) dialog.close();
+  });
+
+  function card(workflow) {
+    var root = document.createElement('article');
+    root.className = 'wf';
+
+    var head = document.createElement('div');
+    head.className = 'wf-head';
+    var h3 = document.createElement('h3');
+    h3.textContent = workflow.title;
+    var sub = document.createElement('div');
+    sub.className = 'sub';
+    sub.textContent = workflow.subtitle || '';
+    head.appendChild(h3);
+    head.appendChild(sub);
+    root.appendChild(head);
+
+    var preview = document.createElement('button');
+    preview.type = 'button';
+    preview.className = 'wf-preview';
+    preview.title = 'Show the full graph';
+    preview.setAttribute('aria-label', 'Show the full graph for ' + workflow.title);
+    var drawn = renderGraph(workflow.graph);
+    // Shape the thumbnail like the graph in it, so a long pipeline gets a short
+    // strip instead of a tall box mostly full of background. Clamped, because
+    // the widest of these would otherwise be a 20:1 sliver.
+    preview.style.aspectRatio = String(Math.min(Math.max(drawn.aspect, 1.6), 5));
+    preview.appendChild(drawn.svg);
+    preview.addEventListener('click', function () { expand(workflow); });
+    root.appendChild(preview);
+
+    var body = document.createElement('div');
+    body.className = 'wf-body';
+
+    var blurb = document.createElement('p');
+    // The blurb is ours, from gallery.json, and carries <code> around ROS names.
+    blurb.innerHTML = workflow.blurb || '';
+    body.appendChild(blurb);
+
+    var phases = workflow.phases || [];
+    if (phases.length) {
+      var phaseRow = document.createElement('div');
+      phaseRow.className = 'chips';
+      phases.forEach(function (p) { phaseRow.appendChild(chip(p)); });
+      body.appendChild(phaseRow);
+    }
+
+    var names = [];
+    var interfaces = workflow.interfaces || {};
+    ['services', 'topics', 'actions'].forEach(function (group) {
+      (interfaces[group] || []).forEach(function (n) { names.push(n); });
+    });
+    if (names.length) {
+      var ifaceRow = document.createElement('div');
+      ifaceRow.className = 'chips';
+      names.slice(0, 4).forEach(function (n) { ifaceRow.appendChild(chip(n, 'iface')); });
+      if (names.length > 4) ifaceRow.appendChild(chip('+' + (names.length - 4) + ' more'));
+      body.appendChild(ifaceRow);
+    }
+
+    var meta = document.createElement('div');
+    meta.className = 'wf-meta';
+    var counts = document.createElement('span');
+    counts.textContent = workflow.stats.nodes + ' nodes · ' + workflow.stats.ros + ' ROS 2 · '
+      + Math.round(workflow.bytes / 1024) + ' kB';
+    var download = document.createElement('a');
+    download.href = 'gallery/' + workflow.file;
+    download.setAttribute('download', workflow.file);
+    download.textContent = 'Download JSON';
+    meta.appendChild(counts);
+    meta.appendChild(download);
+    body.appendChild(meta);
+
+    root.appendChild(body);
+    return root;
+  }
+
+  fetch('gallery/index.json', { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (data) {
+      var workflows = (data && data.workflows) || [];
+      if (!workflows.length) return;
+
+      var grid = document.getElementById('wf-grid');
+      workflows.forEach(function (w) { grid.appendChild(card(w)); });
+
+      // Only label the kinds actually on screen, so the legend does not promise
+      // colours nothing uses.
+      var present = {};
+      workflows.forEach(function (w) {
+        (w.graph.nodes || []).forEach(function (n) { present[n.k] = true; });
+      });
+      var legend = document.getElementById('legend');
+      KINDS.forEach(function (k) {
+        if (!present[k[0]]) return;
+        var item = document.createElement('span');
+        var swatch = document.createElement('i');
+        swatch.style.backgroundColor = k[1];
+        item.appendChild(swatch);
+        item.appendChild(document.createTextNode(k[2]));
+        legend.appendChild(item);
+      });
+
+      document.getElementById('gallery').hidden = false;
+    })
+    .catch(function () { /* no gallery mounted; the section stays hidden */ });
 })();
 </script>
 </body>

@@ -1,0 +1,625 @@
+{
+  "name": "ROS2 Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.prompt || '' }}{{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the rover's ROS2 assistant. Keep answers short and factual — no fluff, just the facts or a clarifying question.",
+          "maxIterations": 20,
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        592,
+        -592
+      ],
+      "id": "3e4904bc-a726-4ea9-bf75-0c065e621c8f",
+      "name": "AI Agent",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "grep": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Grep_Pattern', `Optionally filter returned list (leave empty to get all everything)`, 'string') }}",
+        "combineTopicsAndTypes": true
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApiTool",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -368
+      ],
+      "id": "0f15911c-0d29-4755-ae1c-4259adf15463",
+      "name": "List topics in ROS2 API",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "service",
+        "grep": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Grep_Pattern', `Optionally filter returned list (leave empty to get all everything)`, 'string') }}"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApiTool",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -368
+      ],
+      "id": "8e4e768b-c842-4267-8d6f-d8098d79cb64",
+      "name": "List services in ROS2 API",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getType",
+        "topicName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Topic_Name', ``, 'string') }}",
+        "includeDescription": true,
+        "includeRawDefinition": true
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApiTool",
+      "typeVersion": 1,
+      "position": [
+        208,
+        -368
+      ],
+      "id": "d6788f91-92bf-49e4-b198-246de4148b71",
+      "name": "Get the type of a topic in ROS2 API",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getDetails",
+        "topicName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Topic_Name', ``, 'string') }}"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApiTool",
+      "typeVersion": 1,
+      "position": [
+        336,
+        -368
+      ],
+      "id": "a6e84216-8289-482a-aa4b-c84821200b26",
+      "name": "Get details of a topic in ROS2 API",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "availableInChat": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -400,
+        -496
+      ],
+      "id": "c319fb24-f5c1-488c-92de-5e22c0883b44",
+      "name": "When chat message received",
+      "webhookId": "980a3fa1-ca9a-428b-a053-a450600af055"
+    },
+    {
+      "parameters": {
+        "topicName": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Topic_Name', ``, 'string') }}",
+          "mode": "id"
+        },
+        "messageType": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_Type', ``, 'string') }}",
+          "mode": "id"
+        },
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "8c7fae86-a25f-487e-ad12-0def34ce4d25",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicNextMessageTool",
+      "typeVersion": 1,
+      "position": [
+        464,
+        -368
+      ],
+      "id": "349146df-dee2-4e37-aeed-4f8fa25276dc",
+      "name": "ROS2 Topic Next Message",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "workspace": "28583477664368",
+        "searchTaskProperties": {
+          "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Text', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.asanaTool",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -368
+      ],
+      "id": "d59dab85-e746-44b2-af73-fd93cd1a2f92",
+      "name": "Search a task in Asana",
+      "credentials": {
+        "asanaApi": {
+          "id": "7uZdgdx6h60VLqpu",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Task_ID', ``, 'string') }}",
+        "otherProperties": {
+          "notes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Notes', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.asanaTool",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -368
+      ],
+      "id": "ecc86cf8-61ef-4e6c-83fb-9975ed4980af",
+      "name": "Update a task in Asana",
+      "credentials": {
+        "asanaApi": {
+          "id": "7uZdgdx6h60VLqpu",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workspace": "28583477664368",
+        "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Name', ``, 'string') }}",
+        "otherProperties": {
+          "notes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Notes', ``, 'string') }}",
+          "projects": [
+            "1212803998020655"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.asanaTool",
+      "typeVersion": 1,
+      "position": [
+        848,
+        -368
+      ],
+      "id": "e4bbcab6-f12b-4662-a61e-8f5e8684c865",
+      "name": "Create a task in Asana",
+      "credentials": {
+        "asanaApi": {
+          "id": "7uZdgdx6h60VLqpu",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "node",
+        "grep": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Grep_Pattern', `Optionally filter returned list (leave empty to get all everything)`, 'string') }}"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApiTool",
+      "typeVersion": 1,
+      "position": [
+        976,
+        -368
+      ],
+      "id": "680370f6-f5c4-417d-b9fc-5bc751407cea",
+      "name": "List nodes in ROS2 API",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "serviceName": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Service_Name', ``, 'string') }}",
+          "mode": "id"
+        },
+        "serviceType": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Service_Type', ``, 'string') }}",
+          "mode": "id"
+        },
+        "requestJson": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Request_JSON', ``, 'string') }}"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosServiceCallTool",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        -368
+      ],
+      "id": "2e204d36-5a74-4548-9257-79773ac54709",
+      "name": "ROS2 Service Call",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "service",
+        "grep": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Grep_Pattern', `Optionally filter returned list (leave empty to get all everything)`, 'string') }}"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApiTool",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        -368
+      ],
+      "id": "7d013248-9cf1-4403-86cf-3e0b05d81ed5",
+      "name": "List services in ROS2 API1",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "d6553e08-3112-493b-ad1c-91612ffebbcb",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        -688
+      ],
+      "id": "7d11b89b-3ca5-4cea-8fa2-e9240a492298",
+      "name": "Webhook",
+      "webhookId": "d6553e08-3112-493b-ad1c-91612ffebbcb"
+    },
+    {
+      "parameters": {
+        "resource": "service",
+        "operation": "getDefinition",
+        "serviceName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Service_Name', ``, 'string') }}"
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosApiTool",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        -368
+      ],
+      "id": "203fd68a-bc5e-485e-a9f5-c115ca6b0f0d",
+      "name": "Get the expanded definition of a service in ROS2 API",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        928,
+        -592
+      ],
+      "id": "fdb8279c-9b13-4b41-bf6b-0593532b98e3",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "Qwen/Qwen3.5-0.8B",
+          "mode": "list",
+          "cachedResultName": "Qwen/Qwen3.5-0.8B"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        -368
+      ],
+      "id": "d332d536-1d17-4404-af92-4b574bd71331",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "PsDB6KgXJCvQu0hF",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Capture a single image (JPEG/PNG) from a ROS2 image topic and return it. Use this when the agent needs to see what a camera currently sees, e.g. for visual inspection or scene description.",
+        "topicName": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Topic_Name', `Image topic`, 'string') }}",
+          "mode": "id"
+        },
+        "messageType": {
+          "__rl": true,
+          "mode": "id",
+          "value": "sensor_msgs/msg/CompressedImage"
+        }
+      },
+      "type": "@fhnw-rover/n8n-nodes-ros2.rosTopicCaptureImageTool",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        -368
+      ],
+      "id": "0d5a27c6-1394-427e-8b9a-83f603a67e0e",
+      "name": "ROS2 Topic Capture Image",
+      "credentials": {
+        "rosBridgeApi": {
+          "id": "hFqND2vWYzGinjkz",
+          "name": "ROS2 Rosbridge account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "List topics in ROS2 API": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List services in ROS2 API": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the type of a topic in ROS2 API": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get details of a topic in ROS2 API": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROS2 Topic Next Message": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search a task in Asana": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a task in Asana": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task in Asana": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List nodes in ROS2 API": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROS2 Service Call": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List services in ROS2 API1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the expanded definition of a service in ROS2 API": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROS2 Topic Capture Image": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "20ccc01a-7116-4c37-ae02-9a2817795861",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43789cd0cb2da5253891697a7073de5e1c75ab012ce78cbcac3f94f517f92f73"
+  },
+  "nodeGroups": [],
+  "id": "JvfEk3EZPReo7VCk",
+  "tags": []
+}
